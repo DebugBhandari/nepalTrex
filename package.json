@@ -2,20 +2,38 @@
   "name": "@org/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "dev": "nx dev @org/web",
+    "build": "nx build @org/web",
+    "start": "nx start @org/web"
+  },
   "private": true,
-  "dependencies": {},
   "devDependencies": {
     "@nx/js": "22.6.1",
+    "@nx/next": "^22.6.1",
     "@swc-node/register": "1.11.1",
+    "@swc/cli": "~0.8.0",
     "@swc/core": "1.15.8",
     "@swc/helpers": "0.5.18",
+    "@types/node": "20.19.9",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "nx": "22.6.1",
     "prettier": "^2.6.2",
     "tslib": "^2.3.0",
     "typescript": "~5.9.2"
   },
   "workspaces": [
-    "packages/*"
-  ]
+    "app",
+    "utils",
+    "types"
+  ],
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "next": "~16.1.6",
+    "next-auth": "^4.24.13",
+    "pg": "^8.20.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
 }

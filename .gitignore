@@ -4,6 +4,8 @@
 dist
 tmp
 out-tsc
+.env
+.env.example
 
 # dependencies
 node_modules
@@ -46,3 +48,7 @@ Thumbs.db
 .claude/worktrees
 .claude/settings.local.json
 .nx/polygraph
+
+# Next.js
+.next
+out
