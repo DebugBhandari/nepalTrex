@@ -109,9 +109,9 @@ jobs:
 
               set +u
               . "$HOME/.nvm/nvm.sh"
-              set -u
               nvm install --lts
               nvm use --lts
+              set -u
             fi
 
             if ! command -v npm >/dev/null 2>&1; then
