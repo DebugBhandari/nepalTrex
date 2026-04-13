@@ -61,18 +61,24 @@ jobs:
 
       - name: Deploy And Restart App
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
+          VPS_APP_NAME: ${{ secrets.VPS_APP_NAME }}
+          VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
+          DEPLOY_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          envs: VPS_APP_DIR,VPS_APP_NAME,VPS_ENV_FILE,DEPLOY_SHA
           script_stop: true
           script: |
             set -euo pipefail
 
-            APP_DIR="${{ secrets.VPS_APP_DIR }}"
-            RELEASE_DIR="/tmp/nepaltrex-${{ github.sha }}"
-            APP_NAME="${{ secrets.VPS_APP_NAME || 'nepaltrex' }}"
+            APP_DIR="$VPS_APP_DIR"
+            RELEASE_DIR="/tmp/nepaltrex-$DEPLOY_SHA"
+            APP_NAME="${VPS_APP_NAME:-nepaltrex}"
 
             mkdir -p "$APP_DIR"
 
@@ -82,10 +88,8 @@ jobs:
               --exclude "node_modules" \
               "$RELEASE_DIR/" "$APP_DIR/"
 
-            if [ -n "${{ secrets.VPS_ENV_FILE }}" ]; then
-              cat > "$APP_DIR/.env" <<'ENVEOF'
-            ${{ secrets.VPS_ENV_FILE }}
-            ENVEOF
+            if [ -n "${VPS_ENV_FILE:-}" ]; then
+              printf '%s\n' "$VPS_ENV_FILE" > "$APP_DIR/.env"
             fi
 
             cd "$APP_DIR"
