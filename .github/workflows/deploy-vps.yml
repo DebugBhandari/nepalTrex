@@ -121,6 +121,9 @@ jobs:
               exit 127
             fi
 
+            NPM_GLOBAL_PREFIX="$(npm config get prefix)"
+            export PATH="$NPM_GLOBAL_PREFIX/bin:$PATH"
+
             mkdir -p "$APP_DIR"
 
             rsync -az --delete \
@@ -145,6 +148,11 @@ jobs:
 
             if ! command -v pm2 >/dev/null 2>&1; then
               npm install -g pm2
+            fi
+
+            if ! command -v pm2 >/dev/null 2>&1; then
+              echo "pm2 is unavailable even after global install." >&2
+              exit 127
             fi
 
             pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
