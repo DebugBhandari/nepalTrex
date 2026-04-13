@@ -80,6 +80,23 @@ jobs:
             RELEASE_DIR="/tmp/nepaltrex-$DEPLOY_SHA"
             APP_NAME="${VPS_APP_NAME:-nepaltrex}"
 
+            # ssh-action runs a non-login shell; load common profile scripts so node/npm in nvm are available.
+            if [ -f "$HOME/.profile" ]; then
+              . "$HOME/.profile"
+            fi
+            if [ -f "$HOME/.bashrc" ]; then
+              . "$HOME/.bashrc"
+            fi
+            if [ -s "$HOME/.nvm/nvm.sh" ]; then
+              . "$HOME/.nvm/nvm.sh"
+              nvm use --lts >/dev/null 2>&1 || true
+            fi
+
+            if ! command -v npm >/dev/null 2>&1; then
+              echo "npm is not available on VPS. Install Node.js (LTS) for user '$USER' and retry deploy." >&2
+              exit 127
+            fi
+
             mkdir -p "$APP_DIR"
 
             rsync -az --delete \
