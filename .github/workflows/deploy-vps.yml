@@ -64,6 +64,7 @@ jobs:
         env:
           VPS_APP_DIR: ${{ secrets.VPS_APP_DIR }}
           VPS_APP_NAME: ${{ secrets.VPS_APP_NAME }}
+          VPS_APP_PORT: ${{ secrets.VPS_APP_PORT }}
           VPS_ENV_FILE: ${{ secrets.VPS_ENV_FILE }}
           DEPLOY_SHA: ${{ github.sha }}
         with:
@@ -71,7 +72,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
-          envs: VPS_APP_DIR,VPS_APP_NAME,VPS_ENV_FILE,DEPLOY_SHA
+          envs: VPS_APP_DIR,VPS_APP_NAME,VPS_APP_PORT,VPS_ENV_FILE,DEPLOY_SHA
           script_stop: true
           script: |
             set -euo pipefail
@@ -79,6 +80,7 @@ jobs:
             APP_DIR="$VPS_APP_DIR"
             RELEASE_DIR="/tmp/nepaltrex-$DEPLOY_SHA"
             APP_NAME="${VPS_APP_NAME:-nepaltrex}"
+            APP_PORT="${VPS_APP_PORT:-3000}"
 
             # ssh-action runs a non-login shell; load common profile scripts so node/npm in nvm are available.
             set +u
@@ -133,7 +135,8 @@ jobs:
 
             cd "$APP_DIR"
             npm ci
-            npm run build
+            cd app
+            npx next build
 
             if ! command -v pm2 >/dev/null 2>&1; then
               npm install -g pm2
@@ -142,7 +145,7 @@ jobs:
             if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
               pm2 restart "$APP_NAME" --update-env
             else
-              pm2 start npm --name "$APP_NAME" -- run start
+              pm2 start npx --name "$APP_NAME" -- next start -p "$APP_PORT"
             fi
 
             pm2 save
