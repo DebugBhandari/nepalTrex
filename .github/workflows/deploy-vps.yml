@@ -81,6 +81,7 @@ jobs:
             APP_NAME="${VPS_APP_NAME:-nepaltrex}"
 
             # ssh-action runs a non-login shell; load common profile scripts so node/npm in nvm are available.
+            set +u
             if [ -f "$HOME/.profile" ]; then
               . "$HOME/.profile"
             fi
@@ -91,6 +92,7 @@ jobs:
               . "$HOME/.nvm/nvm.sh"
               nvm use --lts >/dev/null 2>&1 || true
             fi
+            set -u
 
             if ! command -v npm >/dev/null 2>&1; then
               echo "npm is not available on VPS. Install Node.js (LTS) for user '$USER' and retry deploy." >&2
