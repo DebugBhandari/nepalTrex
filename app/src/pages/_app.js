@@ -1,10 +1,29 @@
 import Head from 'next/head';
+import { useEffect, useMemo, useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import theme from '../lib/mui-theme';
+import { Box, CssBaseline, IconButton, ThemeProvider, Tooltip } from '@mui/material';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import { createAppTheme } from '../lib/mui-theme';
 import './styles.css';
 
 function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
+  const [mode, setMode] = useState('light');
+
+  useEffect(() => {
+    const savedMode = window.localStorage.getItem('nepaltrex-color-mode');
+    if (savedMode === 'light' || savedMode === 'dark') {
+      setMode(savedMode);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.body.dataset.theme = mode;
+    window.localStorage.setItem('nepaltrex-color-mode', mode);
+  }, [mode]);
+
+  const theme = useMemo(() => createAppTheme(mode), [mode]);
+
   return (
     <>
       <Head>
@@ -15,6 +34,23 @@ function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
           <CssBaseline />
           <SessionProvider session={session}>
             <Component {...pageProps} />
+            <Box sx={{ position: 'fixed', right: 16, top: 10, zIndex: 1300 }}>
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton
+                  color="primary"
+                  onClick={() => setMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.16)',
+                  }}
+                  aria-label="Toggle dark mode"
+                >
+                  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                </IconButton>
+              </Tooltip>
+            </Box>
           </SessionProvider>
         </ThemeProvider>
       </main>

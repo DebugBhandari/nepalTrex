@@ -25,12 +25,14 @@ export default function SignInPage({ csrfToken, providers, error }) {
         <title>Sign in | NepalTrex</title>
       </Head>
       <Box
-        sx={{
+        sx={(theme) => ({
           minHeight: '100vh',
           py: 6,
           background:
-            'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)',
-        }}
+            theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              : theme.palette.background.default,
+        })}
       >
         <Container maxWidth="sm">
           <Card

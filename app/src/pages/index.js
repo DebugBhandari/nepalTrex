@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -35,9 +35,39 @@ const navItems = [
   { label: 'Contact', href: '#contact' },
 ];
 
+const DEFAULT_MAP_SRC = 'https://www.openstreetmap.org/export/embed.html?bbox=80.0%2C26.0%2C89.0%2C31.0&layer=mapnik';
+
+const ROUTE_MAPS = {
+  'everest base camp': {
+    bbox: '86.60,27.68,87.05,28.20',
+    marker: '27.9881,86.9250',
+  },
+  'annapurna circuit': {
+    bbox: '83.70,28.20,84.30,28.90',
+    marker: '28.5983,83.9311',
+  },
+  'langtang valley': {
+    bbox: '85.30,28.00,85.80,28.40',
+    marker: '28.2112,85.5563',
+  },
+};
+
+function mapEmbedForTrekName(name) {
+  const preset = ROUTE_MAPS[(name || '').toLowerCase()];
+  if (!preset) {
+    return DEFAULT_MAP_SRC;
+  }
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${preset.bbox}&layer=mapnik&marker=${preset.marker}`;
+}
+
 export default function HomePage({ featuredTreks, trekRegions, stays }) {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedTrek, setSelectedTrek] = useState('');
+  const mapsSectionRef = useRef(null);
+
+  const mapSrc = useMemo(() => mapEmbedForTrekName(selectedTrek), [selectedTrek]);
 
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
@@ -54,6 +84,11 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
     return `From NPR ${Math.min(...prices).toFixed(0)}`;
   };
 
+  const openRouteInMap = (trekName) => {
+    setSelectedTrek(trekName);
+    mapsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <>
       <Head>
@@ -63,12 +98,16 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
       <AppBar
         position="sticky"
         elevation={0}
-        sx={{
-          background: 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)',
-          color: '#fff7ed',
-          borderBottom: '1px solid rgba(217,119,69,0.35)',
+        sx={(theme) => ({
+          background:
+            theme.palette.mode === 'dark'
+              ? 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)'
+              : '#ffffff',
+          color: theme.palette.mode === 'dark' ? '#fff7ed' : theme.palette.text.primary,
+          borderBottom:
+            theme.palette.mode === 'dark' ? '1px solid rgba(217,119,69,0.35)' : '1px solid rgba(148,163,184,0.3)',
           backdropFilter: 'blur(8px)',
-        }}
+        })}
       >
         <Toolbar>
           <BabyTrexLogoWithText size={34} color="#f4b183" />
@@ -142,12 +181,14 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
       </Drawer>
 
       <Box
-        sx={{
+        sx={(theme) => ({
           background:
-            'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)',
+            theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              : theme.palette.background.default,
           minHeight: '100vh',
           pb: 6,
-        }}
+        })}
       >
         <Container maxWidth="lg" sx={{ pt: 6 }}>
           <Paper
@@ -197,10 +238,17 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
           </Paper>
 
           <Box id="treks" sx={{ mb: 4 }}>
-            <Typography variant="h4" sx={{ mb: 1, color: '#ffffff', textShadow: '0 2px 14px rgba(0,0,0,0.35)' }}>
+            <Typography
+              variant="h4"
+              sx={(theme) => ({
+                mb: 1,
+                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                textShadow: theme.palette.mode === 'dark' ? '0 2px 14px rgba(0,0,0,0.35)' : 'none',
+              })}
+            >
               Featured Trekking Routes
             </Typography>
-            <Typography color="rgba(255,255,255,0.8)" sx={{ mb: 2 }}>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
               Popular guided journeys for first-timers and experienced hikers.
             </Typography>
             <Stack spacing={2}>
@@ -219,6 +267,9 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
                       <Chip label={`Difficulty: ${titleCase(trek.level)}`} size="small" color="secondary" />
                       <Chip label={`Region: ${trek.region}`} size="small" variant="outlined" />
                     </Stack>
+                    <Button variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek.name)}>
+                      Open Route In Maps
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
@@ -226,10 +277,17 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
           </Box>
 
           <Box id="stays" sx={{ mb: 4 }}>
-            <Typography variant="h4" sx={{ mb: 1, color: '#ffffff', textShadow: '0 2px 14px rgba(0,0,0,0.35)' }}>
+            <Typography
+              variant="h4"
+              sx={(theme) => ({
+                mb: 1,
+                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                textShadow: theme.palette.mode === 'dark' ? '0 2px 14px rgba(0,0,0,0.35)' : 'none',
+              })}
+            >
               Hotels and Homestays
             </Typography>
-            <Typography color="rgba(255,255,255,0.84)" sx={{ mb: 2 }}>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
               Browse local accommodations and compare room and food menu options.
             </Typography>
             <Stack spacing={2}>
@@ -290,6 +348,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
 
           <Paper
             id="maps"
+            ref={mapsSectionRef}
             sx={{
               p: 3,
               mb: 4,
@@ -299,11 +358,16 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             <Typography variant="h5" sx={{ mb: 1 }}>
               Map Explorer
             </Typography>
+            {selectedTrek && (
+              <Typography color="text.secondary" sx={{ mb: 1.2 }}>
+                Showing route area for {selectedTrek}
+              </Typography>
+            )}
             <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
               <iframe
                 title="Nepal map"
                 loading="lazy"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=80.0%2C26.0%2C89.0%2C31.0&layer=mapnik"
+                src={mapSrc}
                 style={{ width: '100%', height: '360px', border: 0 }}
               />
             </Box>

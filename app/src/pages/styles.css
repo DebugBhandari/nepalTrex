@@ -1,11 +1,36 @@
 :root {
-  --bg-deep: #0f2b2d;
-  --bg-mid: #173b3f;
+  --bg-deep: #f4f6fb;
+  --bg-mid: #ffffff;
   --sun: #f0b429;
-  --snow: #f8f4eb;
+  --snow: #ffffff;
   --ink: #102023;
   --moss: #1e6f5c;
+  --card: #ffffff;
+  --page-bg: #ffffff;
+  --text-primary: #102023;
+  --text-muted: rgba(16, 32, 35, 0.78);
+  --outline: rgba(16, 32, 35, 0.2);
+  --soft-bg: rgba(16, 32, 35, 0.06);
+  --hero-bg: linear-gradient(135deg, rgba(240, 180, 41, 0.16), rgba(30, 111, 92, 0.14));
+  --section-bg: #ffffff;
+  --panel-border: rgba(16, 32, 35, 0.12);
+}
+
+body[data-theme='dark'] {
+  --bg-deep: #0f2b2d;
+  --bg-mid: #173b3f;
+  --snow: #f8f4eb;
   --card: #fffdf8;
+  --page-bg: radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%),
+    radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%),
+    linear-gradient(150deg, var(--bg-deep) 0%, var(--bg-mid) 45%, #08292d 100%);
+  --text-primary: #f8f4eb;
+  --text-muted: rgba(255, 255, 255, 0.82);
+  --outline: rgba(255, 255, 255, 0.35);
+  --soft-bg: rgba(255, 255, 255, 0.1);
+  --hero-bg: linear-gradient(135deg, rgba(5, 24, 28, 0.74), rgba(30, 111, 92, 0.5));
+  --section-bg: rgba(14, 43, 47, 0.78);
+  --panel-border: rgba(255, 255, 255, 0.15);
 }
 
 * {
@@ -20,11 +45,9 @@ body {
 }
 
 body {
-  color: var(--snow);
+  color: var(--text-primary);
   font-family: 'Space Grotesk', sans-serif;
-  background: radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%),
-    radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%),
-    linear-gradient(150deg, var(--bg-deep) 0%, var(--bg-mid) 45%, #08292d 100%);
+  background: var(--page-bg);
 }
 
 a {
@@ -81,7 +104,7 @@ a {
 }
 
 .main-menu a {
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -92,12 +115,12 @@ a {
 .menu-cta {
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--outline);
   font-size: 0.9rem;
 }
 
 .menu-cta:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--soft-bg);
 }
 
 .auth-block {
@@ -108,9 +131,9 @@ a {
 }
 
 .auth-btn {
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--snow);
+  border: 1px solid var(--outline);
+  background: var(--soft-bg);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 0.4rem 0.8rem;
   cursor: pointer;
@@ -131,8 +154,8 @@ a {
   margin-top: 2rem;
   padding: 2.7rem 2rem;
   border-radius: 26px;
-  background: linear-gradient(135deg, rgba(5, 24, 28, 0.74), rgba(30, 111, 92, 0.5));
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--hero-bg);
+  border: 1px solid var(--panel-border);
   animation: rise-in 550ms ease-out;
 }
 
@@ -155,7 +178,7 @@ a {
 .hero-copy {
   margin-top: 1rem;
   max-width: 62ch;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-muted);
 }
 
 .hero-actions {
@@ -178,28 +201,28 @@ a {
 }
 
 .btn-outline {
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--outline);
 }
 
 .section {
   margin-top: 1.7rem;
   padding: 1.7rem;
   border-radius: 20px;
-  background: rgba(14, 43, 47, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--section-bg);
+  border: 1px solid var(--panel-border);
 }
 
 .section-head h2,
 .section h2 {
   margin: 0;
   font-family: 'Merriweather', serif;
-  color: var(--snow);
+  color: var(--text-primary);
 }
 
 .section-head p,
 .section p {
   margin: 0.55rem 0 0;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--text-muted);
 }
 
 .trek-grid {
@@ -250,7 +273,7 @@ a {
 .region-pills span {
   background: rgba(240, 180, 41, 0.18);
   border: 1px solid rgba(240, 180, 41, 0.45);
-  color: var(--snow);
+  color: var(--text-primary);
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
   font-size: 0.9rem;
@@ -260,7 +283,7 @@ a {
   margin-top: 1rem;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--panel-border);
   min-height: 320px;
 }
 
@@ -279,8 +302,8 @@ a {
 }
 
 .map-links a {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--soft-bg);
+  border: 1px solid var(--panel-border);
   border-radius: 10px;
   padding: 0.55rem 0.72rem;
   font-size: 0.86rem;
@@ -301,11 +324,11 @@ a {
 .site-footer {
   margin-top: 1.4rem;
   padding: 1.15rem 0.2rem 0.2rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-muted);
   display: flex;
   flex-wrap: wrap;
   gap: 0.85rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 1px solid var(--panel-border);
 }
 
 .site-footer p {

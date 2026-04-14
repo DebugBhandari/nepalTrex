@@ -99,7 +99,7 @@ export default function StayDetailPage({ stay }) {
           py: 5,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              ? 'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -111,8 +111,8 @@ export default function StayDetailPage({ stay }) {
             variant="outlined"
             sx={(theme) => ({
               mb: 2,
-              color: theme.palette.mode === 'dark' ? '#fff7ed' : theme.palette.text.primary,
-              borderColor: theme.palette.mode === 'dark' ? '#fff7ed' : 'rgba(148,163,184,0.45)',
+              color: theme.palette.mode === 'dark' ? '#f8f4eb' : theme.palette.text.primary,
+              borderColor: theme.palette.mode === 'dark' ? '#f8f4eb' : 'rgba(148,163,184,0.45)',
             })}
           >
             Back to Home
@@ -122,9 +122,9 @@ export default function StayDetailPage({ stay }) {
             sx={{
               mb: 2,
               background:
-                'linear-gradient(145deg, rgba(255,250,242,0.98) 0%, rgba(252,246,237,0.95) 100%)',
-              border: '1px solid rgba(148,163,184,0.3)',
-              boxShadow: '0 22px 44px rgba(15, 23, 42, 0.24)',
+                'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(241,248,246,0.94) 100%)',
+              border: '1px solid rgba(27,122,100,0.2)',
+              boxShadow: '0 22px 44px rgba(8, 41, 45, 0.24)',
             }}
           >
             <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />

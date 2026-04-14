@@ -6,7 +6,7 @@ import { signOut } from 'next-auth/react';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import {
   Alert,
   AppBar,
@@ -270,11 +270,11 @@ export default function AdminPage({ user, initialStays }) {
         sx={(theme) => ({
           background:
             theme.palette.mode === 'dark'
-              ? 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)'
+              ? 'linear-gradient(90deg, rgba(10,34,37,0.94) 0%, rgba(19,59,63,0.94) 100%)'
               : '#ffffff',
-          color: theme.palette.mode === 'dark' ? '#fff7ed' : theme.palette.text.primary,
+          color: theme.palette.mode === 'dark' ? '#f8f4eb' : theme.palette.text.primary,
           borderBottom:
-            theme.palette.mode === 'dark' ? '1px solid rgba(217,119,69,0.35)' : '1px solid rgba(148,163,184,0.3)',
+            theme.palette.mode === 'dark' ? '1px solid rgba(240,180,41,0.24)' : '1px solid rgba(148,163,184,0.3)',
         })}
       >
         <Toolbar>
@@ -296,9 +296,9 @@ export default function AdminPage({ user, initialStays }) {
             p: { xs: 2, md: 3 },
             background:
               theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, rgba(31,41,55,0.9) 0%, rgba(30,41,59,0.9) 100%)'
-                : 'linear-gradient(145deg, #ffffff 0%, #f8efe4 100%)',
-            border: '1px solid rgba(148,163,184,0.3)',
+                ? 'linear-gradient(145deg, rgba(31,41,55,0.9) 0%, rgba(15,23,42,0.9) 100%)'
+                : 'linear-gradient(145deg, #ffffff 0%, #f2faf6 100%)',
+            border: '1px solid rgba(23,59,63,0.14)',
           })}
         >
           <Typography variant="h4">Manage Your Hotels and Homestays</Typography>
