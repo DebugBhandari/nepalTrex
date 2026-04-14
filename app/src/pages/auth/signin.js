@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { getCsrfToken, getProviders, signIn } from 'next-auth/react';
 
 export default function SignInPage({ csrfToken, providers, error }) {
@@ -35,6 +36,15 @@ export default function SignInPage({ csrfToken, providers, error }) {
             }
           }
 
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.05);
+            }
+          }
+
           input:focus {
             border-color: #667eea !important;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
@@ -49,15 +59,17 @@ export default function SignInPage({ csrfToken, providers, error }) {
             transform: translateY(0);
           }
 
-          button[type="button"]:hover {
-            border-color: #667eea;
-            background: #f7fafc;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+          button[type="button"]:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
           }
 
           button[type="button"]:active {
             transform: translateY(0);
+          }
+
+          a:hover {
+            color: #667eea;
           }
 
           .divider-line {
@@ -80,10 +92,15 @@ export default function SignInPage({ csrfToken, providers, error }) {
       
       <div style={styles.container}>
         <div style={styles.card}>
+          {/* Logo */}
+          <div style={styles.logoContainer}>
+            <div style={styles.logoCircle}>🏔️</div>
+          </div>
+
           {/* Header */}
           <div style={styles.header}>
             <h1 style={styles.title}>Welcome Back</h1>
-            <p style={styles.subtitle}>Sign in to explore Nepal's trekking adventures</p>
+            <p style={styles.subtitle}>Continue your trekking journey</p>
           </div>
 
           {/* Error Alert */}
@@ -94,6 +111,29 @@ export default function SignInPage({ csrfToken, providers, error }) {
               </p>
             </div>
           )}
+
+          {/* Google OAuth - Prominent */}
+          {hasGoogle ? (
+            <button
+              type="button"
+              style={styles.googleButton}
+              onClick={() => signIn('google', { callbackUrl: '/' })}
+            >
+              <GoogleIcon />
+              <span>Continue with Google</span>
+            </button>
+          ) : (
+            <p style={styles.disabledText}>
+              Google login is disabled. Please configure OAuth credentials.
+            </p>
+          )}
+
+          {/* Divider */}
+          <div style={styles.dividerContainer}>
+            <div style={styles.dividerLine}></div>
+            <span style={styles.dividerText}>OR</span>
+            <div style={styles.dividerLine}></div>
+          </div>
 
           {/* Credentials Form */}
           <form method="post" action="/api/auth/callback/credentials" style={styles.form}>
@@ -106,7 +146,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
                 name="username"
                 type="text"
                 autoComplete="username"
-                placeholder="Enter your username"
+                placeholder="admin"
                 style={styles.input}
                 required
               />
@@ -119,45 +159,24 @@ export default function SignInPage({ csrfToken, providers, error }) {
                 name="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 style={styles.input}
                 required
               />
             </div>
 
             <button type="submit" style={styles.primaryButton}>
-              Sign in with Username
+              Sign In
             </button>
           </form>
 
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0', position: 'relative' }}>
-            <div style={{ position: 'absolute', left: 0, right: 0, height: '1px', background: '#e2e8f0' }}></div>
-            <span style={{ position: 'relative', zIndex: 1, background: 'white', padding: '0 12px', fontSize: '14px', fontWeight: '600', color: '#cbd5e0', flex: 1, textAlign: 'center' }}>
-              OR
-            </span>
+          {/* Sign Up Link */}
+          <div style={styles.signupPrompt}>
+            <span style={{ color: '#718096' }}>Don't have an account? </span>
+            <Link href="/auth/signup" style={styles.signupLink}>
+              Sign up
+            </Link>
           </div>
-
-          {/* Google OAuth */}
-          {hasGoogle ? (
-            <button
-              type="button"
-              style={styles.googleButton}
-              onClick={() => signIn('google', { callbackUrl: '/' })}
-            >
-              <svg style={styles.googleIcon} viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Continue with Google
-            </button>
-          ) : (
-            <p style={styles.disabledText}>
-              Google login is disabled. Please configure OAuth credentials.
-            </p>
-          )}
 
           {/* Footer */}
           <p style={styles.footer}>
@@ -166,6 +185,17 @@ export default function SignInPage({ csrfToken, providers, error }) {
         </div>
       </div>
     </>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
   );
 }
 
@@ -184,26 +214,43 @@ const styles = {
     width: '100%',
     maxWidth: '420px',
     background: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+    borderRadius: '16px',
+    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
     padding: '40px',
     animation: 'slideUp 0.6s ease-out',
+  },
+  logoContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '24px',
+  },
+  logoCircle: {
+    width: '60px',
+    height: '60px',
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '32px',
+    boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)',
   },
   header: {
     textAlign: 'center',
     marginBottom: '32px',
   },
   title: {
-    fontSize: '28px',
-    fontWeight: '700',
+    fontSize: '32px',
+    fontWeight: '800',
     color: '#1a202c',
     marginBottom: '8px',
     letterSpacing: '-0.5px',
   },
   subtitle: {
-    fontSize: '14px',
+    fontSize: '15px',
     color: '#718096',
-    lineHeight: '1.5',
+    lineHeight: '1.6',
+    fontWeight: '500',
   },
   errorAlert: {
     background: '#fed7d7',
@@ -217,6 +264,43 @@ const styles = {
     color: '#c53030',
     margin: 0,
   },
+  googleButton: {
+    width: '100%',
+    padding: '14px 16px',
+    background: 'white',
+    color: '#1a202c',
+    fontSize: '15px',
+    fontWeight: '700',
+    border: '2px solid #e2e8f0',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px',
+    letterSpacing: '0.3px',
+    marginBottom: '24px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+  },
+  dividerContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    margin: '28px 0',
+  },
+  dividerLine: {
+    flex: 1,
+    height: '1px',
+    background: '#e2e8f0',
+  },
+  dividerText: {
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#cbd5e0',
+    textTransform: 'uppercase',
+    letterSpacing: '1px',
+  },
   form: {
     marginBottom: '24px',
   },
@@ -226,15 +310,17 @@ const styles = {
   label: {
     display: 'block',
     fontSize: '14px',
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#2d3748',
     marginBottom: '8px',
     letterSpacing: '0.3px',
+    textTransform: 'uppercase',
+    fontSize: '12px',
   },
   input: {
     width: '100%',
-    padding: '11px 14px',
-    fontSize: '14px',
+    padding: '12px 14px',
+    fontSize: '15px',
     border: '1.5px solid #e2e8f0',
     borderRadius: '8px',
     transition: 'all 0.3s ease',
@@ -244,41 +330,17 @@ const styles = {
   },
   primaryButton: {
     width: '100%',
-    padding: '12px 16px',
+    padding: '14px 16px',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     fontSize: '15px',
-    fontWeight: '600',
+    fontWeight: '700',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '10px',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
     letterSpacing: '0.3px',
     boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-    marginBottom: '16px',
-  },
-  googleButton: {
-    width: '100%',
-    padding: '12px 16px',
-    background: 'white',
-    color: '#1a202c',
-    fontSize: '15px',
-    fontWeight: '600',
-    border: '1.5px solid #e2e8f0',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '10px',
-    letterSpacing: '0.3px',
-    marginBottom: '20px',
-  },
-  googleIcon: {
-    width: '20px',
-    height: '20px',
-    color: '#4285F4',
   },
   disabledText: {
     fontSize: '14px',
@@ -289,6 +351,18 @@ const styles = {
     borderRadius: '8px',
     marginBottom: '20px',
     margin: 0,
+  },
+  signupPrompt: {
+    textAlign: 'center',
+    fontSize: '14px',
+    color: '#718096',
+    marginBottom: '20px',
+  },
+  signupLink: {
+    color: '#667eea',
+    fontWeight: '700',
+    textDecoration: 'none',
+    transition: 'color 0.2s ease',
   },
   footer: {
     textAlign: 'center',
