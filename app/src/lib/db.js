@@ -51,6 +51,22 @@ CREATE TABLE IF NOT EXISTS treks (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS stays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  stay_type TEXT NOT NULL CHECK (stay_type IN ('hotel', 'homestay')),
+  location TEXT NOT NULL,
+  description TEXT NOT NULL,
+  price_per_night NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  contact_phone TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS stays_owner_user_id_idx ON stays(owner_user_id);
 `;
 
 export const pool =

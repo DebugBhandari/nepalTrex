@@ -124,7 +124,14 @@ export default function SignUpPage() {
         }}
       >
         <Container maxWidth="sm">
-          <Card>
+          <Card
+            sx={{
+              background:
+                'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(246,252,249,0.95) 100%)',
+              border: '1px solid rgba(27,122,100,0.2)',
+              boxShadow: '0 24px 44px rgba(8, 41, 45, 0.26)',
+            }}
+          >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
                 <BabyTrexLogo size={42} color="#f0b429" />
@@ -149,7 +156,11 @@ export default function SignUpPage() {
                     fullWidth
                   />
                   {formData.password && (
-                    <LinearProgress variant="determinate" value={(passwordStrength / 5) * 100} />
+                    <LinearProgress
+                      variant="determinate"
+                      value={(passwordStrength / 5) * 100}
+                      sx={{ height: 8, borderRadius: 4 }}
+                    />
                   )}
                   <TextField
                     label="Confirm Password"
@@ -160,7 +171,7 @@ export default function SignUpPage() {
                     required
                     fullWidth
                   />
-                  <Button type="submit" variant="contained" fullWidth disabled={loading}>
+                  <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ py: 1.1 }}>
                     {loading ? 'Creating Account...' : 'Create Account'}
                   </Button>
                 </Stack>

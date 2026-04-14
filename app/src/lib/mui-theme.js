@@ -4,9 +4,9 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#1e6f5c',
+      main: '#1b7a64',
       dark: '#173b3f',
-      light: '#4b9c8a',
+      light: '#5bb79e',
       contrastText: '#ffffff',
     },
     secondary: {
@@ -14,8 +14,8 @@ const theme = createTheme({
       contrastText: '#102023',
     },
     background: {
-      default: '#f4f7f6',
-      paper: '#ffffff',
+      default: '#edf5f3',
+      paper: '#fefcf8',
     },
     text: {
       primary: '#102023',
@@ -50,6 +50,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 10,
+          paddingInline: 16,
+        },
+        containedPrimary: {
+          background: 'linear-gradient(135deg, #1b7a64 0%, #173b3f 100%)',
         },
       },
     },
@@ -57,7 +61,15 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          border: '1px solid #e5e7eb',
+          border: '1px solid rgba(23, 59, 63, 0.12)',
+          boxShadow: '0 10px 28px rgba(16, 32, 35, 0.08)',
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
         },
       },
     },

@@ -27,6 +27,7 @@ import { query } from '../lib/db';
 import { BabyTrexLogoWithText } from '../components/BabyTrexLogo';
 
 const navItems = [
+  { label: 'Stays', href: '#stays' },
   { label: 'Treks', href: '#treks' },
   { label: 'Regions', href: '#regions' },
   { label: 'Maps', href: '#maps' },
@@ -34,10 +35,11 @@ const navItems = [
   { label: 'Contact', href: '#contact' },
 ];
 
-export default function HomePage({ featuredTreks, trekRegions }) {
+export default function HomePage({ featuredTreks, trekRegions, stays }) {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
 
   return (
@@ -46,7 +48,16 @@ export default function HomePage({ featuredTreks, trekRegions }) {
         <title>NepalTrex | Trekking Adventures in Nepal</title>
       </Head>
 
-      <AppBar position="sticky" color="inherit" elevation={1}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          background: 'linear-gradient(90deg, rgba(10,34,37,0.92) 0%, rgba(19,59,63,0.92) 100%)',
+          color: '#f8f4eb',
+          borderBottom: '1px solid rgba(240,180,41,0.25)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
         <Toolbar>
           <BabyTrexLogoWithText size={34} color="#f0b429" />
           <Box sx={{ flexGrow: 1 }} />
@@ -76,7 +87,19 @@ export default function HomePage({ featuredTreks, trekRegions }) {
                 variant="contained"
                 onClick={() => setMenuOpen(false)}
               >
-                Dashboard
+                Super Dashboard
+              </Button>
+            )}
+
+            {status === 'authenticated' && isAdminOrSuperUser && (
+              <Button
+                component={Link}
+                href="/admin"
+                startIcon={<DashboardIcon />}
+                variant="outlined"
+                onClick={() => setMenuOpen(false)}
+              >
+                Admin Dashboard
               </Button>
             )}
 
@@ -115,7 +138,16 @@ export default function HomePage({ featuredTreks, trekRegions }) {
         }}
       >
         <Container maxWidth="lg" sx={{ pt: 6 }}>
-          <Paper sx={{ p: { xs: 3, md: 5 }, mb: 4, backgroundColor: 'rgba(255,255,255,0.92)' }}>
+          <Paper
+            sx={{
+              p: { xs: 3, md: 5 },
+              mb: 4,
+              background:
+                'linear-gradient(145deg, rgba(254,252,248,0.95) 0%, rgba(240,250,246,0.92) 45%, rgba(255,244,219,0.9) 100%)',
+              border: '1px solid rgba(27,122,100,0.22)',
+              boxShadow: '0 22px 44px rgba(8, 41, 45, 0.28)',
+            }}
+          >
             <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
               Trekking in the Himalayas
             </Typography>
@@ -133,13 +165,69 @@ export default function HomePage({ featuredTreks, trekRegions }) {
               <Button href="#maps" variant="outlined" size="large">
                 View Map Explorer
               </Button>
-              {isSuperUser && (
-                <Button component={Link} href="/dashboard" variant="outlined" startIcon={<DashboardIcon />} size="large">
-                  Dashboard
+              {isAdminOrSuperUser && (
+                <Button
+                  component={Link}
+                  href={isSuperUser ? '/dashboard' : '/admin'}
+                  variant="outlined"
+                  startIcon={<DashboardIcon />}
+                  size="large"
+                >
+                  {isSuperUser ? 'Super Dashboard' : 'Admin Dashboard'}
+                </Button>
+              )}
+              {isAdminOrSuperUser && (
+                <Button component={Link} href="/admin" variant="outlined" size="large">
+                  Manage Stays
                 </Button>
               )}
             </Stack>
           </Paper>
+
+          <Box id="stays" sx={{ mb: 4 }}>
+            <Typography variant="h4" color="common.white" sx={{ mb: 1 }}>
+              Hotels and Homestays
+            </Typography>
+            <Typography color="rgba(255,255,255,0.8)" sx={{ mb: 2 }}>
+              Browse local accommodations across trekking regions.
+            </Typography>
+            <Stack spacing={2}>
+              {stays.map((stay) => (
+                <Card
+                  key={stay.id}
+                  sx={{
+                    background:
+                      'linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(241,248,246,0.94) 100%)',
+                  }}
+                >
+                  <CardContent>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
+                      <Box>
+                        <Typography variant="h6">{stay.name}</Typography>
+                        <Typography color="text.secondary" sx={{ mb: 1 }}>
+                          {stay.location}
+                        </Typography>
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                          <Chip label={titleCase(stay.stayType)} size="small" color="secondary" />
+                          <Chip label={`NPR ${Number(stay.pricePerNight).toFixed(0)} / night`} size="small" />
+                        </Stack>
+                      </Box>
+                      <Stack justifyContent="center">
+                        <Button component={Link} href={`/${stay.slug}`} variant="contained">
+                          View Stay
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+              {stays.length === 0 && (
+                <Paper sx={{ p: 2 }}>
+                  <Typography color="text.secondary">No stays registered yet.</Typography>
+                </Paper>
+              )}
+            </Stack>
+          </Box>
 
           <Box id="treks" sx={{ mb: 4 }}>
             <Typography variant="h4" color="common.white" sx={{ mb: 1 }}>
@@ -150,7 +238,13 @@ export default function HomePage({ featuredTreks, trekRegions }) {
             </Typography>
             <Stack spacing={2}>
               {featuredTreks.map((trek) => (
-                <Card key={trek.name}>
+                <Card
+                  key={trek.name}
+                  sx={{
+                    background:
+                      'linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(241,248,246,0.94) 100%)',
+                  }}
+                >
                   <CardContent>
                     <Typography variant="h6">{trek.name}</Typography>
                     <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
@@ -164,7 +258,14 @@ export default function HomePage({ featuredTreks, trekRegions }) {
             </Stack>
           </Box>
 
-          <Paper id="regions" sx={{ p: 3, mb: 4 }}>
+          <Paper
+            id="regions"
+            sx={{
+              p: 3,
+              mb: 4,
+              background: 'linear-gradient(140deg, #f9fefc 0%, #eef7f3 100%)',
+            }}
+          >
             <Typography variant="h5" sx={{ mb: 1 }}>
               Regions at a Glance
             </Typography>
@@ -175,7 +276,14 @@ export default function HomePage({ featuredTreks, trekRegions }) {
             </Stack>
           </Paper>
 
-          <Paper id="maps" sx={{ p: 3, mb: 4 }}>
+          <Paper
+            id="maps"
+            sx={{
+              p: 3,
+              mb: 4,
+              background: 'linear-gradient(140deg, #fffdf7 0%, #f3faf7 100%)',
+            }}
+          >
             <Typography variant="h5" sx={{ mb: 1 }}>
               Map Explorer
             </Typography>
@@ -189,7 +297,14 @@ export default function HomePage({ featuredTreks, trekRegions }) {
             </Box>
           </Paper>
 
-          <Paper id="about" sx={{ p: 3, mb: 4 }}>
+          <Paper
+            id="about"
+            sx={{
+              p: 3,
+              mb: 4,
+              background: 'linear-gradient(140deg, #f8fffc 0%, #eef6f2 100%)',
+            }}
+          >
             <Typography variant="h5" sx={{ mb: 1 }}>
               Why NepalTrex
             </Typography>
@@ -237,10 +352,28 @@ export async function getServerSideProps() {
 
     const trekRegions = regionRows.rows.map((row) => row.region);
 
+    const stayRows = await query(
+      `
+        SELECT id, name, slug, stay_type, location, price_per_night
+        FROM stays
+        ORDER BY created_at DESC
+      `
+    );
+
+    const stays = stayRows.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      stayType: row.stay_type,
+      location: row.location,
+      pricePerNight: row.price_per_night,
+    }));
+
     return {
       props: {
         featuredTreks,
         trekRegions,
+        stays,
       },
     };
   } catch {
@@ -248,6 +381,7 @@ export async function getServerSideProps() {
       props: {
         featuredTreks: FEATURED_TREKS,
         trekRegions: Array.from(TREK_REGIONS),
+        stays: [],
       },
     };
   }

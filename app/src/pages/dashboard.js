@@ -254,7 +254,16 @@ export default function DashboardPage({ user, treks }) {
         <title>Dashboard | NepalTrex</title>
       </Head>
 
-      <AppBar position="sticky" color="inherit" elevation={1}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          background: 'linear-gradient(90deg, rgba(10,34,37,0.94) 0%, rgba(19,59,63,0.94) 100%)',
+          color: '#f8f4eb',
+          borderBottom: '1px solid rgba(240,180,41,0.24)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
         <Toolbar>
           <IconButton edge="start" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }}>
             <MenuIcon />
@@ -271,7 +280,7 @@ export default function DashboardPage({ user, treks }) {
           >
             Home
           </Button>
-          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" />
+          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ color: '#102023' }} />
         </Toolbar>
       </AppBar>
 
@@ -280,7 +289,14 @@ export default function DashboardPage({ user, treks }) {
       </Drawer>
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Paper sx={{ p: { xs: 2, md: 3 } }}>
+        <Paper
+          sx={{
+            p: { xs: 2, md: 3 },
+            background: 'linear-gradient(145deg, #ffffff 0%, #f2faf6 100%)',
+            border: '1px solid rgba(23,59,63,0.14)',
+            boxShadow: '0 18px 36px rgba(8, 41, 45, 0.14)',
+          }}
+        >
           <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Manage treks and users from one place.
@@ -317,7 +333,13 @@ export default function DashboardPage({ user, treks }) {
 
               <Stack spacing={2}>
                 {items.map((trek) => (
-                  <Card key={trek.id}>
+                  <Card
+                    key={trek.id}
+                    sx={{
+                      background:
+                        'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(244,251,248,0.96) 100%)',
+                    }}
+                  >
                     <CardContent>
                       <Stack spacing={1.5}>
                         <TextField
@@ -453,7 +475,13 @@ export default function DashboardPage({ user, treks }) {
                   const isSelf = entry.id === user.id;
 
                   return (
-                    <Card key={entry.id}>
+                    <Card
+                      key={entry.id}
+                      sx={{
+                        background:
+                          'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(244,251,248,0.96) 100%)',
+                      }}
+                    >
                       <CardContent>
                         <Stack
                           direction={{ xs: 'column', md: 'row' }}

@@ -39,6 +39,22 @@ CREATE TABLE IF NOT EXISTS treks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS stays (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  stay_type TEXT NOT NULL CHECK (stay_type IN ('hotel', 'homestay')),
+  location TEXT NOT NULL,
+  description TEXT NOT NULL,
+  price_per_night NUMERIC(10, 2) NOT NULL DEFAULT 0,
+  contact_phone TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS stays_owner_user_id_idx ON stays(owner_user_id);
+
 INSERT INTO users (username, email, display_name, password_hash, provider)
 VALUES (
   'admin',
@@ -61,3 +77,26 @@ VALUES
   ('Manaslu Circuit', 15, 'challenging', 'Manaslu Region', 'Remote circuit around Manaslu with high mountain passes and fewer crowds.', true),
   ('Upper Mustang', 12, 'moderate', 'Mustang Region', 'Arid trans-Himalayan trail through ancient walled settlements.', true)
 ON CONFLICT (name) DO NOTHING;
+
+INSERT INTO stays (
+  owner_user_id,
+  name,
+  slug,
+  stay_type,
+  location,
+  description,
+  price_per_night,
+  contact_phone
+)
+SELECT
+  u.id,
+  'Ghandruk Homestay',
+  'ghandrukHomestay',
+  'homestay',
+  'Ghandruk, Kaski',
+  'Warm local homestay with mountain views, home-cooked meals, and village cultural experiences.',
+  35,
+  '+977-9800000000'
+FROM users u
+WHERE u.username = 'admin'
+ON CONFLICT (slug) DO NOTHING;
