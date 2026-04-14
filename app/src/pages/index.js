@@ -1,12 +1,17 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useMemo, useRef, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   AppBar,
   Box,
   Button,
@@ -36,27 +41,20 @@ const navItems = [
   { label: 'Contact', href: '#contact' },
 ];
 
-const DEFAULT_MAP_SRC = 'https://www.openstreetmap.org/export/embed.html?bbox=80.0%2C26.0%2C89.0%2C31.0&layer=mapnik';
-
-const ROUTE_MAPS = {
-  'everest base camp': {
-    bbox: '86.60,27.68,87.05,28.20',
-    marker: '27.9881,86.9250',
-  },
-  'annapurna circuit': {
-    bbox: '83.70,28.20,84.30,28.90',
-    marker: '28.5983,83.9311',
-  },
-  'langtang valley': {
-    bbox: '85.30,28.00,85.80,28.40',
-    marker: '28.2112,85.5563',
-  },
-};
+const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
 
 const TREK_IMAGE_BY_NAME = {
   'everest base camp': '/treks/everest-base-camp.jpg',
+  'everest base camp trek': '/treks/everest-base-camp.jpg',
   'annapurna circuit': '/treks/annapurna-circuit.jpg',
   'langtang valley': '/treks/langtang-valley.jpg',
+  'langtang valley trek': '/treks/langtang-valley.jpg',
+};
+
+const REGION_IMAGE_BY_KEYWORD = {
+  everest: '/treks/everest-base-camp.jpg',
+  annapurna: '/treks/annapurna-circuit.jpg',
+  langtang: '/treks/langtang-valley.jpg',
 };
 
 function getTrekImage(name, region) {
@@ -68,22 +66,42 @@ function getTrekImage(name, region) {
   return '/treks/everest-base-camp.jpg';
 }
 
-function mapEmbedForTrekName(name) {
-  const preset = ROUTE_MAPS[(name || '').toLowerCase()];
-  if (!preset) {
-    return DEFAULT_MAP_SRC;
+function getRegionImage(region, regionTreks) {
+  const normalizedRegion = (region || '').toLowerCase();
+
+  for (const key of Object.keys(REGION_IMAGE_BY_KEYWORD)) {
+    if (normalizedRegion.includes(key)) {
+      return REGION_IMAGE_BY_KEYWORD[key];
+    }
   }
 
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${preset.bbox}&layer=mapnik&marker=${preset.marker}`;
+  const firstTrekName = regionTreks[0]?.name;
+  return getTrekImage(firstTrekName, region);
 }
 
-export default function HomePage({ featuredTreks, trekRegions, stays }) {
+export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }) {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedTrek, setSelectedTrek] = useState('');
+  const [selectedTrek, setSelectedTrek] = useState(null);
+  const [expandedRegion, setExpandedRegion] = useState('');
   const mapsSectionRef = useRef(null);
 
-  const mapSrc = useMemo(() => mapEmbedForTrekName(selectedTrek), [selectedTrek]);
+  const treksByRegion = useMemo(() => {
+    const regionMap = new Map();
+
+    allTreks.forEach((trek) => {
+      const regionKey = trek.region || 'Other Routes';
+      if (!regionMap.has(regionKey)) {
+        regionMap.set(regionKey, []);
+      }
+      regionMap.get(regionKey).push(trek);
+    });
+
+    return trekRegions.map((region) => ({
+      region,
+      treks: regionMap.get(region) || [],
+    }));
+  }, [allTreks, trekRegions]);
 
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
@@ -100,8 +118,16 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
     return `From NPR ${Math.min(...prices).toFixed(0)}`;
   };
 
-  const openRouteInMap = (trekName) => {
-    setSelectedTrek(trekName);
+  const openRouteInMap = (trek) => {
+    if (!trek?.name) {
+      return;
+    }
+
+    setSelectedTrek({
+      name: trek.name,
+      routeGeojson: trek.routeGeojson || null,
+    });
+
     mapsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -283,7 +309,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
                       <Chip label={`Difficulty: ${titleCase(trek.level)}`} size="small" color="secondary" />
                       <Chip label={`Region: ${trek.region}`} size="small" variant="outlined" />
                     </Stack>
-                    <Button variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek.name)}>
+                    <Button variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek)}>
                       Open Route In Maps
                     </Button>
                   </CardContent>
@@ -358,11 +384,74 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             })}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
-              Regions at a Glance
+              Trek Regions
             </Typography>
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-              {trekRegions.map((region) => (
-                <Chip key={region} label={region} sx={{ mb: 1 }} />
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              Select a region to expand its available treks with duration, difficulty, and route details.
+            </Typography>
+            <Stack spacing={2}>
+              {treksByRegion.map((regionGroup) => (
+                <Card
+                  key={regionGroup.region}
+                  sx={(theme) => ({
+                    background:
+                      theme.palette.mode === 'dark'
+                        ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                        : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                  })}
+                >
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={getRegionImage(regionGroup.region, regionGroup.treks)}
+                    alt={`${regionGroup.region} trekking region`}
+                  />
+                  <Accordion
+                    disableGutters
+                    expanded={expandedRegion === regionGroup.region}
+                    onChange={(_, isExpanded) => setExpandedRegion(isExpanded ? regionGroup.region : '')}
+                    sx={{
+                      background: 'transparent',
+                      boxShadow: 'none',
+                      '&:before': { display: 'none' },
+                    }}
+                  >
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon />}
+                      aria-controls={`region-panel-${regionGroup.region}`}
+                      id={`region-panel-header-${regionGroup.region}`}
+                    >
+                      <Box>
+                        <Typography variant="h6">{regionGroup.region}</Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {regionGroup.treks.length} trek{regionGroup.treks.length === 1 ? '' : 's'} available
+                        </Typography>
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Stack spacing={2}>
+                        {regionGroup.treks.map((trek) => (
+                          <Paper key={trek.name} sx={{ p: 2 }}>
+                            <Typography variant="subtitle1">{trek.name}</Typography>
+                            <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1, flexWrap: 'wrap' }}>
+                              <Chip label={`Duration: ${formatDurationDays(trek.durationDays)}`} size="small" />
+                              <Chip label={`Difficulty: ${titleCase(trek.level)}`} size="small" color="secondary" />
+                            </Stack>
+                            <Typography color="text.secondary" sx={{ mb: 1.2 }}>
+                              {trek.description || 'Description coming soon.'}
+                            </Typography>
+                            <Button size="small" variant="outlined" onClick={() => openRouteInMap(trek)}>
+                              Open Route In Maps
+                            </Button>
+                          </Paper>
+                        ))}
+                        {regionGroup.treks.length === 0 && (
+                          <Typography color="text.secondary">No treks published yet for this region.</Typography>
+                        )}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                </Card>
               ))}
             </Stack>
           </Paper>
@@ -382,18 +471,13 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             <Typography variant="h5" sx={{ mb: 1 }}>
               Map Explorer
             </Typography>
-            {selectedTrek && (
-              <Typography color="text.secondary" sx={{ mb: 1.2 }}>
-                Showing route area for {selectedTrek}
-              </Typography>
-            )}
+            <Typography color="text.secondary" sx={{ mb: 1.2 }}>
+              {selectedTrek
+                ? `Showing GeoJSON route for ${selectedTrek.name}`
+                : 'Pick any trek and click Open Route In Maps to draw the trail route.'}
+            </Typography>
             <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-              <iframe
-                title="Nepal map"
-                loading="lazy"
-                src={mapSrc}
-                style={{ width: '100%', height: '360px', border: 0 }}
-              />
+              <TrekRouteMap selectedTrek={selectedTrek} />
             </Box>
           </Paper>
 
@@ -431,30 +515,24 @@ export async function getServerSideProps() {
   try {
     const trekRows = await query(
       `
-        SELECT name, duration_days, level, region, route_geojson
+        SELECT name, duration_days, level, region, description, route_geojson, is_featured
         FROM treks
-        WHERE is_featured = true
         ORDER BY name ASC
       `
     );
 
-    const featuredTreks = trekRows.rows.map((row) => ({
+    const allTreks = trekRows.rows.map((row) => ({
       name: row.name,
       durationDays: row.duration_days,
       level: row.level,
       region: row.region,
+      description: row.description || '',
       routeGeojson: row.route_geojson || null,
+      isFeatured: row.is_featured,
     }));
 
-    const regionRows = await query(
-      `
-        SELECT DISTINCT region
-        FROM treks
-        ORDER BY region ASC
-      `
-    );
-
-    const trekRegions = regionRows.rows.map((row) => row.region);
+    const featuredTreks = allTreks.filter((row) => row.isFeatured);
+    const trekRegions = Array.from(new Set(allTreks.map((row) => row.region))).sort((a, b) => a.localeCompare(b));
 
     const stayRows = await query(
       `
@@ -477,14 +555,23 @@ export async function getServerSideProps() {
       props: {
         featuredTreks,
         trekRegions,
+        allTreks,
         stays,
       },
     };
   } catch {
+    const fallbackTreks = FEATURED_TREKS.map((trek) => ({
+      ...trek,
+      description: '',
+      routeGeojson: null,
+      isFeatured: true,
+    }));
+
     return {
       props: {
-        featuredTreks: FEATURED_TREKS,
+        featuredTreks: fallbackTreks,
         trekRegions: Array.from(TREK_REGIONS),
+        allTreks: fallbackTreks,
         stays: [],
       },
     };

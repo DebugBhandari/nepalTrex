@@ -6,6 +6,7 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import { createAppTheme } from '../lib/mui-theme';
 import './styles.css';
+import 'leaflet/dist/leaflet.css';
 
 function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
   const [mode, setMode] = useState('light');

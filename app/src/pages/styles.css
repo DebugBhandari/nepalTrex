@@ -258,6 +258,23 @@ a {
   margin-top: 0.3rem;
 }
 
+.trek-route-label {
+  background: rgba(11, 31, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  color: #f8fafc;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.18rem 0.55rem;
+  text-transform: none;
+}
+
+.trek-route-label::before {
+  display: none;
+}
+
 .split {
   display: grid;
   gap: 1rem;

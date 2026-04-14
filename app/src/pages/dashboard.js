@@ -28,6 +28,12 @@ import {
   Select,
   Stack,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Tab,
   Tabs,
   TextField,
@@ -40,10 +46,56 @@ import { query } from '../lib/db';
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
 
+function normalizeRouteGeojson(routeGeojson) {
+  if (!routeGeojson) {
+    return null;
+  }
+
+  if (typeof routeGeojson === 'string') {
+    try {
+      return JSON.parse(routeGeojson);
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof routeGeojson === 'object') {
+    return routeGeojson;
+  }
+
+  return null;
+}
+
+function getRoutePointCount(routeGeojson) {
+  const parsed = normalizeRouteGeojson(routeGeojson);
+
+  if (!parsed || !parsed.type) {
+    return 0;
+  }
+
+  if (parsed.type === 'LineString') {
+    return Array.isArray(parsed.coordinates) ? parsed.coordinates.length : 0;
+  }
+
+  if (parsed.type === 'MultiLineString') {
+    return Array.isArray(parsed.coordinates)
+      ? parsed.coordinates.reduce((count, line) => count + (Array.isArray(line) ? line.length : 0), 0)
+      : 0;
+  }
+
+  return 0;
+}
+
 export default function DashboardPage({ user, treks }) {
   const [items, setItems] = useState(treks);
   const [savingById, setSavingById] = useState({});
   const [trekMessage, setTrekMessage] = useState('');
+  const [trekSearch, setTrekSearch] = useState('');
+  const [regionFilter, setRegionFilter] = useState('all');
+  const [levelFilter, setLevelFilter] = useState('all');
+  const [routeFilter, setRouteFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   const [activeTab, setActiveTab] = useState('treks');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -56,6 +108,63 @@ export default function DashboardPage({ user, treks }) {
   const [draftRolesById, setDraftRolesById] = useState({});
 
   const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
+
+  const availableRegions = useMemo(
+    () => Array.from(new Set(items.map((trek) => trek.region).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [items]
+  );
+
+  const visibleItems = useMemo(() => {
+    const query = trekSearch.trim().toLowerCase();
+
+    const filtered = items.filter((trek) => {
+      if (regionFilter !== 'all' && trek.region !== regionFilter) {
+        return false;
+      }
+
+      if (levelFilter !== 'all' && trek.level !== levelFilter) {
+        return false;
+      }
+
+      const routePoints = getRoutePointCount(trek.routeGeojson);
+      if (routeFilter === 'with-route' && routePoints === 0) {
+        return false;
+      }
+
+      if (routeFilter === 'missing-route' && routePoints > 0) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const haystack = [trek.name, trek.region, trek.level, trek.description]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const direction = sortDirection === 'asc' ? 1 : -1;
+
+      if (sortBy === 'duration') {
+        return ((Number(a.durationDays) || 0) - (Number(b.durationDays) || 0)) * direction;
+      }
+
+      if (sortBy === 'route') {
+        return (getRoutePointCount(a.routeGeojson) - getRoutePointCount(b.routeGeojson)) * direction;
+      }
+
+      const left = String(a[sortBy] || '').toLowerCase();
+      const right = String(b[sortBy] || '').toLowerCase();
+      return left.localeCompare(right) * direction;
+    });
+
+    return sorted;
+  }, [items, levelFilter, regionFilter, routeFilter, sortBy, sortDirection, trekSearch]);
 
   const fetchUsers = useCallback(
     async (search = '') => {
@@ -328,8 +437,150 @@ export default function DashboardPage({ user, treks }) {
                 </Alert>
               )}
 
+              <Paper sx={{ p: 1.5, mb: 2 }}>
+                <Stack spacing={1.2}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
+                    <TextField
+                      label="Search treks"
+                      placeholder="Name, region, level, description"
+                      value={trekSearch}
+                      onChange={(event) => setTrekSearch(event.target.value)}
+                      size="small"
+                      fullWidth
+                    />
+                    <FormControl size="small" sx={{ minWidth: 170 }}>
+                      <InputLabel id="region-filter-label">Region</InputLabel>
+                      <Select
+                        labelId="region-filter-label"
+                        label="Region"
+                        value={regionFilter}
+                        onChange={(event) => setRegionFilter(event.target.value)}
+                      >
+                        <MenuItem value="all">All regions</MenuItem>
+                        {availableRegions.map((region) => (
+                          <MenuItem key={region} value={region}>
+                            {region}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 160 }}>
+                      <InputLabel id="level-filter-label">Difficulty</InputLabel>
+                      <Select
+                        labelId="level-filter-label"
+                        label="Difficulty"
+                        value={levelFilter}
+                        onChange={(event) => setLevelFilter(event.target.value)}
+                      >
+                        <MenuItem value="all">All levels</MenuItem>
+                        {LEVEL_OPTIONS.map((option) => (
+                          <MenuItem key={option} value={option}>
+                            {option}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <InputLabel id="route-filter-label">Route status</InputLabel>
+                      <Select
+                        labelId="route-filter-label"
+                        label="Route status"
+                        value={routeFilter}
+                        onChange={(event) => setRouteFilter(event.target.value)}
+                      >
+                        <MenuItem value="all">All routes</MenuItem>
+                        <MenuItem value="with-route">With route</MenuItem>
+                        <MenuItem value="missing-route">Missing route</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Stack>
+
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                      <InputLabel id="sort-by-label">Sort by</InputLabel>
+                      <Select
+                        labelId="sort-by-label"
+                        label="Sort by"
+                        value={sortBy}
+                        onChange={(event) => setSortBy(event.target.value)}
+                      >
+                        <MenuItem value="name">Name</MenuItem>
+                        <MenuItem value="region">Region</MenuItem>
+                        <MenuItem value="level">Difficulty</MenuItem>
+                        <MenuItem value="duration">Duration</MenuItem>
+                        <MenuItem value="route">Route points</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 150 }}>
+                      <InputLabel id="sort-direction-label">Direction</InputLabel>
+                      <Select
+                        labelId="sort-direction-label"
+                        label="Direction"
+                        value={sortDirection}
+                        onChange={(event) => setSortDirection(event.target.value)}
+                      >
+                        <MenuItem value="asc">Ascending</MenuItem>
+                        <MenuItem value="desc">Descending</MenuItem>
+                      </Select>
+                    </FormControl>
+                    <Button
+                      variant="outlined"
+                      onClick={() => {
+                        setTrekSearch('');
+                        setRegionFilter('all');
+                        setLevelFilter('all');
+                        setRouteFilter('all');
+                        setSortBy('name');
+                        setSortDirection('asc');
+                      }}
+                    >
+                      Reset filters
+                    </Button>
+                  </Stack>
+                </Stack>
+              </Paper>
+
+              <TableContainer component={Paper} sx={{ mb: 2 }}>
+                <Table size="small" aria-label="Trek summary table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell>Region</TableCell>
+                      <TableCell>Difficulty</TableCell>
+                      <TableCell align="right">Duration</TableCell>
+                      <TableCell>Route GeoJSON</TableCell>
+                      <TableCell>Featured</TableCell>
+                      <TableCell>Description</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {visibleItems.map((trek) => {
+                      const routePoints = getRoutePointCount(trek.routeGeojson);
+
+                      return (
+                        <TableRow key={`summary-${trek.id}`} hover>
+                          <TableCell>{trek.name}</TableCell>
+                          <TableCell>{trek.region}</TableCell>
+                          <TableCell sx={{ textTransform: 'capitalize' }}>{trek.level}</TableCell>
+                          <TableCell align="right">{trek.durationDays} days</TableCell>
+                          <TableCell>
+                            {routePoints > 0 ? `Available (${routePoints} pts)` : 'Missing'}
+                          </TableCell>
+                          <TableCell>{trek.isFeatured ? 'Yes' : 'No'}</TableCell>
+                          <TableCell sx={{ maxWidth: 340 }}>
+                            <Typography variant="body2" color="text.secondary" noWrap>
+                              {trek.description || 'No description'}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
               <Stack spacing={2}>
-                {items.map((trek) => (
+                {visibleItems.map((trek) => (
                   <Card
                     key={trek.id}
                     sx={{
@@ -415,6 +666,9 @@ export default function DashboardPage({ user, treks }) {
                     </CardContent>
                   </Card>
                 ))}
+                {visibleItems.length === 0 && (
+                  <Alert severity="info">No treks match the current filters.</Alert>
+                )}
               </Stack>
             </Box>
           )}
