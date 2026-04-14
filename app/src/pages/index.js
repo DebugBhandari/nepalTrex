@@ -3,6 +3,8 @@ import { signOut, useSession } from 'next-auth/react';
 import { FEATURED_TREKS, TREK_REGIONS } from '@org/types';
 import { formatDurationDays, titleCase } from '@org/utils';
 import { query } from '../lib/db';
+import { BabyTrexLogoWithText } from '../components/BabyTrexLogo';
+import { themeColors } from '../lib/theme';
 
 export default function HomePage({ featuredTreks, trekRegions }) {
   const { data: session, status } = useSession();
@@ -26,7 +28,7 @@ export default function HomePage({ featuredTreks, trekRegions }) {
       <div className="landing-bg" />
 
       <header className="site-header">
-        <div className="brand">NepalTrex</div>
+        <BabyTrexLogoWithText size={36} color={themeColors.goldSun} />
         <nav className="main-menu" aria-label="Main navigation">
           <a href="#treks">Treks</a>
           <a href="#regions">Regions</a>

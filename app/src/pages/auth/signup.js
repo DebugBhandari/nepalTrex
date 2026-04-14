@@ -2,6 +2,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { BabyTrexLogo } from '../../components/BabyTrexLogo';
+import { themeColors } from '../../lib/theme';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -157,7 +159,7 @@ export default function SignUpPage() {
           
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, ${themeColors.deepTeal} 0%, ${themeColors.midTeal} 45%, #08292d 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -176,13 +178,13 @@ export default function SignUpPage() {
           }
 
           input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+            border-color: ${themeColors.moss} !important;
+            box-shadow: 0 0 0 3px rgba(30, 111, 92, 0.1) !important;
           }
 
           button[type="submit"]:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
+            box-shadow: 0 6px 20px rgba(30, 111, 92, 0.5) !important;
           }
 
           button[type="submit"]:active {
@@ -195,7 +197,7 @@ export default function SignUpPage() {
           }
 
           a:hover {
-            color: #667eea;
+            color: ${themeColors.moss};
           }
         `}</style>
       </Head>
@@ -204,7 +206,9 @@ export default function SignUpPage() {
         <div style={styles.card}>
           {/* Logo */}
           <div style={styles.logoContainer}>
-            <div style={styles.logoCircle}>🏔️</div>
+            <div style={styles.logoCircle}>
+              <BabyTrexLogo size={40} color={themeColors.goldSun} />
+            </div>
           </div>
 
           {/* Header */}
@@ -346,13 +350,13 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: `linear-gradient(135deg, ${themeColors.deepTeal} 0%, ${themeColors.midTeal} 45%, #08292d 100%)`,
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
   },
   card: {
     width: '100%',
     maxWidth: '420px',
-    background: 'white',
+    background: themeColors.card,
     borderRadius: '16px',
     boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
     padding: '40px',
@@ -364,15 +368,14 @@ const styles = {
     marginBottom: '24px',
   },
   logoCircle: {
-    width: '60px',
-    height: '60px',
+    width: '70px',
+    height: '70px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.midTeal} 100%)`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '32px',
-    boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)',
+    boxShadow: `0 8px 20px rgba(30, 111, 92, 0.3)`,
   },
   header: {
     textAlign: 'center',
@@ -381,13 +384,13 @@ const styles = {
   title: {
     fontSize: '32px',
     fontWeight: '800',
-    color: '#1a202c',
+    color: themeColors.ink,
     marginBottom: '8px',
     letterSpacing: '-0.5px',
   },
   subtitle: {
     fontSize: '15px',
-    color: '#718096',
+    color: '#666',
     lineHeight: '1.6',
     fontWeight: '500',
   },
@@ -405,7 +408,7 @@ const styles = {
   },
   successAlert: {
     background: '#c6f6d5',
-    border: '1px solid #9ae6b4',
+    border: `1px solid ${themeColors.moss}40`,
     borderRadius: '8px',
     padding: '12px 16px',
     marginBottom: '24px',
@@ -425,7 +428,7 @@ const styles = {
     display: 'block',
     fontSize: '14px',
     fontWeight: '700',
-    color: '#2d3748',
+    color: themeColors.ink,
     marginBottom: '8px',
     letterSpacing: '0.3px',
     textTransform: 'uppercase',
@@ -435,7 +438,7 @@ const styles = {
     width: '100%',
     padding: '12px 14px',
     fontSize: '15px',
-    border: '1.5px solid #e2e8f0',
+    border: '1.5px solid #ddd',
     borderRadius: '8px',
     transition: 'all 0.3s ease',
     fontFamily: 'inherit',
@@ -473,8 +476,8 @@ const styles = {
   primaryButton: {
     width: '100%',
     padding: '14px 16px',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
+    background: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.midTeal} 100%)`,
+    color: themeColors.snow,
     fontSize: '15px',
     fontWeight: '700',
     border: 'none',
@@ -482,16 +485,16 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.3s ease',
     letterSpacing: '0.3px',
-    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+    boxShadow: `0 4px 15px rgba(30, 111, 92, 0.3)`,
   },
   signinPrompt: {
     textAlign: 'center',
     fontSize: '14px',
-    color: '#718096',
+    color: '#666',
     marginBottom: '20px',
   },
   signinLink: {
-    color: '#667eea',
+    color: themeColors.moss,
     fontWeight: '700',
     textDecoration: 'none',
     transition: 'color 0.2s ease',
@@ -499,9 +502,9 @@ const styles = {
   footer: {
     textAlign: 'center',
     fontSize: '12px',
-    color: '#a0aec0',
+    color: '#999',
     marginTop: '24px',
-    borderTop: '1px solid #e2e8f0',
+    borderTop: '1px solid #ddd',
     paddingTop: '16px',
   },
 };
