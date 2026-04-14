@@ -1,8 +1,5 @@
 import bcrypt from 'bcryptjs';
-
-// In-memory user storage for this example
-// In production, use a database
-const users = [];
+import { query } from '../../../lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -28,36 +25,48 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
-  // Check if user already exists
-  // In production, query your database
-  const existingUser = users.find(u => u.email === email || u.username === username);
-  if (existingUser) {
-    return res.status(400).json({ error: 'Email or username already in use' });
-  }
-
   try {
+    // Check if user already exists
+    const existingUser = await query(
+      `
+        SELECT id FROM users 
+        WHERE username = $1 OR email = $2
+        LIMIT 1
+      `,
+      [username, email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Email or username already in use' });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Store user (in production, save to database)
-    const newUser = {
-      id: Date.now().toString(),
-      email,
-      username,
-      password: hashedPassword,
-      createdAt: new Date(),
-    };
-    users.push(newUser);
+    // Insert user into database
+    const result = await query(
+      `
+        INSERT INTO users (username, email, password_hash, provider, display_name)
+        VALUES ($1, $2, $3, 'credentials', $4)
+        RETURNING id, username, email
+      `,
+      [username, email, hashedPassword, username]
+    );
 
-    // Log to console for debugging
     console.log('New user registered:', { email, username });
 
     return res.status(201).json({
       message: 'User registered successfully',
-      user: { id: newUser.id, email, username },
+      user: {
+        id: result.rows[0].id,
+        email: result.rows[0].email,
+        username: result.rows[0].username,
+      },
     });
   } catch (error) {
     console.error('Registration error:', error);
-    return res.status(500).json({ error: 'Registration failed' });
+    return res.status(500).json({
+      error: error.message || 'Registration failed',
+    });
   }
 }
