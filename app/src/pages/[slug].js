@@ -1,10 +1,91 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { Box, Button, Card, CardContent, Chip, Container, Stack, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  Chip,
+  Container,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import { query } from '../lib/db';
 
+const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
+const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
+
 export default function StayDetailPage({ stay }) {
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [bookingStatus, setBookingStatus] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingForm, setBookingForm] = useState({
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    quantity: 1,
+    notes: '',
+  });
+
+  const groupedMenu = useMemo(() => {
+    const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
+    return {
+      rooms: items.filter((item) => item.category === 'room'),
+      foods: items.filter((item) => item.category === 'food'),
+    };
+  }, [stay.menuItems]);
+
+  const handleBook = async () => {
+    if (!selectedItem) {
+      return;
+    }
+
+    setSubmitting(true);
+    setBookingStatus('');
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stayId: stay.id,
+          menuItemName: selectedItem.name,
+          menuItemCategory: selectedItem.category,
+          unitPrice: selectedItem.price,
+          quantity: Number(bookingForm.quantity || 1),
+          customerName: bookingForm.customerName,
+          customerEmail: bookingForm.customerEmail,
+          customerPhone: bookingForm.customerPhone,
+          notes: bookingForm.notes,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to place booking');
+      }
+
+      setBookingStatus('Booking placed successfully. The host will contact you soon.');
+      setBookingForm({
+        customerName: '',
+        customerEmail: '',
+        customerPhone: '',
+        quantity: 1,
+        notes: '',
+      });
+    } catch (error) {
+      setBookingStatus(error.message || 'Failed to place booking');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <>
       <Head>
@@ -20,19 +101,27 @@ export default function StayDetailPage({ stay }) {
             'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)',
         }}
       >
-        <Container maxWidth="md">
-          <Button component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mb: 2, color: '#f8f4eb', borderColor: '#f8f4eb' }}>
+        <Container maxWidth="lg">
+          <Button
+            component={Link}
+            href="/"
+            startIcon={<HomeIcon />}
+            variant="outlined"
+            sx={{ mb: 2, color: '#f8f4eb', borderColor: '#f8f4eb' }}
+          >
             Back to Home
           </Button>
 
           <Card
             sx={{
+              mb: 2,
               background:
                 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(241,248,246,0.94) 100%)',
               border: '1px solid rgba(27,122,100,0.2)',
               boxShadow: '0 22px 44px rgba(8, 41, 45, 0.24)',
             }}
           >
+            <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />
             <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
               <Typography variant="h3" sx={{ mb: 1.5 }}>
                 {stay.name}
@@ -40,7 +129,6 @@ export default function StayDetailPage({ stay }) {
               <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
                 <Chip color="secondary" label={stay.stayType} />
                 <Chip variant="outlined" label={stay.location} />
-                <Chip label={`NPR ${Number(stay.pricePerNight).toFixed(0)} / night`} />
               </Stack>
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 {stay.description}
@@ -52,6 +140,130 @@ export default function StayDetailPage({ stay }) {
               )}
             </CardContent>
           </Card>
+
+          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} alignItems="flex-start">
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h5" color="#f8f4eb" sx={{ mb: 1 }}>
+                Room Options
+              </Typography>
+              <Stack spacing={1.5} sx={{ mb: 3 }}>
+                {groupedMenu.rooms.map((item, index) => (
+                  <Card key={`room-${index}`}>
+                    <CardMedia component="img" height="180" image={item.imageUrl || DEFAULT_MENU_IMAGE} alt={item.name} />
+                    <CardContent>
+                      <Typography variant="h6">{item.name}</Typography>
+                      <Typography color="text.secondary" sx={{ mb: 1 }}>
+                        {item.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+                        <Chip label={`NPR ${Number(item.price).toFixed(0)}`} color="secondary" />
+                        <Button variant="contained" onClick={() => setSelectedItem(item)}>
+                          Book this room
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+                {groupedMenu.rooms.length === 0 && (
+                  <Card>
+                    <CardContent>
+                      <Typography color="text.secondary">No room options listed yet.</Typography>
+                    </CardContent>
+                  </Card>
+                )}
+              </Stack>
+
+              <Typography variant="h5" color="#f8f4eb" sx={{ mb: 1 }}>
+                Food Menu
+              </Typography>
+              <Stack spacing={1.5}>
+                {groupedMenu.foods.map((item, index) => (
+                  <Card key={`food-${index}`}>
+                    <CardMedia component="img" height="180" image={item.imageUrl || DEFAULT_MENU_IMAGE} alt={item.name} />
+                    <CardContent>
+                      <Typography variant="h6">{item.name}</Typography>
+                      <Typography color="text.secondary" sx={{ mb: 1 }}>
+                        {item.description}
+                      </Typography>
+                      <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+                        <Chip label={`NPR ${Number(item.price).toFixed(0)}`} color="secondary" />
+                        <Button variant="contained" onClick={() => setSelectedItem(item)}>
+                          Order this item
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+                {groupedMenu.foods.length === 0 && (
+                  <Card>
+                    <CardContent>
+                      <Typography color="text.secondary">No food options listed yet.</Typography>
+                    </CardContent>
+                  </Card>
+                )}
+              </Stack>
+            </Box>
+
+            <Card sx={{ width: { xs: '100%', lg: 390 }, position: { lg: 'sticky' }, top: 88 }}>
+              <CardContent>
+                <Typography variant="h6" sx={{ mb: 1 }}>
+                  Book / Purchase
+                </Typography>
+                <Typography color="text.secondary" sx={{ mb: 2 }}>
+                  {selectedItem
+                    ? `${selectedItem.name} (${selectedItem.category}) - NPR ${Number(selectedItem.price).toFixed(0)}`
+                    : 'Select a room or food item to continue.'}
+                </Typography>
+
+                {bookingStatus && (
+                  <Alert sx={{ mb: 2 }} severity="info">
+                    {bookingStatus}
+                  </Alert>
+                )}
+
+                <Stack spacing={1.2}>
+                  <TextField
+                    label="Your Name"
+                    value={bookingForm.customerName}
+                    onChange={(event) => setBookingForm((prev) => ({ ...prev, customerName: event.target.value }))}
+                  />
+                  <TextField
+                    label="Email (optional)"
+                    value={bookingForm.customerEmail}
+                    onChange={(event) => setBookingForm((prev) => ({ ...prev, customerEmail: event.target.value }))}
+                  />
+                  <TextField
+                    label="Phone"
+                    value={bookingForm.customerPhone}
+                    onChange={(event) => setBookingForm((prev) => ({ ...prev, customerPhone: event.target.value }))}
+                  />
+                  <TextField
+                    label="Quantity"
+                    type="number"
+                    inputProps={{ min: 1 }}
+                    value={bookingForm.quantity}
+                    onChange={(event) =>
+                      setBookingForm((prev) => ({ ...prev, quantity: Number(event.target.value || 1) }))
+                    }
+                  />
+                  <TextField
+                    label="Notes (optional)"
+                    multiline
+                    minRows={3}
+                    value={bookingForm.notes}
+                    onChange={(event) => setBookingForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  />
+                  <Button
+                    variant="contained"
+                    disabled={!selectedItem || !bookingForm.customerName || submitting}
+                    onClick={handleBook}
+                  >
+                    {submitting ? 'Submitting...' : 'Confirm Booking'}
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Stack>
         </Container>
       </Box>
     </>
@@ -67,7 +279,7 @@ export async function getServerSideProps(context) {
 
   const result = await query(
     `
-      SELECT name, slug, stay_type, location, description, price_per_night, contact_phone
+      SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
       FROM stays
       WHERE slug = $1
       LIMIT 1
@@ -84,12 +296,14 @@ export async function getServerSideProps(context) {
   return {
     props: {
       stay: {
+        id: row.id,
         name: row.name,
         slug: row.slug,
         stayType: row.stay_type,
         location: row.location,
         description: row.description,
-        pricePerNight: row.price_per_night,
+        imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
+        menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],
         contactPhone: row.contact_phone || '',
       },
     },

@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS stays (
   stay_type TEXT NOT NULL CHECK (stay_type IN ('hotel', 'homestay')),
   location TEXT NOT NULL,
   description TEXT NOT NULL,
+  image_url TEXT,
+  menu_items JSONB NOT NULL DEFAULT '[]'::jsonb,
   price_per_night NUMERIC(10, 2) NOT NULL DEFAULT 0,
   contact_phone TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -67,6 +69,39 @@ CREATE TABLE IF NOT EXISTS stays (
 );
 
 CREATE INDEX IF NOT EXISTS stays_owner_user_id_idx ON stays(owner_user_id);
+
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS image_url TEXT;
+
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS menu_items JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+UPDATE stays
+SET
+  image_url = COALESCE(image_url, 'https://placehold.co/1000x620?text=NepalTrex+Stay'),
+  menu_items = CASE
+    WHEN jsonb_typeof(menu_items) = 'array' THEN menu_items
+    ELSE '[]'::jsonb
+  END,
+  updated_at = NOW();
+
+CREATE TABLE IF NOT EXISTS orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  menu_item_name TEXT NOT NULL,
+  menu_item_category TEXT NOT NULL CHECK (menu_item_category IN ('room', 'food')),
+  unit_price NUMERIC(10, 2) NOT NULL,
+  quantity INT NOT NULL CHECK (quantity > 0),
+  total_price NUMERIC(10, 2) NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT,
+  customer_phone TEXT,
+  notes TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS orders_stay_id_idx ON orders(stay_id);
 `;
 
 export const pool =

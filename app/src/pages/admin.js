@@ -5,6 +5,8 @@ import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import {
   Alert,
   AppBar,
@@ -28,6 +30,9 @@ import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
 
 const STAY_TYPES = ['hotel', 'homestay'];
+const MENU_CATEGORIES = ['room', 'food'];
+const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
+const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 
 function makeSlug(input) {
   return input
@@ -35,6 +40,26 @@ function makeSlug(input) {
     .replace(/\s+/g, '-')
     .replace(/[^a-zA-Z0-9-_]/g, '')
     .replace(/-+/g, '-');
+}
+
+function newMenuItem(category = 'room') {
+  return {
+    category,
+    name: '',
+    description: '',
+    price: 0,
+    imageUrl: DEFAULT_MENU_IMAGE,
+  };
+}
+
+function normalizeMenuItems(items) {
+  return (items || []).map((item) => ({
+    category: item.category,
+    name: item.name,
+    description: item.description || '',
+    price: Number(item.price || 0),
+    imageUrl: item.imageUrl || DEFAULT_MENU_IMAGE,
+  }));
 }
 
 export default function AdminPage({ user, initialStays }) {
@@ -49,12 +74,86 @@ export default function AdminPage({ user, initialStays }) {
     stayType: 'homestay',
     location: '',
     description: '',
-    pricePerNight: 0,
+    imageUrl: DEFAULT_STAY_IMAGE,
     contactPhone: '',
+    menuItems: [newMenuItem('room'), newMenuItem('food')],
   });
 
   const updateDraft = (id, field, value) => {
     setStays((prev) => prev.map((stay) => (stay.id === id ? { ...stay, [field]: value } : stay)));
+  };
+
+  const updateStayMenuItem = (stayId, index, field, value) => {
+    setStays((prev) =>
+      prev.map((stay) => {
+        if (stay.id !== stayId) {
+          return stay;
+        }
+
+        const nextMenu = [...(stay.menuItems || [])];
+        nextMenu[index] = {
+          ...nextMenu[index],
+          [field]: value,
+        };
+
+        return { ...stay, menuItems: nextMenu };
+      })
+    );
+  };
+
+  const addStayMenuItem = (stayId, category) => {
+    setStays((prev) =>
+      prev.map((stay) =>
+        stay.id === stayId
+          ? {
+              ...stay,
+              menuItems: [...(stay.menuItems || []), newMenuItem(category)],
+            }
+          : stay
+      )
+    );
+  };
+
+  const removeStayMenuItem = (stayId, index) => {
+    setStays((prev) =>
+      prev.map((stay) => {
+        if (stay.id !== stayId) {
+          return stay;
+        }
+
+        const nextMenu = (stay.menuItems || []).filter((_, itemIndex) => itemIndex !== index);
+        return { ...stay, menuItems: nextMenu.length > 0 ? nextMenu : [newMenuItem('room')] };
+      })
+    );
+  };
+
+  const updateNewMenuItem = (index, field, value) => {
+    setNewStay((prev) => {
+      const nextMenu = [...prev.menuItems];
+      nextMenu[index] = {
+        ...nextMenu[index],
+        [field]: value,
+      };
+
+      return { ...prev, menuItems: nextMenu };
+    });
+  };
+
+  const addNewMenuItem = (category) => {
+    setNewStay((prev) => ({
+      ...prev,
+      menuItems: [...prev.menuItems, newMenuItem(category)],
+    }));
+  };
+
+  const removeNewMenuItem = (index) => {
+    setNewStay((prev) => {
+      const nextMenu = prev.menuItems.filter((_, itemIndex) => itemIndex !== index);
+      return {
+        ...prev,
+        menuItems: nextMenu.length > 0 ? nextMenu : [newMenuItem('room')],
+      };
+    });
   };
 
   const createStay = async () => {
@@ -65,6 +164,7 @@ export default function AdminPage({ user, initialStays }) {
       const payload = {
         ...newStay,
         slug: newStay.slug.trim() || makeSlug(newStay.name),
+        menuItems: normalizeMenuItems(newStay.menuItems),
       };
 
       const response = await fetch('/api/stays', {
@@ -87,7 +187,8 @@ export default function AdminPage({ user, initialStays }) {
           stayType: data.stay.stay_type,
           location: data.stay.location,
           description: data.stay.description,
-          pricePerNight: data.stay.price_per_night,
+          imageUrl: data.stay.image_url || DEFAULT_STAY_IMAGE,
+          menuItems: data.stay.menu_items || [],
           contactPhone: data.stay.contact_phone || '',
           ownerEmail: data.stay.owner_email || null,
         },
@@ -101,8 +202,9 @@ export default function AdminPage({ user, initialStays }) {
         stayType: 'homestay',
         location: '',
         description: '',
-        pricePerNight: 0,
+        imageUrl: DEFAULT_STAY_IMAGE,
         contactPhone: '',
+        menuItems: [newMenuItem('room'), newMenuItem('food')],
       });
     } catch (error) {
       setMessage(error.message || 'Failed to create stay');
@@ -119,7 +221,10 @@ export default function AdminPage({ user, initialStays }) {
       const response = await fetch(`/api/stays/${stay.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(stay),
+        body: JSON.stringify({
+          ...stay,
+          menuItems: normalizeMenuItems(stay.menuItems),
+        }),
       });
 
       const data = await response.json();
@@ -138,7 +243,8 @@ export default function AdminPage({ user, initialStays }) {
                 stayType: data.stay.stay_type,
                 location: data.stay.location,
                 description: data.stay.description,
-                pricePerNight: data.stay.price_per_night,
+                imageUrl: data.stay.image_url || DEFAULT_STAY_IMAGE,
+                menuItems: data.stay.menu_items || [],
                 contactPhone: data.stay.contact_phone || '',
               }
             : entry
@@ -244,16 +350,82 @@ export default function AdminPage({ user, initialStays }) {
                   onChange={(event) => setNewStay((prev) => ({ ...prev, description: event.target.value }))}
                 />
                 <TextField
-                  label="Price per night (NPR)"
-                  type="number"
-                  value={newStay.pricePerNight}
-                  onChange={(event) => setNewStay((prev) => ({ ...prev, pricePerNight: Number(event.target.value || 0) }))}
+                  label="Generic Stay Image URL"
+                  value={newStay.imageUrl}
+                  onChange={(event) => setNewStay((prev) => ({ ...prev, imageUrl: event.target.value }))}
                 />
                 <TextField
                   label="Contact phone"
                   value={newStay.contactPhone}
                   onChange={(event) => setNewStay((prev) => ({ ...prev, contactPhone: event.target.value }))}
                 />
+
+                <Typography variant="subtitle1" sx={{ mt: 1 }}>
+                  Rooms and Foods Menu
+                </Typography>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('room')}>
+                    Add Room Option
+                  </Button>
+                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('food')}>
+                    Add Food Item
+                  </Button>
+                </Stack>
+
+                {(newStay.menuItems || []).map((item, index) => (
+                  <Paper key={`new-menu-${index}`} sx={{ p: 1.5, border: '1px solid #e5e7eb' }}>
+                    <Stack spacing={1}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
+                        <Chip size="small" color="secondary" label={`Menu #${index + 1}`} />
+                        <Button
+                          size="small"
+                          color="error"
+                          startIcon={<DeleteOutlineIcon />}
+                          onClick={() => removeNewMenuItem(index)}
+                        >
+                          Remove
+                        </Button>
+                      </Stack>
+                      <FormControl size="small">
+                        <InputLabel id={`new-menu-cat-${index}`}>Category</InputLabel>
+                        <Select
+                          labelId={`new-menu-cat-${index}`}
+                          label="Category"
+                          value={item.category}
+                          onChange={(event) => updateNewMenuItem(index, 'category', event.target.value)}
+                        >
+                          {MENU_CATEGORIES.map((category) => (
+                            <MenuItem key={category} value={category}>
+                              {category}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <TextField
+                        label="Item Name"
+                        value={item.name}
+                        onChange={(event) => updateNewMenuItem(index, 'name', event.target.value)}
+                      />
+                      <TextField
+                        label="Description"
+                        value={item.description}
+                        onChange={(event) => updateNewMenuItem(index, 'description', event.target.value)}
+                      />
+                      <TextField
+                        label="Price (NPR)"
+                        type="number"
+                        value={item.price}
+                        onChange={(event) => updateNewMenuItem(index, 'price', Number(event.target.value || 0))}
+                      />
+                      <TextField
+                        label="Generic Menu Image URL"
+                        value={item.imageUrl || DEFAULT_MENU_IMAGE}
+                        onChange={(event) => updateNewMenuItem(index, 'imageUrl', event.target.value)}
+                      />
+                    </Stack>
+                  </Paper>
+                ))}
+
                 <Button variant="contained" onClick={createStay} disabled={creating}>
                   {creating ? 'Registering...' : 'Register Stay'}
                 </Button>
@@ -315,16 +487,80 @@ export default function AdminPage({ user, initialStays }) {
                       onChange={(event) => updateDraft(stay.id, 'description', event.target.value)}
                     />
                     <TextField
-                      label="Price per night (NPR)"
-                      type="number"
-                      value={stay.pricePerNight}
-                      onChange={(event) => updateDraft(stay.id, 'pricePerNight', Number(event.target.value || 0))}
+                      label="Generic Stay Image URL"
+                      value={stay.imageUrl || DEFAULT_STAY_IMAGE}
+                      onChange={(event) => updateDraft(stay.id, 'imageUrl', event.target.value)}
                     />
                     <TextField
                       label="Contact phone"
                       value={stay.contactPhone || ''}
                       onChange={(event) => updateDraft(stay.id, 'contactPhone', event.target.value)}
                     />
+
+                    <Typography variant="subtitle2">Menu Options</Typography>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                      <Button variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'room')}>
+                        Add Room Option
+                      </Button>
+                      <Button variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'food')}>
+                        Add Food Item
+                      </Button>
+                    </Stack>
+
+                    {(stay.menuItems || []).map((item, index) => (
+                      <Paper key={`${stay.id}-menu-${index}`} sx={{ p: 1.5, border: '1px solid #e5e7eb' }}>
+                        <Stack spacing={1}>
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
+                            <Chip size="small" label={`Item #${index + 1}`} />
+                            <Button
+                              size="small"
+                              color="error"
+                              startIcon={<DeleteOutlineIcon />}
+                              onClick={() => removeStayMenuItem(stay.id, index)}
+                            >
+                              Remove
+                            </Button>
+                          </Stack>
+                          <FormControl size="small">
+                            <InputLabel id={`${stay.id}-menu-cat-${index}`}>Category</InputLabel>
+                            <Select
+                              labelId={`${stay.id}-menu-cat-${index}`}
+                              label="Category"
+                              value={item.category}
+                              onChange={(event) => updateStayMenuItem(stay.id, index, 'category', event.target.value)}
+                            >
+                              {MENU_CATEGORIES.map((category) => (
+                                <MenuItem key={category} value={category}>
+                                  {category}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                          <TextField
+                            label="Item Name"
+                            value={item.name}
+                            onChange={(event) => updateStayMenuItem(stay.id, index, 'name', event.target.value)}
+                          />
+                          <TextField
+                            label="Description"
+                            value={item.description || ''}
+                            onChange={(event) => updateStayMenuItem(stay.id, index, 'description', event.target.value)}
+                          />
+                          <TextField
+                            label="Price (NPR)"
+                            type="number"
+                            value={item.price}
+                            onChange={(event) => updateStayMenuItem(stay.id, index, 'price', Number(event.target.value || 0))}
+                          />
+                          <TextField
+                            label="Generic Menu Image URL"
+                            value={item.imageUrl || DEFAULT_MENU_IMAGE}
+                            onChange={(event) => updateStayMenuItem(stay.id, index, 'imageUrl', event.target.value)}
+                          />
+                        </Stack>
+                      </Paper>
+                    ))}
+
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                       <Button variant="contained" onClick={() => updateStay(stay)} disabled={savingId === stay.id}>
                         {savingId === stay.id ? 'Saving...' : 'Save Stay'}
@@ -375,8 +611,8 @@ export async function getServerSideProps(context) {
   const rows = isSuper
     ? await query(
         `
-          SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.price_per_night, s.contact_phone,
-                 u.email AS owner_email
+          SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description,
+                 s.image_url, s.menu_items, s.contact_phone, u.email AS owner_email
           FROM stays s
           JOIN users u ON u.id = s.owner_user_id
           ORDER BY s.created_at DESC
@@ -384,7 +620,7 @@ export async function getServerSideProps(context) {
       )
     : await query(
         `
-          SELECT id, name, slug, stay_type, location, description, price_per_night, contact_phone
+          SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
           FROM stays
           WHERE owner_user_id = $1
           ORDER BY created_at DESC
@@ -399,7 +635,8 @@ export async function getServerSideProps(context) {
     stayType: row.stay_type,
     location: row.location,
     description: row.description,
-    pricePerNight: row.price_per_night,
+    imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
+    menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],
     contactPhone: row.contact_phone || '',
     ownerEmail: row.owner_email || null,
   }));

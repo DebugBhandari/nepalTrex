@@ -42,6 +42,18 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
 
+  const formatStartingPrice = (menuItems) => {
+    const prices = (Array.isArray(menuItems) ? menuItems : [])
+      .map((item) => Number(item?.price))
+      .filter((price) => Number.isFinite(price) && price >= 0);
+
+    if (prices.length === 0) {
+      return 'Menu coming soon';
+    }
+
+    return `From NPR ${Math.min(...prices).toFixed(0)}`;
+  };
+
   return (
     <>
       <Head>
@@ -184,53 +196,8 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             </Stack>
           </Paper>
 
-          <Box id="stays" sx={{ mb: 4 }}>
-            <Typography variant="h4" color="common.white" sx={{ mb: 1 }}>
-              Hotels and Homestays
-            </Typography>
-            <Typography color="rgba(255,255,255,0.8)" sx={{ mb: 2 }}>
-              Browse local accommodations across trekking regions.
-            </Typography>
-            <Stack spacing={2}>
-              {stays.map((stay) => (
-                <Card
-                  key={stay.id}
-                  sx={{
-                    background:
-                      'linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(241,248,246,0.94) 100%)',
-                  }}
-                >
-                  <CardContent>
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
-                      <Box>
-                        <Typography variant="h6">{stay.name}</Typography>
-                        <Typography color="text.secondary" sx={{ mb: 1 }}>
-                          {stay.location}
-                        </Typography>
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                          <Chip label={titleCase(stay.stayType)} size="small" color="secondary" />
-                          <Chip label={`NPR ${Number(stay.pricePerNight).toFixed(0)} / night`} size="small" />
-                        </Stack>
-                      </Box>
-                      <Stack justifyContent="center">
-                        <Button component={Link} href={`/${stay.slug}`} variant="contained">
-                          View Stay
-                        </Button>
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-              {stays.length === 0 && (
-                <Paper sx={{ p: 2 }}>
-                  <Typography color="text.secondary">No stays registered yet.</Typography>
-                </Paper>
-              )}
-            </Stack>
-          </Box>
-
           <Box id="treks" sx={{ mb: 4 }}>
-            <Typography variant="h4" color="common.white" sx={{ mb: 1 }}>
+            <Typography variant="h4" sx={{ mb: 1, color: '#ffffff', textShadow: '0 2px 14px rgba(0,0,0,0.35)' }}>
               Featured Trekking Routes
             </Typography>
             <Typography color="rgba(255,255,255,0.8)" sx={{ mb: 2 }}>
@@ -255,6 +222,51 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
                   </CardContent>
                 </Card>
               ))}
+            </Stack>
+          </Box>
+
+          <Box id="stays" sx={{ mb: 4 }}>
+            <Typography variant="h4" sx={{ mb: 1, color: '#ffffff', textShadow: '0 2px 14px rgba(0,0,0,0.35)' }}>
+              Hotels and Homestays
+            </Typography>
+            <Typography color="rgba(255,255,255,0.84)" sx={{ mb: 2 }}>
+              Browse local accommodations and compare room and food menu options.
+            </Typography>
+            <Stack spacing={2}>
+              {stays.map((stay) => (
+                <Card
+                  key={stay.id}
+                  sx={{
+                    background:
+                      'linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(241,248,246,0.94) 100%)',
+                  }}
+                >
+                  <CardContent>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
+                      <Box>
+                        <Typography variant="h6">{stay.name}</Typography>
+                        <Typography color="text.secondary" sx={{ mb: 1 }}>
+                          {stay.location}
+                        </Typography>
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+                          <Chip label={titleCase(stay.stayType)} size="small" color="secondary" />
+                          <Chip label={formatStartingPrice(stay.menuItems)} size="small" />
+                        </Stack>
+                      </Box>
+                      <Stack justifyContent="center">
+                        <Button component={Link} href={`/${stay.slug}`} variant="contained">
+                          View Stay
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+              {stays.length === 0 && (
+                <Paper sx={{ p: 2 }}>
+                  <Typography color="text.secondary">No stays registered yet.</Typography>
+                </Paper>
+              )}
             </Stack>
           </Box>
 
@@ -354,7 +366,7 @@ export async function getServerSideProps() {
 
     const stayRows = await query(
       `
-        SELECT id, name, slug, stay_type, location, price_per_night
+        SELECT id, name, slug, stay_type, location, menu_items
         FROM stays
         ORDER BY created_at DESC
       `
@@ -366,7 +378,7 @@ export async function getServerSideProps() {
       slug: row.slug,
       stayType: row.stay_type,
       location: row.location,
-      pricePerNight: row.price_per_night,
+      menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],
     }));
 
     return {

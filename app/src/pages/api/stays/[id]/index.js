@@ -3,6 +3,37 @@ import { authOptions } from '../../../../lib/auth-options';
 import { query } from '../../../../lib/db';
 
 const ALLOWED_STAY_TYPES = new Set(['hotel', 'homestay']);
+const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
+
+function normalizeMenuItems(menuItems) {
+  if (!Array.isArray(menuItems) || menuItems.length === 0) {
+    return null;
+  }
+
+  const normalized = [];
+
+  for (const item of menuItems) {
+    const category = (item?.category || '').toString().trim().toLowerCase();
+    const name = (item?.name || '').toString().trim();
+    const description = (item?.description || '').toString().trim();
+    const price = Number(item?.price);
+    const imageUrl = (item?.imageUrl || '').toString().trim() || 'https://placehold.co/600x380?text=Menu+Item';
+
+    if (!ALLOWED_MENU_CATEGORIES.has(category) || !name || !Number.isFinite(price) || price < 0) {
+      return null;
+    }
+
+    normalized.push({
+      category,
+      name,
+      description,
+      price,
+      imageUrl,
+    });
+  }
+
+  return normalized;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') {
@@ -20,7 +51,7 @@ export default async function handler(req, res) {
   }
 
   const stayId = req.query.id;
-  const { name, slug, stayType, location, description, pricePerNight, contactPhone } = req.body || {};
+  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone } = req.body || {};
 
   if (!stayId) {
     return res.status(400).json({ error: 'Missing stay id' });
@@ -34,10 +65,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'stayType must be hotel or homestay' });
   }
 
-  const numericPrice = Number(pricePerNight);
-  if (!Number.isFinite(numericPrice) || numericPrice < 0) {
-    return res.status(400).json({ error: 'pricePerNight must be a valid non-negative number' });
+  const normalizedMenuItems = normalizeMenuItems(menuItems);
+  if (!normalizedMenuItems) {
+    return res.status(400).json({ error: 'At least one valid menu item is required' });
   }
+
+  const roomPrices = normalizedMenuItems.filter((item) => item.category === 'room').map((item) => item.price);
+  const fallbackPrice = roomPrices.length > 0 ? Math.min(...roomPrices) : normalizedMenuItems[0].price;
 
   try {
     const existing = await query(
@@ -71,11 +105,13 @@ export default async function handler(req, res) {
           stay_type = $3,
           location = $4,
           description = $5,
-          price_per_night = $6,
-          contact_phone = $7,
+          image_url = $6,
+          menu_items = $7::jsonb,
+          price_per_night = $8,
+          contact_phone = $9,
           updated_at = NOW()
-        WHERE id = $8
-        RETURNING id, owner_user_id, name, slug, stay_type, location, description, price_per_night, contact_phone
+        WHERE id = $10
+        RETURNING id, owner_user_id, name, slug, stay_type, location, description, image_url, menu_items, price_per_night, contact_phone
       `,
       [
         name.trim(),
@@ -83,7 +119,9 @@ export default async function handler(req, res) {
         stayType,
         location.trim(),
         description.trim(),
-        numericPrice,
+        (imageUrl || '').toString().trim() || 'https://placehold.co/1000x620?text=NepalTrex+Stay',
+        JSON.stringify(normalizedMenuItems),
+        fallbackPrice,
         contactPhone?.trim() || null,
         stayId,
       ]
