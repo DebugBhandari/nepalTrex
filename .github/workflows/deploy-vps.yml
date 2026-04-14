@@ -134,6 +134,8 @@ jobs:
 
             if [ -n "${VPS_ENV_FILE:-}" ]; then
               printf '%s\n' "$VPS_ENV_FILE" > "$APP_DIR/.env"
+              # Copy .env to app subdirectory so Next.js can find it during build
+              cp "$APP_DIR/.env" "$APP_DIR/app/.env"
             fi
 
             cd "$APP_DIR"
