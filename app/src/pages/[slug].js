@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Card,
   CardContent,
   CardMedia,
@@ -16,6 +15,7 @@ import {
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import { query } from '../lib/db';
+import AppButton from '../components/AppButton';
 
 const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
@@ -104,7 +104,7 @@ export default function StayDetailPage({ stay }) {
         })}
       >
         <Container maxWidth="lg">
-          <Button
+          <AppButton
             component={Link}
             href="/"
             startIcon={<HomeIcon />}
@@ -116,7 +116,7 @@ export default function StayDetailPage({ stay }) {
             })}
           >
             Back to Home
-          </Button>
+          </AppButton>
 
           <Card
             sx={(theme) => ({
@@ -166,9 +166,9 @@ export default function StayDetailPage({ stay }) {
                       </Typography>
                       <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                         <Chip label={`NPR ${Number(item.price).toFixed(0)}`} color="secondary" />
-                        <Button variant="contained" onClick={() => setSelectedItem(item)}>
+                        <AppButton variant="contained" onClick={() => setSelectedItem(item)}>
                           Book this room
-                        </Button>
+                        </AppButton>
                       </Stack>
                     </CardContent>
                   </Card>
@@ -196,9 +196,9 @@ export default function StayDetailPage({ stay }) {
                       </Typography>
                       <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                         <Chip label={`NPR ${Number(item.price).toFixed(0)}`} color="secondary" />
-                        <Button variant="contained" onClick={() => setSelectedItem(item)}>
+                        <AppButton variant="contained" onClick={() => setSelectedItem(item)}>
                           Order this item
-                        </Button>
+                        </AppButton>
                       </Stack>
                     </CardContent>
                   </Card>
@@ -262,13 +262,13 @@ export default function StayDetailPage({ stay }) {
                     value={bookingForm.notes}
                     onChange={(event) => setBookingForm((prev) => ({ ...prev, notes: event.target.value }))}
                   />
-                  <Button
+                  <AppButton
                     variant="contained"
                     disabled={!selectedItem || !bookingForm.customerName || submitting}
                     onClick={handleBook}
                   >
                     {submitting ? 'Submitting...' : 'Confirm Booking'}
-                  </Button>
+                  </AppButton>
                 </Stack>
               </CardContent>
             </Card>

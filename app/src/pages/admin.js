@@ -11,7 +11,6 @@ import {
   Alert,
   AppBar,
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
@@ -28,6 +27,7 @@ import {
 } from '@mui/material';
 import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
+import AppButton from '../components/AppButton';
 
 const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
@@ -67,6 +67,7 @@ export default function AdminPage({ user, initialStays }) {
   const [message, setMessage] = useState('');
   const [savingId, setSavingId] = useState('');
   const [creating, setCreating] = useState(false);
+  const [editingById, setEditingById] = useState({});
 
   const [newStay, setNewStay] = useState({
     name: '',
@@ -250,6 +251,7 @@ export default function AdminPage({ user, initialStays }) {
             : entry
         )
       );
+      setEditingById((prev) => ({ ...prev, [stay.id]: false }));
       setMessage(`Updated ${data.stay.name}.`);
     } catch (error) {
       setMessage(error.message || 'Failed to update stay');
@@ -273,12 +275,12 @@ export default function AdminPage({ user, initialStays }) {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Admin Dashboard
           </Typography>
-          <Button component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>
+          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>
             Home
-          </Button>
-          <Button onClick={() => signOut({ callbackUrl: '/' })} startIcon={<LogoutIcon />} variant="outlined">
+          </AppButton>
+          <AppButton onClick={() => signOut({ callbackUrl: '/' })} startIcon={<LogoutIcon />} variant="outlined">
             Sign out
-          </Button>
+          </AppButton>
         </Toolbar>
       </AppBar>
 
@@ -362,12 +364,12 @@ export default function AdminPage({ user, initialStays }) {
                   Rooms and Foods Menu
                 </Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('room')}>
+                  <AppButton variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('room')}>
                     Add Room Option
-                  </Button>
-                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('food')}>
+                  </AppButton>
+                  <AppButton variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('food')}>
                     Add Food Item
-                  </Button>
+                  </AppButton>
                 </Stack>
 
                 {(newStay.menuItems || []).map((item, index) => (
@@ -375,14 +377,14 @@ export default function AdminPage({ user, initialStays }) {
                     <Stack spacing={1}>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
                         <Chip size="small" color="secondary" label={`Menu #${index + 1}`} />
-                        <Button
+                        <AppButton
                           size="small"
                           color="error"
                           startIcon={<DeleteOutlineIcon />}
                           onClick={() => removeNewMenuItem(index)}
                         >
                           Remove
-                        </Button>
+                        </AppButton>
                       </Stack>
                       <FormControl size="small">
                         <InputLabel id={`new-menu-cat-${index}`}>Category</InputLabel>
@@ -424,9 +426,9 @@ export default function AdminPage({ user, initialStays }) {
                   </Paper>
                 ))}
 
-                <Button variant="contained" onClick={createStay} disabled={creating}>
+                <AppButton variant="contained" onClick={createStay} disabled={creating}>
                   {creating ? 'Registering...' : 'Register Stay'}
-                </Button>
+                </AppButton>
               </Stack>
             </CardContent>
           </Card>
@@ -436,144 +438,239 @@ export default function AdminPage({ user, initialStays }) {
           </Typography>
 
           <Stack spacing={2}>
-            {stays.map((stay) => (
-              <Card key={stay.id}>
-                <CardContent>
-                  <Stack spacing={1.5}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
-                      <Typography variant="subtitle1">{stay.name}</Typography>
-                      <Stack direction="row" spacing={1}>
-                        <Chip size="small" color="secondary" label={stay.stayType} />
-                        {stay.ownerEmail && <Chip size="small" variant="outlined" label={stay.ownerEmail} />}
-                      </Stack>
-                    </Stack>
-                    <TextField
-                      label="Name"
-                      value={stay.name}
-                      onChange={(event) => updateDraft(stay.id, 'name', event.target.value)}
-                    />
-                    <TextField
-                      label="Slug"
-                      value={stay.slug}
-                      onChange={(event) => updateDraft(stay.id, 'slug', event.target.value)}
-                    />
-                    <FormControl size="small">
-                      <InputLabel id={`type-${stay.id}`}>Type</InputLabel>
-                      <Select
-                        labelId={`type-${stay.id}`}
-                        label="Type"
-                        value={stay.stayType}
-                        onChange={(event) => updateDraft(stay.id, 'stayType', event.target.value)}
+            {stays.map((stay) => {
+              const isEditing = Boolean(editingById[stay.id]);
+              const isSaving = savingId === stay.id;
+
+              return (
+                <Card key={stay.id}>
+                  <CardContent>
+                    {!isEditing ? (
+                      /* ── Collapsed summary ── */
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1.5}
+                        justifyContent="space-between"
+                        alignItems={{ sm: 'center' }}
                       >
-                        {STAY_TYPES.map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {type}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    <TextField
-                      label="Location"
-                      value={stay.location}
-                      onChange={(event) => updateDraft(stay.id, 'location', event.target.value)}
-                    />
-                    <TextField
-                      label="Description"
-                      multiline
-                      minRows={3}
-                      value={stay.description}
-                      onChange={(event) => updateDraft(stay.id, 'description', event.target.value)}
-                    />
-                    <TextField
-                      label="Generic Stay Image URL"
-                      value={stay.imageUrl || DEFAULT_STAY_IMAGE}
-                      onChange={(event) => updateDraft(stay.id, 'imageUrl', event.target.value)}
-                    />
-                    <TextField
-                      label="Contact phone"
-                      value={stay.contactPhone || ''}
-                      onChange={(event) => updateDraft(stay.id, 'contactPhone', event.target.value)}
-                    />
-
-                    <Typography variant="subtitle2">Menu Options</Typography>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                      <Button variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'room')}>
-                        Add Room Option
-                      </Button>
-                      <Button variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'food')}>
-                        Add Food Item
-                      </Button>
-                    </Stack>
-
-                    {(stay.menuItems || []).map((item, index) => (
-                      <Paper key={`${stay.id}-menu-${index}`} sx={{ p: 1.5, border: '1px solid #e5e7eb' }}>
-                        <Stack spacing={1}>
-                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
-                            <Chip size="small" label={`Item #${index + 1}`} />
-                            <Button
-                              size="small"
-                              color="error"
-                              startIcon={<DeleteOutlineIcon />}
-                              onClick={() => removeStayMenuItem(stay.id, index)}
-                            >
-                              Remove
-                            </Button>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            {stay.name}
+                          </Typography>
+                          <Stack
+                            direction="row"
+                            spacing={0.8}
+                            sx={{ mt: 0.8, flexWrap: 'wrap', gap: 0.5 }}
+                          >
+                            <Chip size="small" color="secondary" label={stay.stayType} />
+                            {stay.location && <Chip size="small" variant="outlined" label={stay.location} />}
+                            {stay.ownerEmail && (
+                              <Chip size="small" variant="outlined" label={stay.ownerEmail} />
+                            )}
                           </Stack>
-                          <FormControl size="small">
-                            <InputLabel id={`${stay.id}-menu-cat-${index}`}>Category</InputLabel>
-                            <Select
-                              labelId={`${stay.id}-menu-cat-${index}`}
-                              label="Category"
-                              value={item.category}
-                              onChange={(event) => updateStayMenuItem(stay.id, index, 'category', event.target.value)}
-                            >
-                              {MENU_CATEGORIES.map((category) => (
-                                <MenuItem key={category} value={category}>
-                                  {category}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                          <TextField
-                            label="Item Name"
-                            value={item.name}
-                            onChange={(event) => updateStayMenuItem(stay.id, index, 'name', event.target.value)}
-                          />
-                          <TextField
-                            label="Description"
-                            value={item.description || ''}
-                            onChange={(event) => updateStayMenuItem(stay.id, index, 'description', event.target.value)}
-                          />
-                          <TextField
-                            label="Price (NPR)"
-                            type="number"
-                            value={item.price}
-                            onChange={(event) => updateStayMenuItem(stay.id, index, 'price', Number(event.target.value || 0))}
-                          />
-                          <TextField
-                            label="Generic Menu Image URL"
-                            value={item.imageUrl || DEFAULT_MENU_IMAGE}
-                            onChange={(event) => updateStayMenuItem(stay.id, index, 'imageUrl', event.target.value)}
-                          />
-                        </Stack>
-                      </Paper>
-                    ))}
+                        </Box>
+                        <AppButton
+                          variant="outlined"
+                          onClick={() => setEditingById((prev) => ({ ...prev, [stay.id]: true }))}
+                        >
+                          Edit
+                        </AppButton>
+                      </Stack>
+                    ) : (
+                      /* ── Expanded edit form ── */
+                      <Stack spacing={1.5}>
+                        <TextField
+                          label="Name"
+                          value={stay.name}
+                          onChange={(event) => updateDraft(stay.id, 'name', event.target.value)}
+                          disabled={isSaving}
+                        />
+                        <TextField
+                          label="Slug"
+                          value={stay.slug}
+                          onChange={(event) => updateDraft(stay.id, 'slug', event.target.value)}
+                          disabled={isSaving}
+                        />
+                        <FormControl size="small" disabled={isSaving}>
+                          <InputLabel id={`type-${stay.id}`}>Type</InputLabel>
+                          <Select
+                            labelId={`type-${stay.id}`}
+                            label="Type"
+                            value={stay.stayType}
+                            onChange={(event) => updateDraft(stay.id, 'stayType', event.target.value)}
+                          >
+                            {STAY_TYPES.map((type) => (
+                              <MenuItem key={type} value={type}>
+                                {type}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          label="Location"
+                          value={stay.location}
+                          onChange={(event) => updateDraft(stay.id, 'location', event.target.value)}
+                          disabled={isSaving}
+                        />
+                        <TextField
+                          label="Description"
+                          multiline
+                          minRows={3}
+                          value={stay.description}
+                          onChange={(event) => updateDraft(stay.id, 'description', event.target.value)}
+                          disabled={isSaving}
+                        />
+                        <TextField
+                          label="Generic Stay Image URL"
+                          value={stay.imageUrl || DEFAULT_STAY_IMAGE}
+                          onChange={(event) => updateDraft(stay.id, 'imageUrl', event.target.value)}
+                          disabled={isSaving}
+                        />
+                        <TextField
+                          label="Contact phone"
+                          value={stay.contactPhone || ''}
+                          onChange={(event) => updateDraft(stay.id, 'contactPhone', event.target.value)}
+                          disabled={isSaving}
+                        />
 
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                      <Button variant="contained" onClick={() => updateStay(stay)} disabled={savingId === stay.id}>
-                        {savingId === stay.id ? 'Saving...' : 'Save Stay'}
-                      </Button>
-                      <Button component={Link} href={`/${stay.slug}`} variant="outlined" target="_blank">
-                        View Public Page
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
+                        <Typography variant="subtitle2">Menu Options</Typography>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                          <AppButton
+                            variant="outlined"
+                            size="small"
+                            onClick={() => addStayMenuItem(stay.id, 'room')}
+                            disabled={isSaving}
+                          >
+                            Add Room Option
+                          </AppButton>
+                          <AppButton
+                            variant="outlined"
+                            size="small"
+                            onClick={() => addStayMenuItem(stay.id, 'food')}
+                            disabled={isSaving}
+                          >
+                            Add Food Item
+                          </AppButton>
+                        </Stack>
+
+                        {(stay.menuItems || []).map((item, index) => (
+                          <Paper
+                            key={`${stay.id}-menu-${index}`}
+                            sx={{ p: 1.5, border: '1px solid #e5e7eb' }}
+                          >
+                            <Stack spacing={1}>
+                              <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={1}
+                                justifyContent="space-between"
+                              >
+                                <Chip size="small" label={`Item #${index + 1}`} />
+                                <AppButton
+                                  size="small"
+                                  color="error"
+                                  startIcon={<DeleteOutlineIcon />}
+                                  onClick={() => removeStayMenuItem(stay.id, index)}
+                                  disabled={isSaving}
+                                >
+                                  Remove
+                                </AppButton>
+                              </Stack>
+                              <FormControl size="small" disabled={isSaving}>
+                                <InputLabel id={`${stay.id}-menu-cat-${index}`}>Category</InputLabel>
+                                <Select
+                                  labelId={`${stay.id}-menu-cat-${index}`}
+                                  label="Category"
+                                  value={item.category}
+                                  onChange={(event) =>
+                                    updateStayMenuItem(stay.id, index, 'category', event.target.value)
+                                  }
+                                >
+                                  {MENU_CATEGORIES.map((category) => (
+                                    <MenuItem key={category} value={category}>
+                                      {category}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                              <TextField
+                                label="Item Name"
+                                value={item.name}
+                                onChange={(event) =>
+                                  updateStayMenuItem(stay.id, index, 'name', event.target.value)
+                                }
+                                disabled={isSaving}
+                              />
+                              <TextField
+                                label="Description"
+                                value={item.description || ''}
+                                onChange={(event) =>
+                                  updateStayMenuItem(stay.id, index, 'description', event.target.value)
+                                }
+                                disabled={isSaving}
+                              />
+                              <TextField
+                                label="Price (NPR)"
+                                type="number"
+                                value={item.price}
+                                onChange={(event) =>
+                                  updateStayMenuItem(
+                                    stay.id,
+                                    index,
+                                    'price',
+                                    Number(event.target.value || 0)
+                                  )
+                                }
+                                disabled={isSaving}
+                              />
+                              <TextField
+                                label="Generic Menu Image URL"
+                                value={item.imageUrl || DEFAULT_MENU_IMAGE}
+                                onChange={(event) =>
+                                  updateStayMenuItem(stay.id, index, 'imageUrl', event.target.value)
+                                }
+                                disabled={isSaving}
+                              />
+                            </Stack>
+                          </Paper>
+                        ))}
+
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                          <AppButton
+                            variant="contained"
+                            onClick={() => updateStay(stay)}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? 'Saving...' : 'Save Stay'}
+                          </AppButton>
+                          <AppButton
+                            component={Link}
+                            href={`/${stay.slug}`}
+                            variant="outlined"
+                            target="_blank"
+                          >
+                            View Public Page
+                          </AppButton>
+                          <AppButton
+                            variant="outlined"
+                            onClick={() =>
+                              setEditingById((prev) => ({ ...prev, [stay.id]: false }))
+                            }
+                            disabled={isSaving}
+                          >
+                            Cancel
+                          </AppButton>
+                        </Stack>
+                      </Stack>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
             {stays.length === 0 && (
               <Paper sx={{ p: 2 }}>
-                <Typography color="text.secondary">No stays yet. Register your first stay above.</Typography>
+                <Typography color="text.secondary">
+                  No stays yet. Register your first stay above.
+                </Typography>
               </Paper>
             )}
           </Stack>

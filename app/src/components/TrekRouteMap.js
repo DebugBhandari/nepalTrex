@@ -12,14 +12,40 @@ function normalizeGeoJson(routeGeojson) {
 
   if (typeof routeGeojson === 'string') {
     try {
-      return JSON.parse(routeGeojson);
+      return normalizeGeoJson(JSON.parse(routeGeojson));
     } catch {
       return null;
     }
   }
 
   if (typeof routeGeojson === 'object') {
-    return routeGeojson;
+    if (!routeGeojson.type) {
+      return null;
+    }
+
+    // Convert our custom RouteWaypoints format → GeoJSON LineString Feature
+    if (routeGeojson.type === 'RouteWaypoints' && Array.isArray(routeGeojson.waypoints)) {
+      const coords = routeGeojson.waypoints
+        .filter(([lat, lng]) => lat !== '' && lng !== '' && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng)))
+        .map(([lat, lng]) => [Number(lng), Number(lat)]); // GeoJSON is [lng, lat]
+      if (coords.length < 2) return null;
+      return {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates: coords },
+      };
+    }
+
+    if (routeGeojson.type === 'Feature' || routeGeojson.type === 'FeatureCollection') {
+      return routeGeojson;
+    }
+
+    // Wrap geometry objects such as LineString into a Feature for consistent rendering.
+    return {
+      type: 'Feature',
+      properties: {},
+      geometry: routeGeojson,
+    };
   }
 
   return null;
@@ -90,6 +116,7 @@ export default function TrekRouteMap({ selectedTrek }) {
       <TrekRouteBounds routeGeojson={routeGeojson} />
       {routeGeojson && (
         <GeoJSON
+          key={selectedTrekName || 'route-layer'}
           data={routeGeojson}
           {...routeLayerOptions}
           style={{

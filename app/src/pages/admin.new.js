@@ -11,7 +11,6 @@ import {
   Alert,
   AppBar,
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
@@ -28,6 +27,7 @@ import {
 } from '@mui/material';
 import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
+import AppButton from '../components/AppButton';
 
 const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
@@ -273,12 +273,12 @@ export default function AdminPage({ user, initialStays }) {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Admin Dashboard
           </Typography>
-          <Button component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>
+          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>
             Home
-          </Button>
-          <Button onClick={() => signOut({ callbackUrl: '/' })} startIcon={<LogoutIcon />} variant="outlined">
+          </AppButton>
+          <AppButton onClick={() => signOut({ callbackUrl: '/' })} startIcon={<LogoutIcon />} variant="outlined">
             Sign out
-          </Button>
+          </AppButton>
         </Toolbar>
       </AppBar>
 
@@ -362,12 +362,12 @@ export default function AdminPage({ user, initialStays }) {
                   Rooms and Foods Menu
                 </Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('room')}>
+                  <AppButton variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('room')}>
                     Add Room Option
-                  </Button>
-                  <Button variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('food')}>
+                  </AppButton>
+                  <AppButton variant="outlined" startIcon={<AddIcon />} onClick={() => addNewMenuItem('food')}>
                     Add Food Item
-                  </Button>
+                  </AppButton>
                 </Stack>
 
                 {(newStay.menuItems || []).map((item, index) => (
@@ -375,14 +375,14 @@ export default function AdminPage({ user, initialStays }) {
                     <Stack spacing={1}>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
                         <Chip size="small" color="secondary" label={`Menu #${index + 1}`} />
-                        <Button
+                        <AppButton
                           size="small"
                           color="error"
                           startIcon={<DeleteOutlineIcon />}
                           onClick={() => removeNewMenuItem(index)}
                         >
                           Remove
-                        </Button>
+                        </AppButton>
                       </Stack>
                       <FormControl size="small">
                         <InputLabel id={`new-menu-cat-${index}`}>Category</InputLabel>
@@ -424,9 +424,9 @@ export default function AdminPage({ user, initialStays }) {
                   </Paper>
                 ))}
 
-                <Button variant="contained" onClick={createStay} disabled={creating}>
+                <AppButton variant="contained" onClick={createStay} disabled={creating}>
                   {creating ? 'Registering...' : 'Register Stay'}
-                </Button>
+                </AppButton>
               </Stack>
             </CardContent>
           </Card>
@@ -497,12 +497,12 @@ export default function AdminPage({ user, initialStays }) {
 
                     <Typography variant="subtitle2">Menu Options</Typography>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                      <Button variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'room')}>
+                      <AppButton variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'room')}>
                         Add Room Option
-                      </Button>
-                      <Button variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'food')}>
+                      </AppButton>
+                      <AppButton variant="outlined" size="small" onClick={() => addStayMenuItem(stay.id, 'food')}>
                         Add Food Item
-                      </Button>
+                      </AppButton>
                     </Stack>
 
                     {(stay.menuItems || []).map((item, index) => (
@@ -510,14 +510,14 @@ export default function AdminPage({ user, initialStays }) {
                         <Stack spacing={1}>
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between">
                             <Chip size="small" label={`Item #${index + 1}`} />
-                            <Button
+                            <AppButton
                               size="small"
                               color="error"
                               startIcon={<DeleteOutlineIcon />}
                               onClick={() => removeStayMenuItem(stay.id, index)}
                             >
                               Remove
-                            </Button>
+                            </AppButton>
                           </Stack>
                           <FormControl size="small">
                             <InputLabel id={`${stay.id}-menu-cat-${index}`}>Category</InputLabel>
@@ -560,12 +560,12 @@ export default function AdminPage({ user, initialStays }) {
                     ))}
 
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                      <Button variant="contained" onClick={() => updateStay(stay)} disabled={savingId === stay.id}>
+                      <AppButton variant="contained" onClick={() => updateStay(stay)} disabled={savingId === stay.id}>
                         {savingId === stay.id ? 'Saving...' : 'Save Stay'}
-                      </Button>
-                      <Button component={Link} href={`/${stay.slug}`} variant="outlined" target="_blank">
+                      </AppButton>
+                      <AppButton component={Link} href={`/${stay.slug}`} variant="outlined" target="_blank">
                         View Public Page
-                      </Button>
+                      </AppButton>
                     </Stack>
                   </Stack>
                 </CardContent>

@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   }
 
   const trekId = req.query.id;
-  const { name, durationDays, level, region, description, isFeatured } = req.body || {};
+  const { name, durationDays, level, region, description, isFeatured, routeGeojson } = req.body || {};
 
   if (!trekId) {
     return res.status(400).json({ error: 'Missing trek id' });
@@ -51,6 +51,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'isFeatured must be true or false' });
   }
 
+  // routeGeojson is optional — null clears it, an object/array stores it
+  let parsedRouteGeojson = null;
+  if (routeGeojson !== undefined && routeGeojson !== null) {
+    if (typeof routeGeojson !== 'object') {
+      return res.status(400).json({ error: 'routeGeojson must be an object or null' });
+    }
+    parsedRouteGeojson = routeGeojson;
+  }
+
   try {
     const result = await query(
       `
@@ -62,9 +71,10 @@ export default async function handler(req, res) {
           region = $4,
           description = $5,
           is_featured = $6,
+          route_geojson = $7,
           updated_at = NOW()
-        WHERE id = $7
-        RETURNING id, name, duration_days, level, region, description, is_featured
+        WHERE id = $8
+        RETURNING id, name, duration_days, level, region, description, is_featured, route_geojson
       `,
       [
         name.trim(),
@@ -73,6 +83,7 @@ export default async function handler(req, res) {
         region.trim(),
         description.trim(),
         isFeatured,
+        parsedRouteGeojson,
         trekId,
       ]
     );

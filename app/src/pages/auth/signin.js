@@ -4,7 +4,6 @@ import GoogleIcon from '@mui/icons-material/Google';
 import {
   Alert,
   Box,
-  Button,
   Card,
   CardContent,
   Container,
@@ -14,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { getCsrfToken, getProviders, signIn } from 'next-auth/react';
+import AppButton from '../../components/AppButton';
 import { BabyTrexLogo } from '../../components/BabyTrexLogo';
 
 export default function SignInPage({ csrfToken, providers, error }) {
@@ -60,7 +60,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
               )}
 
               {hasGoogle ? (
-                <Button
+                <AppButton
                   fullWidth
                   variant="outlined"
                   startIcon={<GoogleIcon />}
@@ -68,7 +68,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
                   sx={{ mb: 2 }}
                 >
                   Continue with Google
-                </Button>
+                </AppButton>
               ) : (
                 <Alert severity="warning" sx={{ mb: 2 }}>
                   Google login is disabled.
@@ -89,9 +89,9 @@ export default function SignInPage({ csrfToken, providers, error }) {
                     required
                     fullWidth
                   />
-                  <Button type="submit" variant="contained" fullWidth sx={{ py: 1.1 }}>
+                  <AppButton type="submit" variant="contained" fullWidth sx={{ py: 1.1 }}>
                     Sign In
-                  </Button>
+                  </AppButton>
                 </Stack>
               </Box>
 

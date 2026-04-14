@@ -12,9 +12,9 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Alert,
   AppBar,
   Box,
-  Button,
   Card,
   CardContent,
   CardMedia,
@@ -30,7 +30,7 @@ import {
 import { FEATURED_TREKS, TREK_REGIONS } from '@org/types';
 import { formatDurationDays, titleCase } from '@org/utils';
 import { query } from '../lib/db';
-import { BabyTrexLogoWithText } from '../components/BabyTrexLogo';
+import AppButton from '../components/AppButton';
 
 const navItems = [
   { label: 'Stays', href: '#stays' },
@@ -57,6 +57,59 @@ const REGION_IMAGE_BY_KEYWORD = {
   langtang: '/treks/langtang-valley.jpg',
 };
 
+const ROUTE_GEOJSON_BY_NAME = {
+  'everest base camp': {
+    type: 'LineString',
+    coordinates: [
+      [86.7314, 27.6881],
+      [86.7138, 27.8077],
+      [86.8318, 27.8965],
+      [86.8652, 27.9881],
+    ],
+  },
+  'everest base camp trek': {
+    type: 'LineString',
+    coordinates: [
+      [86.7314, 27.6881],
+      [86.7138, 27.8077],
+      [86.8318, 27.8965],
+      [86.8652, 27.9881],
+    ],
+  },
+  'annapurna circuit': {
+    type: 'LineString',
+    coordinates: [
+      [84.41, 28.235],
+      [84.628, 28.595],
+      [84.758, 28.796],
+      [83.97, 28.824],
+      [83.682, 28.209],
+    ],
+  },
+  'langtang valley': {
+    type: 'LineString',
+    coordinates: [
+      [85.358, 28.213],
+      [85.417, 28.3],
+      [85.482, 28.4],
+      [85.5, 28.41],
+    ],
+  },
+  'langtang valley trek': {
+    type: 'LineString',
+    coordinates: [
+      [85.358, 28.213],
+      [85.417, 28.3],
+      [85.482, 28.4],
+      [85.5, 28.41],
+    ],
+  },
+};
+
+function routeGeojsonByName(name) {
+  return ROUTE_GEOJSON_BY_NAME[(name || '').toLowerCase()] || null;
+}
+
 function getTrekImage(name, region) {
   const key = (name || '').toLowerCase();
   if (TREK_IMAGE_BY_NAME[key]) {
@@ -79,7 +132,7 @@ function getRegionImage(region, regionTreks) {
   return getTrekImage(firstTrekName, region);
 }
 
-export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }) {
+export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, dataSource, dataError }) {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedTrek, setSelectedTrek] = useState(null);
@@ -125,7 +178,7 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
 
     setSelectedTrek({
       name: trek.name,
-      routeGeojson: trek.routeGeojson || null,
+      routeGeojson: trek.routeGeojson || routeGeojsonByName(trek.name),
     });
 
     mapsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -143,7 +196,16 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
         sx={{ backdropFilter: 'blur(8px)' }}
       >
         <Toolbar>
-          <BabyTrexLogoWithText size={34} color="#f4b183" />
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: 0.2,
+              color: '#f59e0b',
+            }}
+          >
+            NepalTrex
+          </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <IconButton onClick={() => setMenuOpen(true)} aria-label="Open menu">
             <MenuIcon />
@@ -158,13 +220,13 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
           </Typography>
           <Stack spacing={1}>
             {navItems.map((item) => (
-              <Button key={item.href} href={item.href} variant="outlined" onClick={() => setMenuOpen(false)}>
+              <AppButton key={item.href} href={item.href} variant="outlined" onClick={() => setMenuOpen(false)}>
                 {item.label}
-              </Button>
+              </AppButton>
             ))}
 
             {status === 'authenticated' && isSuperUser && (
-              <Button
+              <AppButton
                 component={Link}
                 href="/dashboard"
                 startIcon={<DashboardIcon />}
@@ -172,11 +234,11 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                 onClick={() => setMenuOpen(false)}
               >
                 Super Dashboard
-              </Button>
+              </AppButton>
             )}
 
             {status === 'authenticated' && isAdminOrSuperUser && (
-              <Button
+              <AppButton
                 component={Link}
                 href="/admin"
                 startIcon={<DashboardIcon />}
@@ -184,11 +246,11 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                 onClick={() => setMenuOpen(false)}
               >
                 Admin Dashboard
-              </Button>
+              </AppButton>
             )}
 
             {status === 'authenticated' ? (
-              <Button
+              <AppButton
                 startIcon={<LogoutIcon />}
                 variant="outlined"
                 onClick={() => {
@@ -197,9 +259,9 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                 }}
               >
                 Sign out
-              </Button>
+              </AppButton>
             ) : (
-              <Button
+              <AppButton
                 component={Link}
                 href="/auth/signin"
                 startIcon={<LoginIcon />}
@@ -207,7 +269,7 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                 onClick={() => setMenuOpen(false)}
               >
                 Sign in
-              </Button>
+              </AppButton>
             )}
           </Stack>
         </Box>
@@ -224,6 +286,13 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
         })}
       >
         <Container maxWidth="lg" sx={{ pt: 6 }}>
+          {dataSource === 'fallback' && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Showing fallback trek data because database routes could not be loaded.
+              {dataError ? ` (${dataError})` : ''}
+            </Alert>
+          )}
+
           <Paper
             sx={(theme) => ({
               p: { xs: 3, md: 5 },
@@ -246,14 +315,14 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
               compare routes, and plan safely before you fly.
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <Button href="#treks" variant="contained" size="large">
+              <AppButton href="#treks" variant="contained" size="large">
                 Explore Treks
-              </Button>
-              <Button href="#maps" variant="outlined" size="large">
+              </AppButton>
+              <AppButton href="#maps" variant="outlined" size="large">
                 View Map Explorer
-              </Button>
+              </AppButton>
               {isAdminOrSuperUser && (
-                <Button
+                <AppButton
                   component={Link}
                   href={isSuperUser ? '/dashboard' : '/admin'}
                   variant="outlined"
@@ -261,12 +330,12 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                   size="large"
                 >
                   {isSuperUser ? 'Super Dashboard' : 'Admin Dashboard'}
-                </Button>
+                </AppButton>
               )}
               {isAdminOrSuperUser && (
-                <Button component={Link} href="/admin" variant="outlined" size="large">
+                <AppButton component={Link} href="/admin" variant="outlined" size="large">
                   Manage Stays
-                </Button>
+                </AppButton>
               )}
             </Stack>
           </Paper>
@@ -309,9 +378,9 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                       <Chip label={`Difficulty: ${titleCase(trek.level)}`} size="small" color="secondary" />
                       <Chip label={`Region: ${trek.region}`} size="small" variant="outlined" />
                     </Stack>
-                    <Button variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek)}>
+                    <AppButton variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek)}>
                       Open Route In Maps
-                    </Button>
+                    </AppButton>
                   </CardContent>
                 </Card>
               ))}
@@ -356,9 +425,9 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                         </Stack>
                       </Box>
                       <Stack justifyContent="center">
-                        <Button component={Link} href={`/${stay.slug}`} variant="contained">
+                        <AppButton component={Link} href={`/${stay.slug}`} variant="contained">
                           View Stay
-                        </Button>
+                        </AppButton>
                       </Stack>
                     </Stack>
                   </CardContent>
@@ -440,9 +509,9 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays }
                             <Typography color="text.secondary" sx={{ mb: 1.2 }}>
                               {trek.description || 'Description coming soon.'}
                             </Typography>
-                            <Button size="small" variant="outlined" onClick={() => openRouteInMap(trek)}>
+                            <AppButton size="small" variant="outlined" onClick={() => openRouteInMap(trek)}>
                               Open Route In Maps
-                            </Button>
+                            </AppButton>
                           </Paper>
                         ))}
                         {regionGroup.treks.length === 0 && (
@@ -527,7 +596,7 @@ export async function getServerSideProps() {
       level: row.level,
       region: row.region,
       description: row.description || '',
-      routeGeojson: row.route_geojson || null,
+      routeGeojson: row.route_geojson || routeGeojsonByName(row.name),
       isFeatured: row.is_featured,
     }));
 
@@ -557,13 +626,17 @@ export async function getServerSideProps() {
         trekRegions,
         allTreks,
         stays,
+        dataSource: 'database',
+        dataError: '',
       },
     };
-  } catch {
+  } catch (error) {
+    console.error('Homepage data fallback:', error);
+
     const fallbackTreks = FEATURED_TREKS.map((trek) => ({
       ...trek,
       description: '',
-      routeGeojson: null,
+      routeGeojson: routeGeojsonByName(trek.name),
       isFeatured: true,
     }));
 
@@ -573,6 +646,8 @@ export async function getServerSideProps() {
         trekRegions: Array.from(TREK_REGIONS),
         allTreks: fallbackTreks,
         stays: [],
+        dataSource: 'fallback',
+        dataError: error?.message || 'Unknown database error',
       },
     };
   }

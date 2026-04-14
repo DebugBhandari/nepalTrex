@@ -8,11 +8,12 @@ import HomeIcon from '@mui/icons-material/Home';
 import HikingIcon from '@mui/icons-material/Hiking';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import {
   Alert,
   AppBar,
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
@@ -42,9 +43,44 @@ import {
 } from '@mui/material';
 import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
+import AppButton from '../components/AppButton';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
+
+function parseWaypointsFromGeojson(routeGeojson) {
+  if (!routeGeojson) return [];
+  const parsed =
+    typeof routeGeojson === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(routeGeojson);
+          } catch {
+            return null;
+          }
+        })()
+      : routeGeojson;
+  if (!parsed) return [];
+  if (parsed.type === 'RouteWaypoints' && Array.isArray(parsed.waypoints)) {
+    return parsed.waypoints;
+  }
+  if (parsed.type === 'LineString' && Array.isArray(parsed.coordinates)) {
+    return parsed.coordinates.map(([lng, lat]) => [lat, lng, '']);
+  }
+  if (parsed.type === 'Feature' && parsed.geometry?.type === 'LineString') {
+    return parsed.geometry.coordinates.map(([lng, lat]) => [lat, lng, '']);
+  }
+  return [];
+}
+
+function waypointsToRouteGeojson(waypoints) {
+  if (!Array.isArray(waypoints) || waypoints.length === 0) return null;
+  const valid = waypoints.filter(
+    ([lat, lng]) => lat !== '' && lng !== '' && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng))
+  );
+  if (valid.length === 0) return null;
+  return { type: 'RouteWaypoints', waypoints: valid };
+}
 
 function normalizeRouteGeojson(routeGeojson) {
   if (!routeGeojson) {
@@ -73,6 +109,10 @@ function getRoutePointCount(routeGeojson) {
     return 0;
   }
 
+  if (parsed.type === 'RouteWaypoints' && Array.isArray(parsed.waypoints)) {
+    return parsed.waypoints.length;
+  }
+
   if (parsed.type === 'LineString') {
     return Array.isArray(parsed.coordinates) ? parsed.coordinates.length : 0;
   }
@@ -87,7 +127,10 @@ function getRoutePointCount(routeGeojson) {
 }
 
 export default function DashboardPage({ user, treks }) {
-  const [items, setItems] = useState(treks);
+  const [items, setItems] = useState(() =>
+    treks.map((t) => ({ ...t, waypoints: parseWaypointsFromGeojson(t.routeGeojson) }))
+  );
+  const [editingById, setEditingById] = useState({});
   const [savingById, setSavingById] = useState({});
   const [trekMessage, setTrekMessage] = useState('');
   const [trekSearch, setTrekSearch] = useState('');
@@ -219,6 +262,37 @@ export default function DashboardPage({ user, treks }) {
     setItems((prev) => prev.map((trek) => (trek.id === id ? { ...trek, [field]: value } : trek)));
   };
 
+  const handleWaypointChange = (trekId, rowIdx, colIdx, value) => {
+    setItems((prev) =>
+      prev.map((trek) => {
+        if (trek.id !== trekId) return trek;
+        const wps = [...(trek.waypoints || [])];
+        const row = [...(wps[rowIdx] || ['', '', ''])];
+        row[colIdx] = value;
+        wps[rowIdx] = row;
+        return { ...trek, waypoints: wps };
+      })
+    );
+  };
+
+  const handleAddWaypoint = (trekId) => {
+    setItems((prev) =>
+      prev.map((trek) =>
+        trek.id === trekId ? { ...trek, waypoints: [...(trek.waypoints || []), ['', '', '']] } : trek
+      )
+    );
+  };
+
+  const handleRemoveWaypoint = (trekId, rowIdx) => {
+    setItems((prev) =>
+      prev.map((trek) =>
+        trek.id === trekId
+          ? { ...trek, waypoints: (trek.waypoints || []).filter((_, i) => i !== rowIdx) }
+          : trek
+      )
+    );
+  };
+
   const handleSaveTrek = async (trekId) => {
     const trek = items.find((item) => item.id === trekId);
     if (!trek) {
@@ -241,6 +315,7 @@ export default function DashboardPage({ user, treks }) {
           region: trek.region,
           description: trek.description || '',
           isFeatured: Boolean(trek.isFeatured),
+          routeGeojson: waypointsToRouteGeojson(trek.waypoints),
         }),
       });
 
@@ -261,11 +336,14 @@ export default function DashboardPage({ user, treks }) {
                 region: payload.trek.region,
                 description: payload.trek.description || '',
                 isFeatured: payload.trek.is_featured,
+                routeGeojson: payload.trek.route_geojson || null,
+                waypoints: parseWaypointsFromGeojson(payload.trek.route_geojson),
               }
             : item
         )
       );
 
+      setEditingById((prev) => ({ ...prev, [trekId]: false }));
       setTrekMessage(`Updated trek details for ${payload.trek.name}.`);
     } catch (error) {
       setTrekMessage(error.message || 'Failed to update trek');
@@ -313,7 +391,7 @@ export default function DashboardPage({ user, treks }) {
         Menu
       </Typography>
       <Stack spacing={1}>
-        <Button
+        <AppButton
           component={Link}
           href="/"
           startIcon={<HomeIcon />}
@@ -321,8 +399,8 @@ export default function DashboardPage({ user, treks }) {
           onClick={() => setDrawerOpen(false)}
         >
           Home
-        </Button>
-        <Button
+        </AppButton>
+        <AppButton
           startIcon={<HikingIcon />}
           variant={activeTab === 'treks' ? 'contained' : 'outlined'}
           onClick={() => {
@@ -331,9 +409,9 @@ export default function DashboardPage({ user, treks }) {
           }}
         >
           Trek Updates
-        </Button>
+        </AppButton>
         {canManage && (
-          <Button
+          <AppButton
             startIcon={<ManageAccountsIcon />}
             variant={activeTab === 'users' ? 'contained' : 'outlined'}
             onClick={() => {
@@ -342,17 +420,17 @@ export default function DashboardPage({ user, treks }) {
             }}
           >
             User Management
-          </Button>
+          </AppButton>
         )}
         <Divider sx={{ my: 1 }} />
-        <Button
+        <AppButton
           color="inherit"
           startIcon={<LogoutIcon />}
           variant="outlined"
           onClick={() => signOut({ callbackUrl: '/' })}
         >
           Sign out
-        </Button>
+        </AppButton>
       </Stack>
     </Box>
   );
@@ -375,7 +453,7 @@ export default function DashboardPage({ user, treks }) {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             NepalTrex Dashboard
           </Typography>
-          <Button
+          <AppButton
             component={Link}
             href="/"
             startIcon={<HomeIcon />}
@@ -383,7 +461,7 @@ export default function DashboardPage({ user, treks }) {
             sx={{ mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
           >
             Home
-          </Button>
+          </AppButton>
           <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" />
         </Toolbar>
       </AppBar>
@@ -523,7 +601,7 @@ export default function DashboardPage({ user, treks }) {
                         <MenuItem value="desc">Descending</MenuItem>
                       </Select>
                     </FormControl>
-                    <Button
+                    <AppButton
                       variant="outlined"
                       onClick={() => {
                         setTrekSearch('');
@@ -535,7 +613,7 @@ export default function DashboardPage({ user, treks }) {
                       }}
                     >
                       Reset filters
-                    </Button>
+                    </AppButton>
                   </Stack>
                 </Stack>
               </Paper>
@@ -580,92 +658,257 @@ export default function DashboardPage({ user, treks }) {
               </TableContainer>
 
               <Stack spacing={2}>
-                {visibleItems.map((trek) => (
-                  <Card
-                    key={trek.id}
-                    sx={{
-                      background:
-                        'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                    }}
-                  >
-                    <CardContent>
-                      <Stack spacing={1.5}>
-                        <TextField
-                          label="Trek Name"
-                          value={trek.name}
-                          onChange={(event) => handleTrekFieldChange(trek.id, 'name', event.target.value)}
-                          disabled={!canManage || Boolean(savingById[trek.id])}
-                          fullWidth
-                        />
-                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-                          <TextField
-                            label="Duration (days)"
-                            type="number"
-                            value={trek.durationDays}
-                            onChange={(event) =>
-                              handleTrekFieldChange(trek.id, 'durationDays', Number(event.target.value || 0))
-                            }
-                            disabled={!canManage || Boolean(savingById[trek.id])}
-                            fullWidth
-                            inputProps={{ min: 1 }}
-                          />
-                          <FormControl fullWidth size="small" disabled={!canManage || Boolean(savingById[trek.id])}>
-                            <InputLabel id={`level-${trek.id}`}>Level</InputLabel>
-                            <Select
-                              labelId={`level-${trek.id}`}
-                              label="Level"
-                              value={trek.level}
-                              onChange={(event) => handleTrekFieldChange(trek.id, 'level', event.target.value)}
-                            >
-                              {LEVEL_OPTIONS.map((option) => (
-                                <MenuItem key={option} value={option}>
-                                  {option}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Stack>
-                        <TextField
-                          label="Region"
-                          value={trek.region}
-                          onChange={(event) => handleTrekFieldChange(trek.id, 'region', event.target.value)}
-                          disabled={!canManage || Boolean(savingById[trek.id])}
-                          fullWidth
-                        />
-                        <TextField
-                          label="Description"
-                          multiline
-                          minRows={4}
-                          value={trek.description || ''}
-                          onChange={(event) => handleTrekFieldChange(trek.id, 'description', event.target.value)}
-                          disabled={!canManage || Boolean(savingById[trek.id])}
-                          fullWidth
-                        />
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={Boolean(trek.isFeatured)}
-                              onChange={(event) =>
-                                handleTrekFieldChange(trek.id, 'isFeatured', event.target.checked)
-                              }
-                              disabled={!canManage || Boolean(savingById[trek.id])}
-                            />
-                          }
-                          label="Featured trek"
-                        />
-                        {canManage && (
-                          <Button
-                            variant="contained"
-                            onClick={() => handleSaveTrek(trek.id)}
-                            disabled={Boolean(savingById[trek.id])}
+                {visibleItems.map((trek) => {
+                  const isEditing = Boolean(editingById[trek.id]);
+                  const isSaving = Boolean(savingById[trek.id]);
+
+                  return (
+                    <Card
+                      key={trek.id}
+                      sx={{
+                        background:
+                          'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
+                      }}
+                    >
+                      <CardContent>
+                        {!isEditing ? (
+                          /* ── Collapsed summary ── */
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1.5}
+                            justifyContent="space-between"
+                            alignItems={{ sm: 'center' }}
                           >
-                            {savingById[trek.id] ? 'Saving...' : 'Save Trek'}
-                          </Button>
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="subtitle1" fontWeight={600}>
+                                {trek.name}
+                              </Typography>
+                              <Stack
+                                direction="row"
+                                spacing={0.8}
+                                sx={{ mt: 0.8, flexWrap: 'wrap', gap: 0.5 }}
+                              >
+                                <Chip size="small" label={trek.region} />
+                                <Chip
+                                  size="small"
+                                  label={trek.level}
+                                  sx={{ textTransform: 'capitalize' }}
+                                />
+                                <Chip size="small" label={`${trek.durationDays} days`} />
+                                {trek.isFeatured && (
+                                  <Chip size="small" color="warning" label="Featured" />
+                                )}
+                                <Chip
+                                  size="small"
+                                  variant="outlined"
+                                  label={
+                                    (trek.waypoints || []).length > 0
+                                      ? `Route: ${trek.waypoints.length} pts`
+                                      : 'No route'
+                                  }
+                                />
+                              </Stack>
+                            </Box>
+                            {canManage && (
+                              <AppButton
+                                variant="outlined"
+                                onClick={() =>
+                                  setEditingById((prev) => ({ ...prev, [trek.id]: true }))
+                                }
+                              >
+                                Edit
+                              </AppButton>
+                            )}
+                          </Stack>
+                        ) : (
+                          /* ── Expanded edit form ── */
+                          <Stack spacing={1.5}>
+                            <TextField
+                              label="Trek Name"
+                              value={trek.name}
+                              onChange={(event) =>
+                                handleTrekFieldChange(trek.id, 'name', event.target.value)
+                              }
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                              <TextField
+                                label="Duration (days)"
+                                type="number"
+                                value={trek.durationDays}
+                                onChange={(event) =>
+                                  handleTrekFieldChange(
+                                    trek.id,
+                                    'durationDays',
+                                    Number(event.target.value || 0)
+                                  )
+                                }
+                                disabled={isSaving}
+                                fullWidth
+                                inputProps={{ min: 1 }}
+                              />
+                              <FormControl fullWidth size="small" disabled={isSaving}>
+                                <InputLabel id={`level-${trek.id}`}>Level</InputLabel>
+                                <Select
+                                  labelId={`level-${trek.id}`}
+                                  label="Level"
+                                  value={trek.level}
+                                  onChange={(event) =>
+                                    handleTrekFieldChange(trek.id, 'level', event.target.value)
+                                  }
+                                >
+                                  {LEVEL_OPTIONS.map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                      {option}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Stack>
+                            <TextField
+                              label="Region"
+                              value={trek.region}
+                              onChange={(event) =>
+                                handleTrekFieldChange(trek.id, 'region', event.target.value)
+                              }
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <TextField
+                              label="Description"
+                              multiline
+                              minRows={4}
+                              value={trek.description || ''}
+                              onChange={(event) =>
+                                handleTrekFieldChange(trek.id, 'description', event.target.value)
+                              }
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  checked={Boolean(trek.isFeatured)}
+                                  onChange={(event) =>
+                                    handleTrekFieldChange(
+                                      trek.id,
+                                      'isFeatured',
+                                      event.target.checked
+                                    )
+                                  }
+                                  disabled={isSaving}
+                                />
+                              }
+                              label="Featured trek"
+                            />
+
+                            {/* ── Route Coordinates editor ── */}
+                            <Box>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                sx={{ mb: 1 }}
+                              >
+                                <Typography variant="subtitle2">Route Coordinates</Typography>
+                                <AppButton
+                                  size="small"
+                                  variant="outlined"
+                                  startIcon={<AddIcon />}
+                                  onClick={() => handleAddWaypoint(trek.id)}
+                                  disabled={isSaving}
+                                >
+                                  Add Point
+                                </AppButton>
+                              </Stack>
+                              {(trek.waypoints || []).length === 0 && (
+                                <Typography variant="caption" color="text.secondary">
+                                  No route coordinates yet. Add points above.
+                                </Typography>
+                              )}
+                              <Stack spacing={1}>
+                                {(trek.waypoints || []).map(([lat, lng, place], rowIdx) => (
+                                  <Stack
+                                    key={`wp-${trek.id}-${rowIdx}`}
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={1}
+                                    alignItems={{ sm: 'center' }}
+                                  >
+                                    <TextField
+                                      label="Latitude"
+                                      type="number"
+                                      value={lat}
+                                      onChange={(e) =>
+                                        handleWaypointChange(trek.id, rowIdx, 0, e.target.value)
+                                      }
+                                      disabled={isSaving}
+                                      size="small"
+                                      sx={{ width: { sm: 140 } }}
+                                      inputProps={{ step: 'any' }}
+                                    />
+                                    <TextField
+                                      label="Longitude"
+                                      type="number"
+                                      value={lng}
+                                      onChange={(e) =>
+                                        handleWaypointChange(trek.id, rowIdx, 1, e.target.value)
+                                      }
+                                      disabled={isSaving}
+                                      size="small"
+                                      sx={{ width: { sm: 140 } }}
+                                      inputProps={{ step: 'any' }}
+                                    />
+                                    <TextField
+                                      label="Place name"
+                                      value={place || ''}
+                                      onChange={(e) =>
+                                        handleWaypointChange(trek.id, rowIdx, 2, e.target.value)
+                                      }
+                                      disabled={isSaving}
+                                      size="small"
+                                      sx={{ flex: 1 }}
+                                    />
+                                    <AppButton
+                                      size="small"
+                                      color="error"
+                                      variant="outlined"
+                                      startIcon={<DeleteOutlineIcon />}
+                                      onClick={() => handleRemoveWaypoint(trek.id, rowIdx)}
+                                      disabled={isSaving}
+                                      sx={{ minWidth: 90, flexShrink: 0 }}
+                                    >
+                                      Remove
+                                    </AppButton>
+                                  </Stack>
+                                ))}
+                              </Stack>
+                            </Box>
+
+                            <Stack direction="row" spacing={1}>
+                              <AppButton
+                                variant="contained"
+                                onClick={() => handleSaveTrek(trek.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? 'Saving...' : 'Save Trek'}
+                              </AppButton>
+                              <AppButton
+                                variant="outlined"
+                                onClick={() =>
+                                  setEditingById((prev) => ({ ...prev, [trek.id]: false }))
+                                }
+                                disabled={isSaving}
+                              >
+                                Cancel
+                              </AppButton>
+                            </Stack>
+                          </Stack>
                         )}
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
                 {visibleItems.length === 0 && (
                   <Alert severity="info">No treks match the current filters.</Alert>
                 )}
@@ -697,10 +940,10 @@ export default function DashboardPage({ user, treks }) {
                   fullWidth
                   sx={{ flex: 1, minWidth: 240 }}
                 />
-                <Button variant="contained" type="submit" disabled={usersLoading}>
+                <AppButton variant="contained" type="submit" disabled={usersLoading}>
                   {usersLoading ? 'Searching...' : 'Search'}
-                </Button>
-                <Button
+                </AppButton>
+                <AppButton
                   variant="outlined"
                   type="button"
                   disabled={usersLoading}
@@ -710,7 +953,7 @@ export default function DashboardPage({ user, treks }) {
                   }}
                 >
                   Reset
-                </Button>
+                </AppButton>
               </Box>
 
               {usersMessage && (
@@ -768,13 +1011,13 @@ export default function DashboardPage({ user, treks }) {
                                 ))}
                               </Select>
                             </FormControl>
-                            <Button
+                            <AppButton
                               variant="contained"
                               disabled={isSaving || isSelf || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
                             >
                               {isSaving ? 'Saving...' : 'Update Role'}
-                            </Button>
+                            </AppButton>
                           </Stack>
                         </Stack>
                       </CardContent>

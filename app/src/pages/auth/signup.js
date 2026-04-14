@@ -2,7 +2,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { Alert, Box, Button, Card, CardContent, Container, LinearProgress, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, Container, LinearProgress, Stack, TextField, Typography } from '@mui/material';
+import AppButton from '../../components/AppButton';
 import { BabyTrexLogo } from '../../components/BabyTrexLogo';
 
 export default function SignUpPage() {
@@ -176,9 +177,9 @@ export default function SignUpPage() {
                     required
                     fullWidth
                   />
-                  <Button type="submit" variant="contained" fullWidth disabled={loading} sx={{ py: 1.1 }}>
+                  <AppButton type="submit" variant="contained" fullWidth disabled={loading} sx={{ py: 1.1 }}>
                     {loading ? 'Creating Account...' : 'Create Account'}
-                  </Button>
+                  </AppButton>
                 </Stack>
               </Box>
 
