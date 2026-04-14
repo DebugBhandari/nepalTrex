@@ -46,11 +46,17 @@ export default async function handler(req, res) {
     // Insert user into database
     const result = await query(
       `
-        INSERT INTO users (username, email, password_hash, provider, display_name)
-        VALUES ($1, $2, $3, 'credentials', $4)
-        RETURNING id, username, email
+        INSERT INTO users (username, email, password_hash, provider, display_name, role)
+        VALUES ($1, $2, $3, 'credentials', $4, $5)
+        RETURNING id, username, email, role
       `,
-      [username, email, hashedPassword, username]
+      [
+        username,
+        email,
+        hashedPassword,
+        username,
+        email.trim().toLowerCase() === 'bhandarideepakdev@gmail.com' ? 'superUser' : 'user',
+      ]
     );
 
     console.log('New user registered:', { email, username });
@@ -61,6 +67,7 @@ export default async function handler(req, res) {
         id: result.rows[0].id,
         email: result.rows[0].email,
         username: result.rows[0].username,
+        role: result.rows[0].role,
       },
     });
   } catch (error) {

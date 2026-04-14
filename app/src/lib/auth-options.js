@@ -3,6 +3,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { query } from './db';
 
+const SUPERUSER_EMAIL = 'bhandarideepakdev@gmail.com';
+
 const providers = [
   CredentialsProvider({
     name: 'Username and Password',
@@ -19,7 +21,7 @@ const providers = [
 
       const result = await query(
         `
-          SELECT id, username, email, display_name, password_hash
+          SELECT id, username, email, display_name, password_hash, role
           FROM users
           WHERE username = $1 AND provider = 'credentials'
           LIMIT 1
@@ -45,6 +47,7 @@ const providers = [
         id: userRow.id,
         name: userRow.display_name || userRow.username,
         email: userRow.email,
+        role: userRow.role || 'user',
       };
     },
   }),
@@ -71,17 +74,43 @@ export const authOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === 'google') {
+        const normalizedEmail = (user.email || '').trim().toLowerCase();
+        const role = normalizedEmail === SUPERUSER_EMAIL ? 'superUser' : 'user';
+
         await query(
           `
-            INSERT INTO users (email, display_name, provider, provider_account_id)
-            VALUES ($1, $2, 'google', $3)
+            INSERT INTO users (email, display_name, provider, provider_account_id, role)
+            VALUES ($1, $2, 'google', $3, $4)
             ON CONFLICT (provider, provider_account_id)
             DO UPDATE SET
               email = EXCLUDED.email,
               display_name = EXCLUDED.display_name,
+              role = EXCLUDED.role,
               updated_at = NOW()
           `,
-          [user.email || null, user.name || null, account.providerAccountId]
+          [user.email || null, user.name || null, account.providerAccountId, role]
+        );
+
+        if (normalizedEmail === SUPERUSER_EMAIL) {
+          await query(
+            `
+              UPDATE users
+              SET role = 'superUser', updated_at = NOW()
+              WHERE LOWER(email) = $1
+            `,
+            [normalizedEmail]
+          );
+        }
+      }
+
+      if (user?.email?.trim().toLowerCase() === SUPERUSER_EMAIL) {
+        await query(
+          `
+            UPDATE users
+            SET role = 'superUser', updated_at = NOW()
+            WHERE LOWER(email) = $1
+          `,
+          [SUPERUSER_EMAIL]
         );
       }
 
@@ -90,10 +119,11 @@ export const authOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.userId = user.id;
+        token.role = user.role || token.role || 'user';
       } else if (token?.email) {
         const result = await query(
           `
-            SELECT id
+            SELECT id, role
             FROM users
             WHERE email = $1
             ORDER BY created_at DESC
@@ -105,12 +135,17 @@ export const authOptions = {
         if (result.rows[0]?.id) {
           token.userId = result.rows[0].id;
         }
+
+        if (result.rows[0]?.role) {
+          token.role = result.rows[0].role;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (token?.userId && session?.user) {
         session.user.id = token.userId;
+        session.user.role = token.role || 'user';
       }
       return session;
     },

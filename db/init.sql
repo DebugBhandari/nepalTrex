@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT UNIQUE,
   email TEXT UNIQUE,
   display_name TEXT,
+  role TEXT NOT NULL DEFAULT 'user',
   password_hash TEXT,
   provider TEXT NOT NULL DEFAULT 'credentials',
   provider_account_id TEXT,
@@ -12,9 +13,19 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
+
+UPDATE users
+SET role = 'user', updated_at = NOW()
+WHERE role IS NULL OR TRIM(role) = '';
+
+UPDATE users
+SET role = 'superUser', updated_at = NOW()
+WHERE LOWER(email) = 'bhandarideepakdev@gmail.com';
+
 CREATE UNIQUE INDEX IF NOT EXISTS users_provider_provider_account_id_idx
-  ON users(provider, provider_account_id)
-  WHERE provider_account_id IS NOT NULL;
+  ON users(provider, provider_account_id);
 
 CREATE TABLE IF NOT EXISTS treks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,6 +48,10 @@ VALUES (
   'credentials'
 )
 ON CONFLICT (username) DO NOTHING;
+
+UPDATE users
+SET role = 'admin', updated_at = NOW()
+WHERE username = 'admin' AND role <> 'superUser';
 
 INSERT INTO treks (name, duration_days, level, region, description, is_featured)
 VALUES
