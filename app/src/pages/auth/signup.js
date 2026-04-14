@@ -2,8 +2,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
+import { Alert, Box, Button, Card, CardContent, Container, LinearProgress, Stack, TextField, Typography } from '@mui/material';
 import { BabyTrexLogo } from '../../components/BabyTrexLogo';
-import { themeColors } from '../../lib/theme';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -12,7 +12,6 @@ export default function SignUpPage() {
     password: '',
     confirmPassword: '',
   });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -28,17 +27,12 @@ export default function SignUpPage() {
     return strength;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === 'password') {
       setPasswordStrength(calculatePasswordStrength(value));
     }
-
     if (error) setError('');
     if (success) setSuccess('');
   };
@@ -71,8 +65,8 @@ export default function SignUpPage() {
     return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setSuccess('');
 
@@ -81,11 +75,9 @@ export default function SignUpPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: formData.email,
           username: formData.username,
@@ -93,418 +85,94 @@ export default function SignUpPage() {
         }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      if (!res.ok) {
+      if (!response.ok) {
         setError(data.error || 'Registration failed');
         setLoading(false);
         return;
       }
 
       setSuccess('Account created successfully! Redirecting to sign in...');
-      setFormData({
-        email: '',
-        username: '',
-        password: '',
-        confirmPassword: '',
-      });
+      const credentials = { username: formData.username, password: formData.password };
+      setFormData({ email: '', username: '', password: '', confirmPassword: '' });
 
       setTimeout(() => {
         signIn('credentials', {
-          username: formData.username,
-          password: formData.password,
+          username: credentials.username,
+          password: credentials.password,
           callbackUrl: '/',
         });
-      }, 1500);
+      }, 1200);
     } catch (err) {
       setError(err.message || 'An error occurred during registration');
       setLoading(false);
     }
   };
 
-  const getPasswordStrengthLabel = () => {
-    switch (passwordStrength) {
-      case 0:
-        return 'Very Weak';
-      case 1:
-        return 'Weak';
-      case 2:
-        return 'Fair';
-      case 3:
-        return 'Good';
-      case 4:
-        return 'Strong';
-      case 5:
-        return 'Very Strong';
-      default:
-        return '';
-    }
-  };
-
-  const getPasswordStrengthColor = () => {
-    const colors = ['#dc3545', '#fd7e14', '#ffc107', '#17a2b8', '#28a745', '#20c997'];
-    return colors[passwordStrength] || '#e2e8f0';
-  };
-
   return (
     <>
       <Head>
         <title>Sign Up | NepalTrex</title>
-        <style>{`
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background: linear-gradient(135deg, ${themeColors.deepTeal} 0%, ${themeColors.midTeal} 45%, #08292d 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          @keyframes slideUp {
-            from {
-              opacity: 0;
-              transform: translateY(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          input:focus {
-            border-color: ${themeColors.moss} !important;
-            box-shadow: 0 0 0 3px rgba(30, 111, 92, 0.1) !important;
-          }
-
-          button[type="submit"]:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 111, 92, 0.5) !important;
-          }
-
-          button[type="submit"]:active {
-            transform: translateY(0);
-          }
-
-          button[type="submit"]:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
-
-          a:hover {
-            color: ${themeColors.moss};
-          }
-        `}</style>
       </Head>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          py: 6,
+          background:
+            'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)',
+        }}
+      >
+        <Container maxWidth="sm">
+          <Card>
+            <CardContent sx={{ p: 4 }}>
+              <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
+                <BabyTrexLogo size={42} color="#f0b429" />
+                <Typography variant="h4">Create Account</Typography>
+                <Typography color="text.secondary">Start your trekking adventure today</Typography>
+              </Stack>
 
-      <div style={styles.container}>
-        <div style={styles.card}>
-          {/* Logo */}
-          <div style={styles.logoContainer}>
-            <div style={styles.logoCircle}>
-              <BabyTrexLogo size={40} color={themeColors.goldSun} />
-            </div>
-          </div>
+              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+              {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-          {/* Header */}
-          <div style={styles.header}>
-            <h1 style={styles.title}>Create Account</h1>
-            <p style={styles.subtitle}>Start your trekking adventure today</p>
-          </div>
+              <Box component="form" onSubmit={handleSubmit}>
+                <Stack spacing={1.5}>
+                  <TextField label="Email" name="email" type="email" value={formData.email} onChange={handleChange} required fullWidth />
+                  <TextField label="Username" name="username" value={formData.username} onChange={handleChange} required fullWidth />
+                  <TextField
+                    label="Password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                  />
+                  {formData.password && (
+                    <LinearProgress variant="determinate" value={(passwordStrength / 5) * 100} />
+                  )}
+                  <TextField
+                    label="Confirm Password"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                  />
+                  <Button type="submit" variant="contained" fullWidth disabled={loading}>
+                    {loading ? 'Creating Account...' : 'Create Account'}
+                  </Button>
+                </Stack>
+              </Box>
 
-          {/* Error Alert */}
-          {error && (
-            <div style={styles.errorAlert}>
-              <p style={styles.errorText}>⚠️ {error}</p>
-            </div>
-          )}
-
-          {/* Success Alert */}
-          {success && (
-            <div style={styles.successAlert}>
-              <p style={styles.successText}>✓ {success}</p>
-            </div>
-          )}
-
-          {/* Registration Form */}
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.formGroup}>
-              <label htmlFor="email" style={styles.label}>Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="your@email.com"
-                value={formData.email}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label htmlFor="username" style={styles.label}>Username</label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
-                placeholder="Choose a username"
-                value={formData.username}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label htmlFor="password" style={styles.label}>Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-              {formData.password && (
-                <div style={styles.passwordStrengthContainer}>
-                  <div style={styles.strengthBars}>
-                    {[...Array(5)].map((_, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          ...styles.strengthBar,
-                          backgroundColor:
-                            i < passwordStrength ? getPasswordStrengthColor() : '#e2e8f0',
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span style={{...styles.strengthLabel, color: getPasswordStrengthColor()}}>
-                    {getPasswordStrengthLabel()}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label htmlFor="confirmPassword" style={styles.label}>Confirm Password</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                <p style={styles.mismatchWarning}>⚠️ Passwords do not match</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              style={styles.primaryButton}
-              disabled={loading || !formData.email || !formData.username || !formData.password || !formData.confirmPassword}
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
-          </form>
-
-          {/* Sign In Link */}
-          <div style={styles.signinPrompt}>
-            <span style={{ color: '#718096' }}>Already have an account? </span>
-            <Link href="/auth/signin" style={styles.signinLink}>
-              Sign in
-            </Link>
-          </div>
-
-          {/* Footer */}
-          <p style={styles.footer}>
-            © 2026 NepalTrex. All rights reserved.
-          </p>
-        </div>
-      </div>
+              <Typography sx={{ mt: 2 }}>
+                Already have an account? <Link href="/auth/signin">Sign in</Link>
+              </Typography>
+            </CardContent>
+          </Card>
+        </Container>
+      </Box>
     </>
   );
 }
-
-const styles = {
-  container: {
-    width: '100%',
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    background: `linear-gradient(135deg, ${themeColors.deepTeal} 0%, ${themeColors.midTeal} 45%, #08292d 100%)`,
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif",
-  },
-  card: {
-    width: '100%',
-    maxWidth: '420px',
-    background: themeColors.card,
-    borderRadius: '16px',
-    boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
-    padding: '40px',
-    animation: 'slideUp 0.6s ease-out',
-  },
-  logoContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '24px',
-  },
-  logoCircle: {
-    width: '70px',
-    height: '70px',
-    borderRadius: '50%',
-    background: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.midTeal} 100%)`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: `0 8px 20px rgba(30, 111, 92, 0.3)`,
-  },
-  header: {
-    textAlign: 'center',
-    marginBottom: '32px',
-  },
-  title: {
-    fontSize: '32px',
-    fontWeight: '800',
-    color: themeColors.ink,
-    marginBottom: '8px',
-    letterSpacing: '-0.5px',
-  },
-  subtitle: {
-    fontSize: '15px',
-    color: '#666',
-    lineHeight: '1.6',
-    fontWeight: '500',
-  },
-  errorAlert: {
-    background: '#fed7d7',
-    border: '1px solid #fc8181',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    marginBottom: '24px',
-  },
-  errorText: {
-    fontSize: '14px',
-    color: '#c53030',
-    margin: 0,
-  },
-  successAlert: {
-    background: '#c6f6d5',
-    border: `1px solid ${themeColors.moss}40`,
-    borderRadius: '8px',
-    padding: '12px 16px',
-    marginBottom: '24px',
-  },
-  successText: {
-    fontSize: '14px',
-    color: '#22543d',
-    margin: 0,
-  },
-  form: {
-    marginBottom: '24px',
-  },
-  formGroup: {
-    marginBottom: '20px',
-  },
-  label: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: '700',
-    color: themeColors.ink,
-    marginBottom: '8px',
-    letterSpacing: '0.3px',
-    textTransform: 'uppercase',
-    fontSize: '12px',
-  },
-  input: {
-    width: '100%',
-    padding: '12px 14px',
-    fontSize: '15px',
-    border: '1.5px solid #ddd',
-    borderRadius: '8px',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-    outline: 'none',
-    boxSizing: 'border-box',
-  },
-  passwordStrengthContainer: {
-    marginTop: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  },
-  strengthBars: {
-    display: 'flex',
-    gap: '4px',
-    flex: 1,
-  },
-  strengthBar: {
-    flex: 1,
-    height: '4px',
-    borderRadius: '2px',
-    transition: 'all 0.3s ease',
-  },
-  strengthLabel: {
-    fontSize: '12px',
-    fontWeight: '700',
-    whiteSpace: 'nowrap',
-  },
-  mismatchWarning: {
-    fontSize: '12px',
-    color: '#c53030',
-    marginTop: '6px',
-    margin: 0,
-  },
-  primaryButton: {
-    width: '100%',
-    padding: '14px 16px',
-    background: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.midTeal} 100%)`,
-    color: themeColors.snow,
-    fontSize: '15px',
-    fontWeight: '700',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    letterSpacing: '0.3px',
-    boxShadow: `0 4px 15px rgba(30, 111, 92, 0.3)`,
-  },
-  signinPrompt: {
-    textAlign: 'center',
-    fontSize: '14px',
-    color: '#666',
-    marginBottom: '20px',
-  },
-  signinLink: {
-    color: themeColors.moss,
-    fontWeight: '700',
-    textDecoration: 'none',
-    transition: 'color 0.2s ease',
-  },
-  footer: {
-    textAlign: 'center',
-    fontSize: '12px',
-    color: '#999',
-    marginTop: '24px',
-    borderTop: '1px solid #ddd',
-    paddingTop: '16px',
-  },
-};

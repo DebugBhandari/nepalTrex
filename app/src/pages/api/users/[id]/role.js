@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../lib/auth-options';
 import { query } from '../../../../lib/db';
 
-const ALLOWED_TARGET_ROLES = new Set(['admin', 'superUser']);
+const ALLOWED_TARGET_ROLES = new Set(['user', 'admin', 'superUser']);
 
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') {
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   }
 
   if (!ALLOWED_TARGET_ROLES.has(nextRole)) {
-    return res.status(400).json({ error: 'Role must be admin or superUser' });
+    return res.status(400).json({ error: 'Role must be user, admin, or superUser' });
   }
 
   try {

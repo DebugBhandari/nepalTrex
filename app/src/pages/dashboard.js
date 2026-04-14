@@ -1,9 +1,44 @@
 import Head from 'next/head';
-import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
+import MenuIcon from '@mui/icons-material/Menu';
+import HomeIcon from '@mui/icons-material/Home';
+import HikingIcon from '@mui/icons-material/Hiking';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import LogoutIcon from '@mui/icons-material/Logout';
+import {
+  Alert,
+  AppBar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Divider,
+  Drawer,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Toolbar,
+  Typography,
+} from '@mui/material';
 import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
+
+const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
+const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
 
 export default function DashboardPage({ user, treks }) {
   const [items, setItems] = useState(treks);
@@ -11,57 +46,71 @@ export default function DashboardPage({ user, treks }) {
   const [trekMessage, setTrekMessage] = useState('');
 
   const [activeTab, setActiveTab] = useState('treks');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState('');
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersMessage, setUsersMessage] = useState('');
   const [updatingRoleById, setUpdatingRoleById] = useState({});
+  const [draftRolesById, setDraftRolesById] = useState({});
 
-  const canEditTreks = useMemo(() => user?.role === 'superUser', [user?.role]);
+  const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
 
-  const fetchUsers = async (search = '') => {
-    if (!canEditTreks) {
-      return;
-    }
-
-    setUsersLoading(true);
-    setUsersMessage('');
-
-    try {
-      const params = new URLSearchParams();
-      if (search.trim()) {
-        params.set('search', search.trim());
+  const fetchUsers = useCallback(
+    async (search = '') => {
+      if (!canManage) {
+        return;
       }
 
-      const response = await fetch(`/api/users?${params.toString()}`);
-      const payload = await response.json();
+      setUsersLoading(true);
+      setUsersMessage('');
 
-      if (!response.ok) {
-        throw new Error(payload.error || 'Failed to fetch users');
-      }
+      try {
+        const params = new URLSearchParams();
+        if (search.trim()) {
+          params.set('search', search.trim());
+        }
 
-      setUsers(payload.users || []);
-      if (search.trim()) {
-        setUsersMessage(`Found ${(payload.users || []).length} matching users.`);
+        const response = await fetch(`/api/users?${params.toString()}`);
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'Failed to fetch users');
+        }
+
+        const fetchedUsers = payload.users || [];
+        setUsers(fetchedUsers);
+        setDraftRolesById(
+          fetchedUsers.reduce((acc, current) => {
+            acc[current.id] = current.role || 'user';
+            return acc;
+          }, {})
+        );
+
+        if (search.trim()) {
+          setUsersMessage(`Found ${fetchedUsers.length} matching users.`);
+        }
+      } catch (error) {
+        setUsersMessage(error.message || 'Failed to fetch users');
+      } finally {
+        setUsersLoading(false);
       }
-    } catch (error) {
-      setUsersMessage(error.message || 'Failed to fetch users');
-    } finally {
-      setUsersLoading(false);
-    }
-  };
+    },
+    [canManage]
+  );
 
   useEffect(() => {
-    if (canEditTreks && activeTab === 'users' && users.length === 0 && !usersLoading) {
+    if (canManage && activeTab === 'users' && users.length === 0 && !usersLoading) {
       fetchUsers('');
     }
-  }, [activeTab, canEditTreks, users.length, usersLoading]);
+  }, [activeTab, canManage, users.length, usersLoading, fetchUsers]);
 
-  const handleDescriptionChange = (id, value) => {
-    setItems((prev) => prev.map((trek) => (trek.id === id ? { ...trek, description: value } : trek)));
+  const handleTrekFieldChange = (id, field, value) => {
+    setItems((prev) => prev.map((trek) => (trek.id === id ? { ...trek, [field]: value } : trek)));
   };
 
-  const handleSave = async (trekId) => {
+  const handleSaveTrek = async (trekId) => {
     const trek = items.find((item) => item.id === trekId);
     if (!trek) {
       return;
@@ -71,29 +120,54 @@ export default function DashboardPage({ user, treks }) {
     setTrekMessage('');
 
     try {
-      const response = await fetch(`/api/treks/${trekId}/description`, {
+      const response = await fetch(`/api/treks/${trekId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ description: trek.description || '' }),
+        body: JSON.stringify({
+          name: trek.name,
+          durationDays: Number(trek.durationDays),
+          level: trek.level,
+          region: trek.region,
+          description: trek.description || '',
+          isFeatured: Boolean(trek.isFeatured),
+        }),
       });
 
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error || 'Failed to update description');
+        throw new Error(payload.error || 'Failed to update trek');
       }
 
-      setTrekMessage(`Updated description for ${trek.name}.`);
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === trekId
+            ? {
+                ...item,
+                name: payload.trek.name,
+                durationDays: payload.trek.duration_days,
+                level: payload.trek.level,
+                region: payload.trek.region,
+                description: payload.trek.description || '',
+                isFeatured: payload.trek.is_featured,
+              }
+            : item
+        )
+      );
+
+      setTrekMessage(`Updated trek details for ${payload.trek.name}.`);
     } catch (error) {
-      setTrekMessage(error.message || 'Failed to update description');
+      setTrekMessage(error.message || 'Failed to update trek');
     } finally {
       setSavingById((prev) => ({ ...prev, [trekId]: false }));
     }
   };
 
-  const upgradeRole = async (targetUserId, nextRole) => {
+  const saveUserRole = async (targetUserId) => {
+    const selectedRole = draftRolesById[targetUserId];
+
     setUpdatingRoleById((prev) => ({ ...prev, [targetUserId]: true }));
     setUsersMessage('');
 
@@ -103,7 +177,7 @@ export default function DashboardPage({ user, treks }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ role: nextRole }),
+        body: JSON.stringify({ role: selectedRole }),
       });
 
       const payload = await response.json();
@@ -115,7 +189,8 @@ export default function DashboardPage({ user, treks }) {
       setUsers((prev) =>
         prev.map((item) => (item.id === targetUserId ? { ...item, role: payload.user.role } : item))
       );
-      setUsersMessage(`Updated role to ${nextRole} for ${payload.user.email || payload.user.username}.`);
+      setDraftRolesById((prev) => ({ ...prev, [targetUserId]: payload.user.role }));
+      setUsersMessage(`Updated role for ${payload.user.email || payload.user.username} to ${payload.user.role}.`);
     } catch (error) {
       setUsersMessage(error.message || 'Failed to update user role');
     } finally {
@@ -123,168 +198,315 @@ export default function DashboardPage({ user, treks }) {
     }
   };
 
-  const renderTreksTab = () => (
-    <div style={{ marginTop: '1rem' }}>
-      <h2>Trek Descriptions</h2>
-      {!canEditTreks && (
-        <p style={{ color: '#5c5f66' }}>
-          Only superUsers can edit trek descriptions. You can still view all entries.
-        </p>
-      )}
-      {trekMessage && <p style={{ color: '#1a7f37' }}>{trekMessage}</p>}
-
-      <div style={{ display: 'grid', gap: '1rem' }}>
-        {items.map((trek) => (
-          <article
-            key={trek.id}
-            style={{ border: '1px solid #ddd', borderRadius: '10px', padding: '1rem' }}
-          >
-            <h3 style={{ marginTop: 0 }}>{trek.name}</h3>
-            <p style={{ margin: '0.4rem 0' }}>
-              <strong>Region:</strong> {trek.region}
-            </p>
-            <p style={{ margin: '0.4rem 0' }}>
-              <strong>Difficulty:</strong> {trek.level}
-            </p>
-            <label htmlFor={`desc-${trek.id}`} style={{ display: 'block', marginBottom: '0.4rem' }}>
-              Description
-            </label>
-            <textarea
-              id={`desc-${trek.id}`}
-              rows={4}
-              value={trek.description || ''}
-              onChange={(event) => handleDescriptionChange(trek.id, event.target.value)}
-              disabled={!canEditTreks || Boolean(savingById[trek.id])}
-              style={{ width: '100%', padding: '0.6rem' }}
-            />
-            {canEditTreks && (
-              <button
-                style={{ marginTop: '0.6rem' }}
-                onClick={() => handleSave(trek.id)}
-                disabled={Boolean(savingById[trek.id])}
-              >
-                {savingById[trek.id] ? 'Saving...' : 'Save description'}
-              </button>
-            )}
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderUsersTab = () => {
-    if (!canEditTreks) {
-      return null;
-    }
-
-    return (
-      <div style={{ marginTop: '1rem' }}>
-        <h2>User Management</h2>
-        <p style={{ color: '#5c5f66' }}>Search users and upgrade them to admin or superUser.</p>
-
-        <form
-          style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', marginBottom: '1rem' }}
-          onSubmit={(event) => {
-            event.preventDefault();
-            fetchUsers(userSearch);
+  const menuList = (
+    <Box sx={{ width: 280, p: 2 }} role="presentation">
+      <Typography variant="h6" sx={{ mb: 1 }}>
+        Menu
+      </Typography>
+      <Stack spacing={1}>
+        <Button
+          component={Link}
+          href="/"
+          startIcon={<HomeIcon />}
+          variant="outlined"
+          onClick={() => setDrawerOpen(false)}
+        >
+          Home
+        </Button>
+        <Button
+          startIcon={<HikingIcon />}
+          variant={activeTab === 'treks' ? 'contained' : 'outlined'}
+          onClick={() => {
+            setActiveTab('treks');
+            setDrawerOpen(false);
           }}
         >
-          <input
-            value={userSearch}
-            onChange={(event) => setUserSearch(event.target.value)}
-            placeholder="Search by username, email, or name"
-            style={{ flex: 1, padding: '0.6rem' }}
-          />
-          <button type="submit" disabled={usersLoading}>
-            {usersLoading ? 'Searching...' : 'Search'}
-          </button>
-          <button
-            type="button"
+          Trek Updates
+        </Button>
+        {canManage && (
+          <Button
+            startIcon={<ManageAccountsIcon />}
+            variant={activeTab === 'users' ? 'contained' : 'outlined'}
             onClick={() => {
-              setUserSearch('');
-              fetchUsers('');
+              setActiveTab('users');
+              setDrawerOpen(false);
             }}
-            disabled={usersLoading}
           >
-            Reset
-          </button>
-        </form>
-
-        {usersMessage && <p style={{ color: '#1a7f37' }}>{usersMessage}</p>}
-
-        <div style={{ display: 'grid', gap: '0.8rem' }}>
-          {users.map((entry) => (
-            <article
-              key={entry.id}
-              style={{ border: '1px solid #ddd', borderRadius: '10px', padding: '0.9rem' }}
-            >
-              <p style={{ margin: '0.2rem 0' }}>
-                <strong>Name:</strong> {entry.displayName || entry.username || 'N/A'}
-              </p>
-              <p style={{ margin: '0.2rem 0' }}>
-                <strong>Email:</strong> {entry.email || 'N/A'}
-              </p>
-              <p style={{ margin: '0.2rem 0' }}>
-                <strong>Role:</strong> {entry.role || 'user'}
-              </p>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button
-                  onClick={() => upgradeRole(entry.id, 'admin')}
-                  disabled={Boolean(updatingRoleById[entry.id]) || entry.role === 'admin' || entry.role === 'superUser'}
-                >
-                  Make admin
-                </button>
-                <button
-                  onClick={() => upgradeRole(entry.id, 'superUser')}
-                  disabled={Boolean(updatingRoleById[entry.id]) || entry.role === 'superUser'}
-                >
-                  Make superUser
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-    );
-  };
+            User Management
+          </Button>
+        )}
+        <Divider sx={{ my: 1 }} />
+        <Button
+          color="inherit"
+          startIcon={<LogoutIcon />}
+          variant="outlined"
+          onClick={() => signOut({ callbackUrl: '/' })}
+        >
+          Sign out
+        </Button>
+      </Stack>
+    </Box>
+  );
 
   return (
     <>
       <Head>
         <title>Dashboard | NepalTrex</title>
       </Head>
-      <div style={{ maxWidth: '900px', margin: '2rem auto', padding: '1rem' }}>
-        <h1>Dashboard</h1>
-        <p>Signed in as {user?.name || user?.email}</p>
-        <p>Role: {user?.role || 'user'}</p>
-        <button onClick={() => signOut({ callbackUrl: '/' })}>Sign out</button>
 
-        <div style={{ marginTop: '2rem', display: 'flex', gap: '0.6rem' }}>
-          <button
-            onClick={() => setActiveTab('treks')}
-            style={{
-              background: activeTab === 'treks' ? '#111827' : '#e5e7eb',
-              color: activeTab === 'treks' ? '#ffffff' : '#111827',
-            }}
+      <AppBar position="sticky" color="inherit" elevation={1}>
+        <Toolbar>
+          <IconButton edge="start" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }}>
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            NepalTrex Dashboard
+          </Typography>
+          <Button
+            component={Link}
+            href="/"
+            startIcon={<HomeIcon />}
+            variant="outlined"
+            sx={{ mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
           >
-            Trek Updates
-          </button>
-          {canEditTreks && (
-            <button
-              onClick={() => setActiveTab('users')}
-              style={{
-                background: activeTab === 'users' ? '#111827' : '#e5e7eb',
-                color: activeTab === 'users' ? '#ffffff' : '#111827',
-              }}
-            >
-              User Management
-            </button>
-          )}
-        </div>
+            Home
+          </Button>
+          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" />
+        </Toolbar>
+      </AppBar>
 
-        {activeTab === 'treks' && renderTreksTab()}
-        {activeTab === 'users' && renderUsersTab()}
-      </div>
+      <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        {menuList}
+      </Drawer>
+
+      <Container maxWidth="lg" sx={{ py: 3 }}>
+        <Paper sx={{ p: { xs: 2, md: 3 } }}>
+          <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Manage treks and users from one place.
+          </Typography>
+
+          <Tabs
+            value={activeTab}
+            onChange={(_, value) => setActiveTab(value)}
+            variant="scrollable"
+            allowScrollButtonsMobile
+            sx={{ mt: 2 }}
+          >
+            <Tab value="treks" label="Trek Updates" />
+            {canManage && <Tab value="users" label="User Management" />}
+          </Tabs>
+
+          {activeTab === 'treks' && (
+            <Box sx={{ mt: 2 }}>
+              {canManage ? (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  As superUser, you can update all trek fields below.
+                </Alert>
+              ) : (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  You can view trek information. Only superUsers can save trek changes.
+                </Alert>
+              )}
+
+              {trekMessage && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {trekMessage}
+                </Alert>
+              )}
+
+              <Stack spacing={2}>
+                {items.map((trek) => (
+                  <Card key={trek.id}>
+                    <CardContent>
+                      <Stack spacing={1.5}>
+                        <TextField
+                          label="Trek Name"
+                          value={trek.name}
+                          onChange={(event) => handleTrekFieldChange(trek.id, 'name', event.target.value)}
+                          disabled={!canManage || Boolean(savingById[trek.id])}
+                          fullWidth
+                        />
+                        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                          <TextField
+                            label="Duration (days)"
+                            type="number"
+                            value={trek.durationDays}
+                            onChange={(event) =>
+                              handleTrekFieldChange(trek.id, 'durationDays', Number(event.target.value || 0))
+                            }
+                            disabled={!canManage || Boolean(savingById[trek.id])}
+                            fullWidth
+                            inputProps={{ min: 1 }}
+                          />
+                          <FormControl fullWidth size="small" disabled={!canManage || Boolean(savingById[trek.id])}>
+                            <InputLabel id={`level-${trek.id}`}>Level</InputLabel>
+                            <Select
+                              labelId={`level-${trek.id}`}
+                              label="Level"
+                              value={trek.level}
+                              onChange={(event) => handleTrekFieldChange(trek.id, 'level', event.target.value)}
+                            >
+                              {LEVEL_OPTIONS.map((option) => (
+                                <MenuItem key={option} value={option}>
+                                  {option}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Stack>
+                        <TextField
+                          label="Region"
+                          value={trek.region}
+                          onChange={(event) => handleTrekFieldChange(trek.id, 'region', event.target.value)}
+                          disabled={!canManage || Boolean(savingById[trek.id])}
+                          fullWidth
+                        />
+                        <TextField
+                          label="Description"
+                          multiline
+                          minRows={4}
+                          value={trek.description || ''}
+                          onChange={(event) => handleTrekFieldChange(trek.id, 'description', event.target.value)}
+                          disabled={!canManage || Boolean(savingById[trek.id])}
+                          fullWidth
+                        />
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={Boolean(trek.isFeatured)}
+                              onChange={(event) =>
+                                handleTrekFieldChange(trek.id, 'isFeatured', event.target.checked)
+                              }
+                              disabled={!canManage || Boolean(savingById[trek.id])}
+                            />
+                          }
+                          label="Featured trek"
+                        />
+                        {canManage && (
+                          <Button
+                            variant="contained"
+                            onClick={() => handleSaveTrek(trek.id)}
+                            disabled={Boolean(savingById[trek.id])}
+                          >
+                            {savingById[trek.id] ? 'Saving...' : 'Save Trek'}
+                          </Button>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          {activeTab === 'users' && canManage && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6" sx={{ mb: 1 }}>
+                User Management
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Search users and update roles, including revoking admin or superUser access.
+              </Typography>
+
+              <Box
+                component="form"
+                sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  fetchUsers(userSearch);
+                }}
+              >
+                <TextField
+                  value={userSearch}
+                  onChange={(event) => setUserSearch(event.target.value)}
+                  placeholder="Search by username, email, or display name"
+                  fullWidth
+                  sx={{ flex: 1, minWidth: 240 }}
+                />
+                <Button variant="contained" type="submit" disabled={usersLoading}>
+                  {usersLoading ? 'Searching...' : 'Search'}
+                </Button>
+                <Button
+                  variant="outlined"
+                  type="button"
+                  disabled={usersLoading}
+                  onClick={() => {
+                    setUserSearch('');
+                    fetchUsers('');
+                  }}
+                >
+                  Reset
+                </Button>
+              </Box>
+
+              {usersMessage && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {usersMessage}
+                </Alert>
+              )}
+
+              <Stack spacing={1.5}>
+                {users.map((entry) => {
+                  const isSaving = Boolean(updatingRoleById[entry.id]);
+                  const currentDraft = draftRolesById[entry.id] || entry.role || 'user';
+                  const isSelf = entry.id === user.id;
+
+                  return (
+                    <Card key={entry.id}>
+                      <CardContent>
+                        <Stack
+                          direction={{ xs: 'column', md: 'row' }}
+                          spacing={2}
+                          justifyContent="space-between"
+                        >
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="subtitle1">
+                              {entry.displayName || entry.username || 'N/A'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {entry.email || 'N/A'}
+                            </Typography>
+                            <Chip label={`Current role: ${entry.role || 'user'}`} size="small" sx={{ mt: 1 }} />
+                          </Box>
+
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+                            <FormControl size="small" sx={{ minWidth: 140 }}>
+                              <InputLabel id={`role-input-${entry.id}`}>Role</InputLabel>
+                              <Select
+                                labelId={`role-input-${entry.id}`}
+                                label="Role"
+                                value={currentDraft}
+                                onChange={(event) =>
+                                  setDraftRolesById((prev) => ({ ...prev, [entry.id]: event.target.value }))
+                                }
+                                disabled={isSaving || isSelf}
+                              >
+                                {ROLE_OPTIONS.map((roleOption) => (
+                                  <MenuItem key={roleOption} value={roleOption}>
+                                    {roleOption}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                            <Button
+                              variant="contained"
+                              disabled={isSaving || isSelf || currentDraft === entry.role}
+                              onClick={() => saveUserRole(entry.id)}
+                            >
+                              {isSaving ? 'Saving...' : 'Update Role'}
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Stack>
+            </Box>
+          )}
+        </Paper>
+      </Container>
     </>
   );
 }
@@ -303,7 +525,7 @@ export async function getServerSideProps(context) {
 
   const trekRows = await query(
     `
-      SELECT id, name, region, level, description
+      SELECT id, name, duration_days, level, region, description, is_featured
       FROM treks
       ORDER BY name ASC
     `
@@ -312,9 +534,11 @@ export async function getServerSideProps(context) {
   const treks = trekRows.rows.map((row) => ({
     id: row.id,
     name: row.name,
-    region: row.region,
+    durationDays: row.duration_days,
     level: row.level,
+    region: row.region,
     description: row.description || '',
+    isFeatured: row.is_featured,
   }));
 
   return {
