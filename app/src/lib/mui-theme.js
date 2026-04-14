@@ -2,23 +2,25 @@ import { createTheme } from '@mui/material/styles';
 
 export function createAppTheme(mode = 'light') {
   const isDark = mode === 'dark';
+  // Palette: #091413 (darkest) → #285A48 (dark) → #408A71 (mid) → #B0E4CC (lightest)
+  // Dark mode reverts: lightest becomes text/surface, darkest becomes bg
   const lightPalette = {
-    primary: '#0f766e',
-    secondary: '#c2410c',
-    bg: '#ffffff',
-    bgAlt: '#f2fbf9',
-    text: '#0b1f2a',
-    textMuted: '#4b5b66',
-    border: 'rgba(11, 31, 42, 0.16)',
+    primary: '#408A71',
+    secondary: '#285A48',
+    bg: '#f4fcf8',
+    bgAlt: '#ddf0e8',
+    text: '#091413',
+    textMuted: '#285A48',
+    border: 'rgba(9, 20, 19, 0.16)',
   };
   const darkPalette = {
-    primary: '#c2410c',
-    secondary: '#0f766e',
-    bg: '#0b1220',
-    bgAlt: '#131e31',
-    text: '#e8f0f7',
-    textMuted: '#afc0d2',
-    border: 'rgba(232, 240, 247, 0.24)',
+    primary: '#408A71',
+    secondary: '#B0E4CC',
+    bg: '#091413',
+    bgAlt: '#285A48',
+    text: '#B0E4CC',
+    textMuted: '#408A71',
+    border: 'rgba(176, 228, 204, 0.16)',
   };
   const palette = isDark ? darkPalette : lightPalette;
 
@@ -27,15 +29,15 @@ export function createAppTheme(mode = 'light') {
       mode,
       primary: {
         main: palette.primary,
-        dark: isDark ? '#9a3509' : '#0a5953',
-        light: isDark ? '#dc6b3b' : '#1d968c',
+        dark: '#285A48',
+        light: '#B0E4CC',
         contrastText: '#ffffff',
       },
       secondary: {
         main: palette.secondary,
-        dark: isDark ? '#0a5953' : '#9a3509',
-        light: isDark ? '#1d968c' : '#dc6b3b',
-        contrastText: '#ffffff',
+        dark: isDark ? '#408A71' : '#091413',
+        light: isDark ? '#f4fcf8' : '#408A71',
+        contrastText: isDark ? '#091413' : '#ffffff',
       },
       background: {
         default: palette.bg,
@@ -86,7 +88,7 @@ export function createAppTheme(mode = 'light') {
             paddingInline: 16,
           },
           containedPrimary: {
-            background: `linear-gradient(135deg, ${palette.primary} 0%, ${isDark ? '#9a3509' : '#0a5953'} 100%)`,
+            background: `linear-gradient(135deg, ${palette.primary} 0%, #285A48 100%)`,
             color: '#ffffff',
           },
           outlined: {

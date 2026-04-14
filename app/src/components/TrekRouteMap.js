@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import L from 'leaflet';
-import { GeoJSON, MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
 
 const NEPAL_CENTER = [28.2, 84.1];
 const NEPAL_ZOOM = 7;
@@ -51,6 +51,13 @@ function normalizeGeoJson(routeGeojson) {
   return null;
 }
 
+function extractNamedWaypoints(routeGeojson) {
+  if (!routeGeojson || typeof routeGeojson !== 'object') return [];
+  const raw = typeof routeGeojson === 'string' ? (() => { try { return JSON.parse(routeGeojson); } catch { return null; } })() : routeGeojson;
+  if (!raw || raw.type !== 'RouteWaypoints' || !Array.isArray(raw.waypoints)) return [];
+  return raw.waypoints.filter(wp => Array.isArray(wp) && wp[2] && typeof wp[2] === 'string');
+}
+
 function TrekRouteBounds({ routeGeojson }) {
   const map = useMap();
 
@@ -78,6 +85,7 @@ function TrekRouteBounds({ routeGeojson }) {
 export default function TrekRouteMap({ selectedTrek }) {
   const routeGeojson = useMemo(() => normalizeGeoJson(selectedTrek?.routeGeojson), [selectedTrek]);
   const selectedTrekName = selectedTrek?.name || '';
+  const namedWaypoints = useMemo(() => extractNamedWaypoints(selectedTrek?.routeGeojson), [selectedTrek]);
 
   const routeLabelOptions = useMemo(
     () => ({
@@ -126,6 +134,18 @@ export default function TrekRouteMap({ selectedTrek }) {
           }}
         />
       )}
+      {namedWaypoints.map(([lat, lng, name], i) => (
+        <CircleMarker
+          key={`wp-${i}`}
+          center={[lat, lng]}
+          radius={5}
+          pathOptions={{ color: '#285A48', fillColor: '#408A71', fillOpacity: 1, weight: 2 }}
+        >
+          <Tooltip permanent direction="top" offset={[0, -8]}>
+            {name}
+          </Tooltip>
+        </CircleMarker>
+      ))}
     </MapContainer>
   );
 }
