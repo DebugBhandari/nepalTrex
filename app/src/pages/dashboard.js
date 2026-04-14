@@ -258,9 +258,9 @@ export default function DashboardPage({ user, treks }) {
         position="sticky"
         elevation={0}
         sx={{
-          background: 'linear-gradient(90deg, rgba(10,34,37,0.94) 0%, rgba(19,59,63,0.94) 100%)',
-          color: '#f8f4eb',
-          borderBottom: '1px solid rgba(240,180,41,0.24)',
+          background: 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)',
+          color: '#fff7ed',
+          borderBottom: '1px solid rgba(217,119,69,0.35)',
           backdropFilter: 'blur(8px)',
         }}
       >
@@ -292,9 +292,9 @@ export default function DashboardPage({ user, treks }) {
         <Paper
           sx={{
             p: { xs: 2, md: 3 },
-            background: 'linear-gradient(145deg, #ffffff 0%, #f2faf6 100%)',
-            border: '1px solid rgba(23,59,63,0.14)',
-            boxShadow: '0 18px 36px rgba(8, 41, 45, 0.14)',
+            background: 'linear-gradient(145deg, #fffaf2 0%, #f8efe4 100%)',
+            border: '1px solid rgba(148,163,184,0.3)',
+            boxShadow: '0 18px 36px rgba(15, 23, 42, 0.14)',
           }}
         >
           <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
@@ -337,7 +337,7 @@ export default function DashboardPage({ user, treks }) {
                     key={trek.id}
                     sx={{
                       background:
-                        'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(244,251,248,0.96) 100%)',
+                        'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
                     }}
                   >
                     <CardContent>
@@ -479,7 +479,7 @@ export default function DashboardPage({ user, treks }) {
                       key={entry.id}
                       sx={{
                         background:
-                          'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(244,251,248,0.96) 100%)',
+                          'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
                       }}
                     >
                       <CardContent>

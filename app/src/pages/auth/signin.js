@@ -29,21 +29,21 @@ export default function SignInPage({ csrfToken, providers, error }) {
           minHeight: '100vh',
           py: 6,
           background:
-            'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)',
+            'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)',
         }}
       >
         <Container maxWidth="sm">
           <Card
             sx={{
               background:
-                'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(246,252,249,0.95) 100%)',
-              border: '1px solid rgba(27,122,100,0.2)',
-              boxShadow: '0 24px 44px rgba(8, 41, 45, 0.26)',
+                'linear-gradient(145deg, rgba(255,250,242,0.98) 0%, rgba(252,246,237,0.95) 100%)',
+              border: '1px solid rgba(148,163,184,0.3)',
+              boxShadow: '0 24px 44px rgba(15, 23, 42, 0.26)',
             }}
           >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <BabyTrexLogo size={42} color="#f0b429" />
+                <BabyTrexLogo size={42} color="#d97745" />
                 <Typography variant="h4">Welcome Back</Typography>
                 <Typography color="text.secondary">Continue your trekking journey</Typography>
               </Stack>
@@ -60,7 +60,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
                   variant="outlined"
                   startIcon={<GoogleIcon />}
                   onClick={() => signIn('google', { callbackUrl: '/' })}
-                  sx={{ mb: 2, borderColor: '#f0b429', color: '#173b3f' }}
+                  sx={{ mb: 2, borderColor: '#d97745', color: '#2f435f' }}
                 >
                   Continue with Google
                 </Button>

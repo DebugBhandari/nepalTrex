@@ -98,7 +98,7 @@ export default function StayDetailPage({ stay }) {
           minHeight: '100vh',
           py: 5,
           background:
-            'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)',
+            'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)',
         }}
       >
         <Container maxWidth="lg">
@@ -107,7 +107,7 @@ export default function StayDetailPage({ stay }) {
             href="/"
             startIcon={<HomeIcon />}
             variant="outlined"
-            sx={{ mb: 2, color: '#f8f4eb', borderColor: '#f8f4eb' }}
+            sx={{ mb: 2, color: '#fff7ed', borderColor: '#fff7ed' }}
           >
             Back to Home
           </Button>
@@ -116,9 +116,9 @@ export default function StayDetailPage({ stay }) {
             sx={{
               mb: 2,
               background:
-                'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(241,248,246,0.94) 100%)',
-              border: '1px solid rgba(27,122,100,0.2)',
-              boxShadow: '0 22px 44px rgba(8, 41, 45, 0.24)',
+                'linear-gradient(145deg, rgba(255,250,242,0.98) 0%, rgba(252,246,237,0.95) 100%)',
+              border: '1px solid rgba(148,163,184,0.3)',
+              boxShadow: '0 22px 44px rgba(15, 23, 42, 0.24)',
             }}
           >
             <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />
@@ -143,7 +143,7 @@ export default function StayDetailPage({ stay }) {
 
           <Stack direction={{ xs: 'column', lg: 'row' }} spacing={2} alignItems="flex-start">
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" color="#f8f4eb" sx={{ mb: 1 }}>
+              <Typography variant="h5" color="#fff7ed" sx={{ mb: 1 }}>
                 Room Options
               </Typography>
               <Stack spacing={1.5} sx={{ mb: 3 }}>
@@ -173,7 +173,7 @@ export default function StayDetailPage({ stay }) {
                 )}
               </Stack>
 
-              <Typography variant="h5" color="#f8f4eb" sx={{ mb: 1 }}>
+              <Typography variant="h5" color="#fff7ed" sx={{ mb: 1 }}>
                 Food Menu
               </Typography>
               <Stack spacing={1.5}>

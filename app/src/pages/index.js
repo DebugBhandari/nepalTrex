@@ -64,14 +64,14 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
         position="sticky"
         elevation={0}
         sx={{
-          background: 'linear-gradient(90deg, rgba(10,34,37,0.92) 0%, rgba(19,59,63,0.92) 100%)',
-          color: '#f8f4eb',
-          borderBottom: '1px solid rgba(240,180,41,0.25)',
+          background: 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)',
+          color: '#fff7ed',
+          borderBottom: '1px solid rgba(217,119,69,0.35)',
           backdropFilter: 'blur(8px)',
         }}
       >
         <Toolbar>
-          <BabyTrexLogoWithText size={34} color="#f0b429" />
+          <BabyTrexLogoWithText size={34} color="#f4b183" />
           <Box sx={{ flexGrow: 1 }} />
           <IconButton onClick={() => setMenuOpen(true)} aria-label="Open menu">
             <MenuIcon />
@@ -144,7 +144,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
       <Box
         sx={{
           background:
-            'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)',
+            'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)',
           minHeight: '100vh',
           pb: 6,
         }}
@@ -155,9 +155,9 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
               p: { xs: 3, md: 5 },
               mb: 4,
               background:
-                'linear-gradient(145deg, rgba(254,252,248,0.95) 0%, rgba(240,250,246,0.92) 45%, rgba(255,244,219,0.9) 100%)',
-              border: '1px solid rgba(27,122,100,0.22)',
-              boxShadow: '0 22px 44px rgba(8, 41, 45, 0.28)',
+                'linear-gradient(145deg, rgba(255,250,242,0.96) 0%, rgba(252,246,237,0.95) 50%, rgba(245,237,227,0.94) 100%)',
+              border: '1px solid rgba(148,163,184,0.3)',
+              boxShadow: '0 22px 44px rgba(15, 23, 42, 0.28)',
             }}
           >
             <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
@@ -209,7 +209,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
                   key={trek.name}
                   sx={{
                     background:
-                      'linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(241,248,246,0.94) 100%)',
+                      'linear-gradient(145deg, rgba(255,251,245,0.97) 0%, rgba(250,244,236,0.95) 100%)',
                   }}
                 >
                   <CardContent>
@@ -238,7 +238,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
                   key={stay.id}
                   sx={{
                     background:
-                      'linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(241,248,246,0.94) 100%)',
+                      'linear-gradient(145deg, rgba(255,251,245,0.97) 0%, rgba(250,244,236,0.95) 100%)',
                   }}
                 >
                   <CardContent>
@@ -275,7 +275,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             sx={{
               p: 3,
               mb: 4,
-              background: 'linear-gradient(140deg, #f9fefc 0%, #eef7f3 100%)',
+              background: 'linear-gradient(140deg, #fff8ef 0%, #f6ecdf 100%)',
             }}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
@@ -293,7 +293,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             sx={{
               p: 3,
               mb: 4,
-              background: 'linear-gradient(140deg, #fffdf7 0%, #f3faf7 100%)',
+              background: 'linear-gradient(140deg, #fffaf1 0%, #f7f0e5 100%)',
             }}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
@@ -314,7 +314,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
             sx={{
               p: 3,
               mb: 4,
-              background: 'linear-gradient(140deg, #f8fffc 0%, #eef6f2 100%)',
+              background: 'linear-gradient(140deg, #fff7ef 0%, #f4ebe1 100%)',
             }}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
