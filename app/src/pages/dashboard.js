@@ -316,6 +316,8 @@ export default function DashboardPage({ user, treks }) {
           description: trek.description || '',
           isFeatured: Boolean(trek.isFeatured),
           routeGeojson: waypointsToRouteGeojson(trek.waypoints),
+          elevationMinM: trek.elevationMinM ? Number(trek.elevationMinM) : null,
+          elevationMaxM: trek.elevationMaxM ? Number(trek.elevationMaxM) : null,
         }),
       });
 
@@ -338,6 +340,8 @@ export default function DashboardPage({ user, treks }) {
                 isFeatured: payload.trek.is_featured,
                 routeGeojson: payload.trek.route_geojson || null,
                 waypoints: parseWaypointsFromGeojson(payload.trek.route_geojson),
+                elevationMinM: payload.trek.elevation_min_m || null,
+                elevationMaxM: payload.trek.elevation_max_m || null,
               }
             : item
         )
@@ -626,9 +630,9 @@ export default function DashboardPage({ user, treks }) {
                       <TableCell>Region</TableCell>
                       <TableCell>Difficulty</TableCell>
                       <TableCell align="right">Duration</TableCell>
-                      <TableCell>Route GeoJSON</TableCell>
+                      <TableCell>Elevation (m)</TableCell>
+                      <TableCell>Route</TableCell>
                       <TableCell>Featured</TableCell>
-                      <TableCell>Description</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -639,17 +643,17 @@ export default function DashboardPage({ user, treks }) {
                         <TableRow key={`summary-${trek.id}`} hover>
                           <TableCell>{trek.name}</TableCell>
                           <TableCell>{trek.region}</TableCell>
-                          <TableCell sx={{ textTransform: 'capitalize' }}>{trek.level}</TableCell>
-                          <TableCell align="right">{trek.durationDays} days</TableCell>
+                          <TableCell>{trek.level}</TableCell>
+                          <TableCell align="right">{trek.durationDays}d</TableCell>
                           <TableCell>
-                            {routePoints > 0 ? `Available (${routePoints} pts)` : 'Missing'}
+                            {trek.elevationMinM && trek.elevationMaxM
+                              ? `${trek.elevationMinM.toLocaleString()} – ${trek.elevationMaxM.toLocaleString()}`
+                              : '—'}
+                          </TableCell>
+                          <TableCell>
+                            {routePoints > 0 ? `${routePoints} pts` : '—'}
                           </TableCell>
                           <TableCell>{trek.isFeatured ? 'Yes' : 'No'}</TableCell>
-                          <TableCell sx={{ maxWidth: 340 }}>
-                            <Typography variant="body2" color="text.secondary" noWrap>
-                              {trek.description || 'No description'}
-                            </Typography>
-                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -695,6 +699,9 @@ export default function DashboardPage({ user, treks }) {
                                   sx={{ textTransform: 'capitalize' }}
                                 />
                                 <Chip size="small" label={`${trek.durationDays} days`} />
+                                {trek.elevationMaxM && (
+                                  <Chip size="small" variant="outlined" label={`↑ ${trek.elevationMaxM.toLocaleString()}m`} />
+                                )}
                                 {trek.isFeatured && (
                                   <Chip size="small" color="warning" label="Featured" />
                                 )}
@@ -802,6 +809,31 @@ export default function DashboardPage({ user, treks }) {
                               }
                               label="Featured trek"
                             />
+
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                              <TextField
+                                label="Min Elevation (m)"
+                                type="number"
+                                value={trek.elevationMinM || ''}
+                                onChange={(event) =>
+                                  handleTrekFieldChange(trek.id, 'elevationMinM', event.target.value)
+                                }
+                                disabled={isSaving}
+                                fullWidth
+                                inputProps={{ min: 0 }}
+                              />
+                              <TextField
+                                label="Max Elevation (m)"
+                                type="number"
+                                value={trek.elevationMaxM || ''}
+                                onChange={(event) =>
+                                  handleTrekFieldChange(trek.id, 'elevationMaxM', event.target.value)
+                                }
+                                disabled={isSaving}
+                                fullWidth
+                                inputProps={{ min: 0 }}
+                              />
+                            </Stack>
 
                             {/* ── Route Coordinates editor ── */}
                             <Box>
@@ -1047,7 +1079,7 @@ export async function getServerSideProps(context) {
 
   const trekRows = await query(
     `
-      SELECT id, name, duration_days, level, region, description, route_geojson, is_featured
+      SELECT id, name, duration_days, level, region, description, route_geojson, is_featured, elevation_min_m, elevation_max_m
       FROM treks
       ORDER BY name ASC
     `
@@ -1062,6 +1094,8 @@ export async function getServerSideProps(context) {
     description: row.description || '',
     routeGeojson: row.route_geojson || null,
     isFeatured: row.is_featured,
+    elevationMinM: row.elevation_min_m || null,
+    elevationMaxM: row.elevation_max_m || null,
   }));
 
   return {

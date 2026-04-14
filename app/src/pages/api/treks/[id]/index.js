@@ -2,7 +2,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../lib/auth-options';
 import { query } from '../../../../lib/db';
 
-const ALLOWED_LEVELS = new Set(['easy', 'moderate', 'challenging']);
+const ALLOWED_LEVELS = new Set([
+  'easy',
+  'moderate',
+  'challenging',
+  'easy to moderate',
+  'moderate to challenging',
+  'very challenging',
+]);
 
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') {
@@ -20,7 +27,7 @@ export default async function handler(req, res) {
   }
 
   const trekId = req.query.id;
-  const { name, durationDays, level, region, description, isFeatured, routeGeojson } = req.body || {};
+  const { name, durationDays, level, region, description, isFeatured, routeGeojson, elevationMinM, elevationMaxM } = req.body || {};
 
   if (!trekId) {
     return res.status(400).json({ error: 'Missing trek id' });
@@ -35,8 +42,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Duration must be a positive integer' });
   }
 
-  if (!level || !ALLOWED_LEVELS.has(level)) {
-    return res.status(400).json({ error: 'Level must be easy, moderate, or challenging' });
+  if (!level || !ALLOWED_LEVELS.has((level || '').toLowerCase())) {
+    return res.status(400).json({ error: 'Invalid difficulty level' });
   }
 
   if (!region || typeof region !== 'string' || !region.trim()) {
@@ -60,6 +67,9 @@ export default async function handler(req, res) {
     parsedRouteGeojson = routeGeojson;
   }
 
+  const parsedElevationMin = elevationMinM !== undefined && elevationMinM !== null ? Number(elevationMinM) : null;
+  const parsedElevationMax = elevationMaxM !== undefined && elevationMaxM !== null ? Number(elevationMaxM) : null;
+
   try {
     const result = await query(
       `
@@ -72,9 +82,11 @@ export default async function handler(req, res) {
           description = $5,
           is_featured = $6,
           route_geojson = $7,
+          elevation_min_m = $8,
+          elevation_max_m = $9,
           updated_at = NOW()
-        WHERE id = $8
-        RETURNING id, name, duration_days, level, region, description, is_featured, route_geojson
+        WHERE id = $10
+        RETURNING id, name, duration_days, level, region, description, is_featured, route_geojson, elevation_min_m, elevation_max_m
       `,
       [
         name.trim(),
@@ -84,6 +96,8 @@ export default async function handler(req, res) {
         description.trim(),
         isFeatured,
         parsedRouteGeojson,
+        parsedElevationMin,
+        parsedElevationMax,
         trekId,
       ]
     );

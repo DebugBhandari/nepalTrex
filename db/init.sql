@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS treks (
   region TEXT NOT NULL,
   description TEXT,
   route_geojson JSONB,
+  elevation_min_m INTEGER,
+  elevation_max_m INTEGER,
   is_featured BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -42,6 +44,12 @@ CREATE TABLE IF NOT EXISTS treks (
 
 ALTER TABLE treks
   ADD COLUMN IF NOT EXISTS route_geojson JSONB;
+
+ALTER TABLE treks
+  ADD COLUMN IF NOT EXISTS elevation_min_m INTEGER;
+
+ALTER TABLE treks
+  ADD COLUMN IF NOT EXISTS elevation_max_m INTEGER;
 
 CREATE TABLE IF NOT EXISTS stays (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -108,111 +116,30 @@ UPDATE users
 SET role = 'admin', updated_at = NOW()
 WHERE username = 'admin' AND role <> 'superUser';
 
-UPDATE treks
-SET
-  name = 'Everest Base Camp Trek',
-  region = 'Everest (Khumbu Region)',
-  updated_at = NOW()
-WHERE name = 'Everest Base Camp'
-  AND NOT EXISTS (SELECT 1 FROM treks WHERE name = 'Everest Base Camp Trek');
-
-UPDATE treks
-SET
-  name = 'Langtang Valley Trek',
-  region = 'Langtang Region',
-  updated_at = NOW()
-WHERE name = 'Langtang Valley'
-  AND NOT EXISTS (SELECT 1 FROM treks WHERE name = 'Langtang Valley Trek');
-
-INSERT INTO treks (name, duration_days, level, region, description, route_geojson, is_featured)
+INSERT INTO treks (name, duration_days, level, region, elevation_min_m, elevation_max_m, route_geojson, is_featured)
 VALUES
-  (
-    'Everest Base Camp Trek',
-    14,
-    'moderate',
-    'Everest (Khumbu Region)',
-    'Classic Khumbu route from Lukla to Everest Base Camp with Kala Patthar viewpoint.',
-    '{"type":"LineString","coordinates":[[86.7314,27.6881],[86.7265,27.7016],[86.7148,27.7184],[86.7137,27.742],[86.714,27.7662],[86.7242,27.7897],[86.7335,27.8079],[86.7132,27.8236],[86.7176,27.836],[86.724,27.84],[86.733,27.855],[86.7153,27.8053],[86.716,27.806],[86.7138,27.8077],[86.7315,27.8195],[86.7502,27.8332],[86.7651,27.8367],[86.769,27.8348],[86.7793,27.8286],[86.8,27.817],[86.813,27.807],[86.8157,27.8361],[86.825,27.853],[86.8315,27.8648],[86.8317,27.8782],[86.8318,27.8965],[86.8319,27.9078],[86.8365,27.9055],[86.84,27.923],[86.845,27.94],[86.851,27.957],[86.8575,27.9695],[86.86,27.981],[86.8652,27.9881],[86.8528,27.9912]]}'::jsonb,
-    true
-  ),
-  (
-    'Gokyo Lakes Trek',
-    12,
-    'moderate',
-    'Everest (Khumbu Region)',
-    'Khumbu alternate route through Gokyo lakes and Cho La connection toward EBC.',
-    '{"type":"LineString","coordinates":[[86.7314,27.6881],[86.7137,27.742],[86.7138,27.8077],[86.693,27.8385],[86.676,27.867],[86.6768,27.89],[86.6882,27.9505],[86.692,27.9525],[86.6935,27.957],[86.72,27.96],[86.851,27.957],[86.8652,27.9881]]}'::jsonb,
-    true
-  ),
-  (
-    'Three Passes Trek',
-    18,
-    'challenging',
-    'Everest (Khumbu Region)',
-    'High alpine Khumbu circuit crossing Cho La, Kongma La, and Renjo La passes.',
-    '{"type":"LineString","coordinates":[[86.7314,27.6881],[86.7138,27.8077],[86.6882,27.9505],[86.72,27.96],[86.851,27.957],[86.88,27.95],[86.9,27.94],[86.87,27.92],[86.82,27.91],[86.79,27.89],[86.7138,27.8077],[86.7314,27.6881]]}'::jsonb,
-    true
-  ),
-  (
-    'Annapurna Circuit',
-    16,
-    'challenging',
-    'Annapurna Region',
-    'Classic long-haul circuit crossing Thorong La with dramatic terrain changes.',
-    '{"type":"LineString","coordinates":[[84.41,28.235],[84.438,28.28],[84.486,28.35],[84.537,28.43],[84.628,28.595],[84.686,28.669],[84.742,28.781],[84.758,28.796],[84.067,28.848],[83.97,28.824],[83.682,28.209]]}'::jsonb,
-    true
-  ),
-  (
-    'Annapurna Base Camp Trek',
-    11,
-    'moderate',
-    'Annapurna Region',
-    'Moderate ascent route from Nayapul to Annapurna Base Camp via Chhomrong.',
-    '{"type":"LineString","coordinates":[[83.819,28.224],[83.8,28.26],[83.809,28.36],[83.695,28.395],[83.813,28.47],[83.812,28.5],[83.82,28.53],[83.873,28.53],[83.86,28.52]]}'::jsonb,
-    true
-  ),
-  (
-    'Langtang Valley Trek',
-    10,
-    'easy',
-    'Langtang Region',
-    'Popular lower-altitude route from Syabrubesi to Kyanjin and Tserko Ri.',
-    '{"type":"LineString","coordinates":[[85.358,28.213],[85.382,28.245],[85.4,28.275],[85.417,28.3],[85.447,28.35],[85.482,28.4],[85.5,28.41]]}'::jsonb,
-    true
-  ),
-  (
-    'Gosaikunda Trek',
-    8,
-    'moderate',
-    'Langtang Region',
-    'Sacred alpine lake trail from Dhunche to Gosaikunda and Lauribina Pass.',
-    '{"type":"LineString","coordinates":[[85.3,28.1],[85.34,28.15],[85.37,28.2],[85.41,28.23],[85.42,28.25]]}'::jsonb,
-    true
-  ),
-  (
-    'Manaslu Circuit',
-    15,
-    'challenging',
-    'Manaslu Region',
-    'Remote circuit from Soti Khola via Samagaon over Larkya La to Dharapani.',
-    '{"type":"LineString","coordinates":[[84.93,28.23],[84.98,28.3],[85.04,28.36],[85.1,28.42],[85.18,28.5],[85.28,28.6],[85.32,28.66],[85.38,28.7],[84.75,28.65]]}'::jsonb,
-    true
-  ),
-  (
-    'Kanchenjunga Base Camp Trek',
-    20,
-    'challenging',
-    'Kanchenjunga Region',
-    'Long eastern Nepal expedition route linking north and south Kanchenjunga base camp areas.',
-    '{"type":"LineString","coordinates":[[87.93,27.37],[87.96,27.5],[87.98,27.65],[88.02,27.78],[88.1,27.85],[87.95,27.6],[87.9,27.45],[87.88,27.3]]}'::jsonb,
-    true
-  )
+  ('Everest Base Camp Trek', 12, 'Moderate to Challenging', 'Everest', 2610, 5364, '{"type":"RouteWaypoints","waypoints":[[27.6881,86.7314,"Lukla"],[27.7000,86.7200,"Chheplung"],[27.7150,86.7150,"Thado Koshi"],[27.7300,86.7200,"Ghat"],[27.7405,86.7120,"Phakding"],[27.7800,86.7150,"Monjo"],[27.8000,86.7250,"Jorsalle"],[27.8050,86.7140,"Namche Bazaar"],[27.8200,86.7200,"Khumjung"],[27.8360,86.7640,"Tengboche"],[27.8600,86.7900,"Pangboche"],[27.8930,86.8310,"Dingboche"],[27.9200,86.8300,"Dughla"],[27.9500,86.8000,"Lobuche"],[27.9800,86.8290,"Gorak Shep"],[28.0043,86.8570,"Everest Base Camp"]]}', true),
+  ('Gokyo Lakes Trek', 12, 'Moderate to Challenging', 'Everest', 2800, 5357, '{"type":"RouteWaypoints","waypoints":[[27.8050,86.7140,"Namche Bazaar"],[27.8600,86.6900,"Dole"],[27.9000,86.6900,"Machhermo"],[27.9600,86.6900,"Gokyo"],[27.9700,86.6900,"Gokyo Ri"]]}', true),
+  ('Three Passes Trek', 18, 'Very Challenging', 'Everest', 2800, 5545, '{"type":"RouteWaypoints","waypoints":[[27.8050,86.7140,"Namche Bazaar"],[27.8200,86.6500,"Thame"],[27.9500,86.6500,"Renjo La Pass"],[27.9600,86.6900,"Gokyo"],[27.9700,86.7800,"Cho La Pass"],[27.9500,86.8000,"Lobuche"],[27.9600,86.8600,"Kongma La Pass"]]}', false),
+  ('Annapurna Circuit Trek', 14, 'Moderate to Challenging', 'Annapurna', 800, 5416, '{"type":"RouteWaypoints","waypoints":[[28.2340,84.4163,"Besisahar"],[28.2600,84.4100,"Bhulbhule"],[28.3500,84.3800,"Jagat"],[28.5400,84.4000,"Dharapani"],[28.5500,84.3770,"Chame"],[28.6200,84.3700,"Pisang"],[28.6700,84.0200,"Manang"],[28.7200,83.9700,"Yak Kharka"],[28.7600,83.9500,"Thorong Phedi"],[28.7900,83.9400,"Thorong La Pass"],[28.8200,83.8800,"Muktinath"],[28.8300,83.8000,"Kagbeni"],[28.7800,83.7300,"Jomsom"]]}', true),
+  ('Annapurna Base Camp Trek', 10, 'Moderate', 'Annapurna', 1070, 4130, '{"type":"RouteWaypoints","waypoints":[[28.2300,83.8700,"Nayapul"],[28.2300,83.8800,"Birethanti"],[28.4000,83.6900,"Ghorepani"],[28.3700,83.8200,"Tadapani"],[28.4000,83.8000,"Chhomrong"],[28.4400,83.8000,"Bamboo"],[28.5000,83.8100,"Deurali"],[28.5300,83.8900,"MBC"],[28.5300,83.8200,"Annapurna Base Camp"]]}', true),
+  ('Mardi Himal Trek', 6, 'Moderate', 'Annapurna', 1400, 4500, '{"type":"RouteWaypoints","waypoints":[[28.3200,83.8200,"Kande"],[28.3400,83.8300,"Australian Camp"],[28.4000,83.8800,"Forest Camp"],[28.4300,83.9000,"Low Camp"],[28.4700,83.9200,"High Camp"],[28.5000,83.9300,"Mardi Base Camp"]]}', false),
+  ('Poon Hill Trek', 4, 'Easy to Moderate', 'Annapurna', 1070, 3210, '{"type":"RouteWaypoints","waypoints":[[28.2300,83.8700,"Nayapul"],[28.2400,83.8100,"Tikhedhunga"],[28.3100,83.7800,"Ulleri"],[28.4000,83.6900,"Ghorepani"],[28.4100,83.6900,"Poon Hill"]]}', false),
+  ('Langtang Valley Trek', 7, 'Moderate', 'Langtang', 1460, 4984, '{"type":"RouteWaypoints","waypoints":[[28.1700,85.3500,"Syabrubesi"],[28.1900,85.3700,"Bamboo"],[28.2100,85.4300,"Lama Hotel"],[28.2100,85.4700,"Ghora Tabela"],[28.2100,85.5000,"Langtang Village"],[28.2100,85.5600,"Kyanjin Gompa"],[28.2300,85.5800,"Kyanjin Ri"],[28.2300,85.6000,"Tserko Ri"]]}', true),
+  ('Gosaikunda Trek', 6, 'Moderate to Challenging', 'Langtang', 1950, 4610, '{"type":"RouteWaypoints","waypoints":[[28.1100,85.3000,"Dhunche"],[28.1800,85.3500,"Sing Gompa"],[28.2000,85.3800,"Lauribina"],[28.2300,85.4200,"Gosaikunda Lake"]]}', false),
+  ('Helambu Trek', 6, 'Easy to Moderate', 'Langtang', 800, 3600, '{"type":"RouteWaypoints","waypoints":[[27.7700,85.4200,"Sundarijal"],[27.8400,85.4100,"Chisapani"],[27.9000,85.5300,"Kutumsang"],[27.9200,85.6000,"Tharepati"],[27.9200,85.5800,"Melamchi Gaon"]]}', false),
+  ('Manaslu Circuit Trek', 14, 'Challenging', 'Manaslu', 700, 5160, '{"type":"RouteWaypoints","waypoints":[[28.3600,84.7300,"Soti Khola"],[28.4000,84.8200,"Machha Khola"],[28.4500,84.9000,"Jagat"],[28.5000,84.9800,"Deng"],[28.5700,85.0300,"Namrung"],[28.6000,85.0000,"Lho"],[28.6200,84.9500,"Samagaon"],[28.6600,84.9300,"Samdo"],[28.6700,84.5600,"Larkya La Pass"],[28.5400,84.6300,"Bimthang"],[28.5400,84.4000,"Dharapani"]]}', true),
+  ('Tsum Valley Trek', 12, 'Moderate', 'Manaslu', 1400, 3700, '{"type":"RouteWaypoints","waypoints":[[28.4500,84.9000,"Jagat"],[28.5000,84.9200,"Lokpa"],[28.5400,84.9400,"Chumling"],[28.5800,84.9800,"Chhokangparo"],[28.6500,85.0500,"Mu Gompa"]]}', false),
+  ('Upper Mustang Trek', 12, 'Moderate', 'Mustang', 2800, 3840, '{"type":"RouteWaypoints","waypoints":[[28.7800,83.7300,"Jomsom"],[28.8300,83.8000,"Kagbeni"],[28.8700,83.9500,"Chele"],[28.9500,84.0000,"Ghami"],[29.0000,84.0200,"Charang"],[29.1800,84.0300,"Lo Manthang"]]}', true),
+  ('Kanchenjunga North Base Camp Trek', 18, 'Very Challenging', 'Kanchenjunga', 1200, 5143, '{"type":"RouteWaypoints","waypoints":[[27.3500,87.6700,"Taplejung"],[27.4800,87.8000,"Chirwa"],[27.5200,87.8200,"Sekathum"],[27.5600,87.8500,"Amjilosa"],[27.6200,87.9000,"Ghunsa"],[27.7000,87.9500,"Kambachen"],[27.7800,87.9800,"Lhonak"],[27.8200,88.0200,"Pangpema"]]}', false),
+  ('Rara Lake Trek', 8, 'Moderate', 'Western Nepal', 2000, 3010, '{"type":"RouteWaypoints","waypoints":[[29.2700,82.1800,"Jumla"],[29.3000,82.2000,"Chere Chaur"],[29.5200,82.1000,"Rara Lake"]]}', false)
 ON CONFLICT (name) DO UPDATE
 SET
   duration_days = EXCLUDED.duration_days,
   level = EXCLUDED.level,
   region = EXCLUDED.region,
-  description = EXCLUDED.description,
+  elevation_min_m = EXCLUDED.elevation_min_m,
+  elevation_max_m = EXCLUDED.elevation_max_m,
   route_geojson = EXCLUDED.route_geojson,
   is_featured = EXCLUDED.is_featured,
   updated_at = NOW();

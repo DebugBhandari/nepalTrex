@@ -374,9 +374,11 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                   <CardContent>
                     <Typography variant="h6">{trek.name}</Typography>
                     <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                      <Chip label={`Duration: ${formatDurationDays(trek.durationDays)}`} size="small" />
-                      <Chip label={`Difficulty: ${titleCase(trek.level)}`} size="small" color="secondary" />
-                      <Chip label={`Region: ${trek.region}`} size="small" variant="outlined" />
+                      <Chip label={`${trek.durationDays} days`} size="small" />
+                      <Chip label={trek.level} size="small" color="secondary" />
+                      {trek.elevationMaxM && (
+                        <Chip label={`↑ ${trek.elevationMaxM.toLocaleString()}m`} size="small" variant="outlined" />
+                      )}
                     </Stack>
                     <AppButton variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek)}>
                       Open Route In Maps
@@ -503,8 +505,11 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                           <Paper key={trek.name} sx={{ p: 2 }}>
                             <Typography variant="subtitle1">{trek.name}</Typography>
                             <Stack direction="row" spacing={1} sx={{ mt: 1, mb: 1, flexWrap: 'wrap' }}>
-                              <Chip label={`Duration: ${formatDurationDays(trek.durationDays)}`} size="small" />
-                              <Chip label={`Difficulty: ${titleCase(trek.level)}`} size="small" color="secondary" />
+                              <Chip label={`${trek.durationDays} days`} size="small" />
+                              <Chip label={trek.level} size="small" color="secondary" />
+                              {trek.elevationMaxM && (
+                                <Chip label={`↑ ${trek.elevationMaxM.toLocaleString()}m`} size="small" variant="outlined" />
+                              )}
                             </Stack>
                             <Typography color="text.secondary" sx={{ mb: 1.2 }}>
                               {trek.description || 'Description coming soon.'}
@@ -584,7 +589,7 @@ export async function getServerSideProps() {
   try {
     const trekRows = await query(
       `
-        SELECT name, duration_days, level, region, description, route_geojson, is_featured
+        SELECT name, duration_days, level, region, description, route_geojson, is_featured, elevation_min_m, elevation_max_m
         FROM treks
         ORDER BY name ASC
       `
@@ -598,6 +603,8 @@ export async function getServerSideProps() {
       description: row.description || '',
       routeGeojson: row.route_geojson || routeGeojsonByName(row.name),
       isFeatured: row.is_featured,
+      elevationMinM: row.elevation_min_m || null,
+      elevationMaxM: row.elevation_max_m || null,
     }));
 
     const featuredTreks = allTreks.filter((row) => row.isFeatured);
