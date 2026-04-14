@@ -47,10 +47,14 @@ CREATE TABLE IF NOT EXISTS treks (
   level TEXT NOT NULL,
   region TEXT NOT NULL,
   description TEXT,
+  route_geojson JSONB,
   is_featured BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE treks
+  ADD COLUMN IF NOT EXISTS route_geojson JSONB;
 
 CREATE TABLE IF NOT EXISTS stays (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

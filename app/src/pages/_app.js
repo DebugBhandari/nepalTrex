@@ -34,7 +34,7 @@ function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
           <CssBaseline />
           <SessionProvider session={session}>
             <Component {...pageProps} />
-            <Box sx={{ position: 'fixed', left: 14, top: 10, zIndex: 1400 }}>
+            <Box sx={{ position: 'fixed', right: 16, bottom: 16, zIndex: 1400 }}>
               <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
                 <IconButton
                   color="primary"

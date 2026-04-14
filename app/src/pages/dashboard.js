@@ -550,7 +550,7 @@ export async function getServerSideProps(context) {
 
   const trekRows = await query(
     `
-      SELECT id, name, duration_days, level, region, description, is_featured
+      SELECT id, name, duration_days, level, region, description, route_geojson, is_featured
       FROM treks
       ORDER BY name ASC
     `
@@ -563,6 +563,7 @@ export async function getServerSideProps(context) {
     level: row.level,
     region: row.region,
     description: row.description || '',
+    routeGeojson: row.route_geojson || null,
     isFeatured: row.is_featured,
   }));
 

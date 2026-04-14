@@ -12,6 +12,7 @@ import {
   Button,
   Card,
   CardContent,
+  CardMedia,
   Chip,
   Container,
   Drawer,
@@ -51,6 +52,21 @@ const ROUTE_MAPS = {
     marker: '28.2112,85.5563',
   },
 };
+
+const TREK_IMAGE_BY_NAME = {
+  'everest base camp': '/treks/everest-base-camp.jpg',
+  'annapurna circuit': '/treks/annapurna-circuit.jpg',
+  'langtang valley': '/treks/langtang-valley.jpg',
+};
+
+function getTrekImage(name, region) {
+  const key = (name || '').toLowerCase();
+  if (TREK_IMAGE_BY_NAME[key]) {
+    return TREK_IMAGE_BY_NAME[key];
+  }
+
+  return '/treks/everest-base-camp.jpg';
+}
 
 function mapEmbedForTrekName(name) {
   const preset = ROUTE_MAPS[(name || '').toLowerCase()];
@@ -254,6 +270,12 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
                         : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
                   })}
                 >
+                  <CardMedia
+                    component="img"
+                    height="220"
+                    image={getTrekImage(trek.name, trek.region)}
+                    alt={`${trek.name} route landscape`}
+                  />
                   <CardContent>
                     <Typography variant="h6">{trek.name}</Typography>
                     <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
@@ -409,7 +431,7 @@ export async function getServerSideProps() {
   try {
     const trekRows = await query(
       `
-        SELECT name, duration_days, level, region
+        SELECT name, duration_days, level, region, route_geojson
         FROM treks
         WHERE is_featured = true
         ORDER BY name ASC
@@ -421,6 +443,7 @@ export async function getServerSideProps() {
       durationDays: row.duration_days,
       level: row.level,
       region: row.region,
+      routeGeojson: row.route_geojson || null,
     }));
 
     const regionRows = await query(
