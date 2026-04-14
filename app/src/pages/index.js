@@ -229,7 +229,7 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
             sx={{
               fontWeight: 800,
               letterSpacing: 0.2,
-              color: '#f59e0b',
+              color: '#0f766e',
             }}
           >
             NepalTrex
@@ -382,11 +382,18 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               Popular guided journeys for first-timers and experienced hikers.
             </Typography>
-            <Stack spacing={2}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 2,
+              }}
+            >
               {featuredTreks.map((trek) => (
                 <Card
                   key={trek.name}
                   sx={(theme) => ({
+                    width: { xs: '100%', md: 'calc(50% - 8px)' },
                     background:
                       theme.palette.mode === 'dark'
                         ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
@@ -405,7 +412,11 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                     height="220"
                     image={getTrekImage(trek.name)}
                     alt={`${trek.name} route landscape`}
-                    sx={{ pointerEvents: 'none' }}
+                    sx={{
+                      pointerEvents: 'none',
+                      objectFit: 'cover',
+                      objectPosition: 'center',
+                    }}
                   />
                   <CardContent>
                     <Typography variant="h6">{trek.name}</Typography>
@@ -422,7 +433,7 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                   </CardContent>
                 </Card>
               ))}
-            </Stack>
+            </Box>
           </Box>
 
           <Box id="stays" sx={{ mb: 4 }}>
@@ -455,7 +466,7 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                     height="200"
                     image={stay.imageUrl || '/stays/lodge-exterior.jpg'}
                     alt={stay.name}
-                    sx={{ objectFit: 'cover' }}
+                    sx={{ objectFit: 'cover', objectPosition: 'center' }}
                   />
                   <CardContent>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
@@ -512,14 +523,25 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                       theme.palette.mode === 'dark'
                         ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
                         : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-3px) scale(1.01)',
+                      boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
+                    },
                   })}
+                  onMouseEnter={() => setExpandedRegion(regionGroup.region)}
+                  onMouseLeave={() => setExpandedRegion('')}
                 >
                   <CardMedia
                     component="img"
                     height="200"
                     image={getRegionImage(regionGroup.region, regionGroup.treks)}
                     alt={`${regionGroup.region} trekking region`}
-                    sx={{ cursor: 'pointer' }}
+                    sx={{
+                      cursor: 'pointer',
+                      objectFit: 'cover',
+                      objectPosition: 'center',
+                    }}
                     onClick={() => setExpandedRegion(expandedRegion === regionGroup.region ? '' : regionGroup.region)}
                   />
                   <Accordion

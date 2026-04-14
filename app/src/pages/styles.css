@@ -1,17 +1,18 @@
 :root {
   --bg-deep: #ffffff;
   --bg-mid: #f2fbf9;
-  --sun: #c2410c;
+  --sun: #0f766e;
   --snow: #ffffff;
   --ink: #0b1f2a;
   --moss: #0f766e;
+  --on-primary: #ffffff;
   --card: #ffffff;
   --page-bg: linear-gradient(160deg, #ffffff 0%, #f2fbf9 100%);
   --text-primary: #0b1f2a;
   --text-muted: rgba(11, 31, 42, 0.72);
   --outline: rgba(11, 31, 42, 0.2);
   --soft-bg: rgba(15, 118, 110, 0.08);
-  --hero-bg: linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(194, 65, 12, 0.14));
+  --hero-bg: linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(64, 138, 113, 0.14));
   --section-bg: rgba(255, 255, 255, 0.92);
   --panel-border: rgba(11, 31, 42, 0.14);
 }
@@ -21,14 +22,14 @@ body[data-theme='dark'] {
   --bg-mid: #131e31;
   --snow: #e8f0f7;
   --card: #131e31;
-  --page-bg: radial-gradient(circle at 15% 10%, rgba(194, 65, 12, 0.26) 0%, transparent 35%),
+  --page-bg: radial-gradient(circle at 15% 10%, rgba(64, 138, 113, 0.26) 0%, transparent 35%),
     radial-gradient(circle at 80% -10%, rgba(15, 118, 110, 0.26) 0%, transparent 30%),
     linear-gradient(155deg, var(--bg-deep) 0%, var(--bg-mid) 58%, #0a1426 100%);
   --text-primary: #e8f0f7;
   --text-muted: rgba(232, 240, 247, 0.78);
   --outline: rgba(232, 240, 247, 0.28);
   --soft-bg: rgba(232, 240, 247, 0.08);
-  --hero-bg: linear-gradient(135deg, rgba(194, 65, 12, 0.32), rgba(15, 118, 110, 0.28));
+  --hero-bg: linear-gradient(135deg, rgba(64, 138, 113, 0.32), rgba(15, 118, 110, 0.28));
   --section-bg: rgba(19, 30, 49, 0.9);
   --panel-border: rgba(232, 240, 247, 0.18);
 }
@@ -65,7 +66,7 @@ a {
   pointer-events: none;
   background-image: linear-gradient(
       35deg,
-      rgba(240, 180, 41, 0.07) 25%,
+      rgba(15, 118, 110, 0.07) 25%,
       transparent 25%
     ),
     linear-gradient(-35deg, rgba(255, 255, 255, 0.04) 20%, transparent 20%);
@@ -141,7 +142,7 @@ a {
 }
 
 .auth-btn:hover {
-  background: rgba(240, 180, 41, 0.2);
+  background: rgba(15, 118, 110, 0.2);
 }
 
 .landing-page {
@@ -197,7 +198,7 @@ a {
 
 .btn-primary {
   background: var(--sun);
-  color: var(--ink);
+  color: var(--on-primary);
 }
 
 .btn-outline {
@@ -288,8 +289,8 @@ a {
 }
 
 .region-pills span {
-  background: rgba(240, 180, 41, 0.18);
-  border: 1px solid rgba(240, 180, 41, 0.45);
+  background: rgba(15, 118, 110, 0.18);
+  border: 1px solid rgba(15, 118, 110, 0.45);
   color: var(--text-primary);
   border-radius: 999px;
   padding: 0.45rem 0.75rem;
@@ -327,15 +328,22 @@ a {
 }
 
 .map-links a:hover {
-  background: rgba(240, 180, 41, 0.2);
+  background: rgba(15, 118, 110, 0.2);
 }
 
 .callout {
   background: linear-gradient(
     120deg,
-    rgba(240, 180, 41, 0.2),
+    rgba(15, 118, 110, 0.2),
     rgba(30, 111, 92, 0.46)
   );
+}
+
+[style*='background: #0f766e'],
+[style*='background-color: #0f766e'],
+[style*='background:#0f766e'],
+[style*='background-color:#0f766e'] {
+  color: #ffffff;
 }
 
 .site-footer {

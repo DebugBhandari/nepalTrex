@@ -128,7 +128,7 @@ export default function TrekRouteMap({ selectedTrek }) {
           data={routeGeojson}
           {...routeLayerOptions}
           style={{
-            color: '#f97316',
+            color: '#0f766e',
             weight: 5,
             opacity: 0.9,
           }}

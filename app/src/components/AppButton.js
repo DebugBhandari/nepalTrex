@@ -12,10 +12,10 @@ export default function AppButton({ sx, variant = 'contained', ...props }) {
         fontWeight: 700,
         ...(variant === 'contained'
           ? {
-              background: 'linear-gradient(135deg, #f59e0b 0%, #ea580c 100%)',
-              color: '#0b1220',
+              background: 'linear-gradient(135deg, #0f766e 0%, #285A48 100%)',
+              color: '#ffffff',
               '&:hover': {
-                background: 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)',
+                background: 'linear-gradient(135deg, #128779 0%, #2f6a55 100%)',
               },
             }
           : {
