@@ -257,16 +257,7 @@ export default function DashboardPage({ user, treks }) {
       <AppBar
         position="sticky"
         elevation={0}
-        sx={(theme) => ({
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)'
-              : '#ffffff',
-          color: theme.palette.mode === 'dark' ? '#fff7ed' : theme.palette.text.primary,
-          borderBottom:
-            theme.palette.mode === 'dark' ? '1px solid rgba(217,119,69,0.35)' : '1px solid rgba(148,163,184,0.3)',
-          backdropFilter: 'blur(8px)',
-        })}
+        sx={{ backdropFilter: 'blur(8px)' }}
       >
         <Toolbar>
           <IconButton edge="start" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }}>
@@ -284,7 +275,7 @@ export default function DashboardPage({ user, treks }) {
           >
             Home
           </Button>
-          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ color: '#102023' }} />
+          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" />
         </Toolbar>
       </AppBar>
 
@@ -298,9 +289,8 @@ export default function DashboardPage({ user, treks }) {
             p: { xs: 2, md: 3 },
             background:
               theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, rgba(31,41,55,0.9) 0%, rgba(30,41,59,0.9) 100%)'
-                : 'linear-gradient(145deg, #ffffff 0%, #f8efe4 100%)',
-            border: '1px solid rgba(148,163,184,0.3)',
+                ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                : 'linear-gradient(145deg, #ffffff 0%, #f2fbf9 100%)',
             boxShadow: '0 18px 36px rgba(15, 23, 42, 0.14)',
           })}
         >

@@ -36,12 +36,15 @@ export default function SignInPage({ csrfToken, providers, error }) {
       >
         <Container maxWidth="sm">
           <Card
-            sx={{
+            sx={(theme) => ({
               background:
-                'linear-gradient(145deg, rgba(255,250,242,0.98) 0%, rgba(252,246,237,0.95) 100%)',
-              border: '1px solid rgba(148,163,184,0.3)',
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                  : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(242,251,249,0.98) 100%)',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 24px 44px rgba(15, 23, 42, 0.26)',
-            }}
+            })}
           >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
@@ -62,7 +65,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
                   variant="outlined"
                   startIcon={<GoogleIcon />}
                   onClick={() => signIn('google', { callbackUrl: '/' })}
-                  sx={{ mb: 2, borderColor: '#d97745', color: '#2f435f' }}
+                  sx={{ mb: 2 }}
                 >
                   Continue with Google
                 </Button>

@@ -98,16 +98,7 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
       <AppBar
         position="sticky"
         elevation={0}
-        sx={(theme) => ({
-          background:
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(90deg, rgba(31,41,55,0.96) 0%, rgba(51,65,85,0.96) 100%)'
-              : '#ffffff',
-          color: theme.palette.mode === 'dark' ? '#fff7ed' : theme.palette.text.primary,
-          borderBottom:
-            theme.palette.mode === 'dark' ? '1px solid rgba(217,119,69,0.35)' : '1px solid rgba(148,163,184,0.3)',
-          backdropFilter: 'blur(8px)',
-        })}
+        sx={{ backdropFilter: 'blur(8px)' }}
       >
         <Toolbar>
           <BabyTrexLogoWithText size={34} color="#f4b183" />
@@ -192,14 +183,15 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
       >
         <Container maxWidth="lg" sx={{ pt: 6 }}>
           <Paper
-            sx={{
+            sx={(theme) => ({
               p: { xs: 3, md: 5 },
               mb: 4,
               background:
-                'linear-gradient(145deg, rgba(255,250,242,0.96) 0%, rgba(252,246,237,0.95) 50%, rgba(245,237,227,0.94) 100%)',
-              border: '1px solid rgba(148,163,184,0.3)',
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.95) 100%)'
+                  : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.98) 100%)',
               boxShadow: '0 22px 44px rgba(15, 23, 42, 0.28)',
-            }}
+            })}
           >
             <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
               Trekking in the Himalayas
@@ -255,10 +247,12 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
               {featuredTreks.map((trek) => (
                 <Card
                   key={trek.name}
-                  sx={{
+                  sx={(theme) => ({
                     background:
-                      'linear-gradient(145deg, rgba(255,251,245,0.97) 0%, rgba(250,244,236,0.95) 100%)',
-                  }}
+                      theme.palette.mode === 'dark'
+                        ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                        : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                  })}
                 >
                   <CardContent>
                     <Typography variant="h6">{trek.name}</Typography>
@@ -294,10 +288,12 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
               {stays.map((stay) => (
                 <Card
                   key={stay.id}
-                  sx={{
+                  sx={(theme) => ({
                     background:
-                      'linear-gradient(145deg, rgba(255,251,245,0.97) 0%, rgba(250,244,236,0.95) 100%)',
-                  }}
+                      theme.palette.mode === 'dark'
+                        ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                        : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                  })}
                 >
                   <CardContent>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
@@ -330,11 +326,14 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
 
           <Paper
             id="regions"
-            sx={{
+            sx={(theme) => ({
               p: 3,
               mb: 4,
-              background: 'linear-gradient(140deg, #fff8ef 0%, #f6ecdf 100%)',
-            }}
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                  : 'linear-gradient(140deg, #ffffff 0%, #f2fbf9 100%)',
+            })}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
               Regions at a Glance
@@ -349,11 +348,14 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
           <Paper
             id="maps"
             ref={mapsSectionRef}
-            sx={{
+            sx={(theme) => ({
               p: 3,
               mb: 4,
-              background: 'linear-gradient(140deg, #fffaf1 0%, #f7f0e5 100%)',
-            }}
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                  : 'linear-gradient(140deg, #ffffff 0%, #f2fbf9 100%)',
+            })}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
               Map Explorer
@@ -375,11 +377,14 @@ export default function HomePage({ featuredTreks, trekRegions, stays }) {
 
           <Paper
             id="about"
-            sx={{
+            sx={(theme) => ({
               p: 3,
               mb: 4,
-              background: 'linear-gradient(140deg, #fff7ef 0%, #f4ebe1 100%)',
-            }}
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                  : 'linear-gradient(140deg, #ffffff 0%, #f2fbf9 100%)',
+            })}
           >
             <Typography variant="h5" sx={{ mb: 1 }}>
               Why NepalTrex

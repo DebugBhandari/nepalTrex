@@ -119,13 +119,16 @@ export default function StayDetailPage({ stay }) {
           </Button>
 
           <Card
-            sx={{
+            sx={(theme) => ({
               mb: 2,
               background:
-                'linear-gradient(145deg, rgba(255,250,242,0.98) 0%, rgba(252,246,237,0.95) 100%)',
-              border: '1px solid rgba(148,163,184,0.3)',
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                  : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(242,251,249,0.98) 100%)',
+              border: '1px solid',
+              borderColor: 'divider',
               boxShadow: '0 22px 44px rgba(15, 23, 42, 0.24)',
-            }}
+            })}
           >
             <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />
             <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>

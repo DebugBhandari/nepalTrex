@@ -1,36 +1,36 @@
 :root {
-  --bg-deep: #f4f6fb;
-  --bg-mid: #ffffff;
-  --sun: #f0b429;
+  --bg-deep: #ffffff;
+  --bg-mid: #f2fbf9;
+  --sun: #c2410c;
   --snow: #ffffff;
-  --ink: #102023;
-  --moss: #1e6f5c;
+  --ink: #0b1f2a;
+  --moss: #0f766e;
   --card: #ffffff;
-  --page-bg: #ffffff;
-  --text-primary: #102023;
-  --text-muted: rgba(16, 32, 35, 0.78);
-  --outline: rgba(16, 32, 35, 0.2);
-  --soft-bg: rgba(16, 32, 35, 0.06);
-  --hero-bg: linear-gradient(135deg, rgba(240, 180, 41, 0.16), rgba(30, 111, 92, 0.14));
-  --section-bg: #ffffff;
-  --panel-border: rgba(16, 32, 35, 0.12);
+  --page-bg: linear-gradient(160deg, #ffffff 0%, #f2fbf9 100%);
+  --text-primary: #0b1f2a;
+  --text-muted: rgba(11, 31, 42, 0.72);
+  --outline: rgba(11, 31, 42, 0.2);
+  --soft-bg: rgba(15, 118, 110, 0.08);
+  --hero-bg: linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(194, 65, 12, 0.14));
+  --section-bg: rgba(255, 255, 255, 0.92);
+  --panel-border: rgba(11, 31, 42, 0.14);
 }
 
 body[data-theme='dark'] {
-  --bg-deep: #0f2b2d;
-  --bg-mid: #173b3f;
-  --snow: #f8f4eb;
-  --card: #fffdf8;
-  --page-bg: radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%),
-    radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%),
-    linear-gradient(150deg, var(--bg-deep) 0%, var(--bg-mid) 45%, #08292d 100%);
-  --text-primary: #f8f4eb;
-  --text-muted: rgba(255, 255, 255, 0.82);
-  --outline: rgba(255, 255, 255, 0.35);
-  --soft-bg: rgba(255, 255, 255, 0.1);
-  --hero-bg: linear-gradient(135deg, rgba(5, 24, 28, 0.74), rgba(30, 111, 92, 0.5));
-  --section-bg: rgba(14, 43, 47, 0.78);
-  --panel-border: rgba(255, 255, 255, 0.15);
+  --bg-deep: #0b1220;
+  --bg-mid: #131e31;
+  --snow: #e8f0f7;
+  --card: #131e31;
+  --page-bg: radial-gradient(circle at 15% 10%, rgba(194, 65, 12, 0.26) 0%, transparent 35%),
+    radial-gradient(circle at 80% -10%, rgba(15, 118, 110, 0.26) 0%, transparent 30%),
+    linear-gradient(155deg, var(--bg-deep) 0%, var(--bg-mid) 58%, #0a1426 100%);
+  --text-primary: #e8f0f7;
+  --text-muted: rgba(232, 240, 247, 0.78);
+  --outline: rgba(232, 240, 247, 0.28);
+  --soft-bg: rgba(232, 240, 247, 0.08);
+  --hero-bg: linear-gradient(135deg, rgba(194, 65, 12, 0.32), rgba(15, 118, 110, 0.28));
+  --section-bg: rgba(19, 30, 49, 0.9);
+  --panel-border: rgba(232, 240, 247, 0.18);
 }
 
 * {
