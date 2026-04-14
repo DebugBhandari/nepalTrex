@@ -44,17 +44,49 @@ const navItems = [
 const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
 
 const TREK_IMAGE_BY_NAME = {
-  'everest base camp': '/treks/everest-base-camp.jpg',
   'everest base camp trek': '/treks/everest-base-camp.jpg',
-  'annapurna circuit': '/treks/annapurna-circuit.jpg',
-  'langtang valley': '/treks/langtang-valley.jpg',
+  'gokyo lakes trek': '/treks/gokyo-lakes.jpg',
+  'three passes trek': '/treks/three-passes.jpg',
+  'island peak trek': '/treks/island-peak.jpg',
+  'annapurna circuit trek': '/treks/annapurna-circuit.jpg',
+  'annapurna base camp trek': '/treks/annapurna-base-camp.jpg',
+  'poon hill trek': '/treks/poon-hill.jpg',
+  'mardi himal trek': '/treks/mardi-himal.jpg',
   'langtang valley trek': '/treks/langtang-valley.jpg',
+  'gosaikunda lake trek': '/treks/gosaikunda-lake.jpg',
+  'helambu trek': '/treks/helambu.jpg',
+  'manaslu circuit trek': '/treks/manaslu-circuit.jpg',
+  'tsum valley trek': '/treks/tsum-valley.jpg',
+  'upper mustang trek': '/treks/upper-mustang.jpg',
+  'kanchenjunga north base camp trek': '/treks/kanchenjunga.jpg',
+  'rara lake trek': '/treks/rara-lake.jpg',
+  // aliases without 'trek' suffix
+  'everest base camp': '/treks/everest-base-camp.jpg',
+  'gokyo lakes': '/treks/gokyo-lakes.jpg',
+  'three passes': '/treks/three-passes.jpg',
+  'annapurna circuit': '/treks/annapurna-circuit.jpg',
+  'annapurna base camp': '/treks/annapurna-base-camp.jpg',
+  'poon hill': '/treks/poon-hill.jpg',
+  'mardi himal': '/treks/mardi-himal.jpg',
+  'langtang valley': '/treks/langtang-valley.jpg',
+  'gosaikunda lake': '/treks/gosaikunda-lake.jpg',
+  'helambu': '/treks/helambu.jpg',
+  'manaslu circuit': '/treks/manaslu-circuit.jpg',
+  'tsum valley': '/treks/tsum-valley.jpg',
+  'upper mustang': '/treks/upper-mustang.jpg',
+  'kanchenjunga north base camp': '/treks/kanchenjunga.jpg',
+  'rara lake': '/treks/rara-lake.jpg',
 };
 
 const REGION_IMAGE_BY_KEYWORD = {
   everest: '/treks/everest-base-camp.jpg',
+  khumbu: '/treks/everest-base-camp.jpg',
   annapurna: '/treks/annapurna-circuit.jpg',
   langtang: '/treks/langtang-valley.jpg',
+  manaslu: '/treks/manaslu-circuit.jpg',
+  mustang: '/treks/upper-mustang.jpg',
+  kanchenjunga: '/treks/kanchenjunga.jpg',
+  western: '/treks/rara-lake.jpg',
 };
 
 const ROUTE_GEOJSON_BY_NAME = {
@@ -110,13 +142,9 @@ function routeGeojsonByName(name) {
   return ROUTE_GEOJSON_BY_NAME[(name || '').toLowerCase()] || null;
 }
 
-function getTrekImage(name, region) {
+function getTrekImage(name) {
   const key = (name || '').toLowerCase();
-  if (TREK_IMAGE_BY_NAME[key]) {
-    return TREK_IMAGE_BY_NAME[key];
-  }
-
-  return '/treks/everest-base-camp.jpg';
+  return TREK_IMAGE_BY_NAME[key] || '/treks/everest-base-camp.jpg';
 }
 
 function getRegionImage(region, regionTreks) {
@@ -363,13 +391,21 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                       theme.palette.mode === 'dark'
                         ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
                         : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    '&:hover': {
+                      transform: 'translateY(-3px)',
+                      boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
+                    },
                   })}
+                  onClick={() => openRouteInMap(trek)}
                 >
                   <CardMedia
                     component="img"
                     height="220"
-                    image={getTrekImage(trek.name, trek.region)}
+                    image={getTrekImage(trek.name)}
                     alt={`${trek.name} route landscape`}
+                    sx={{ pointerEvents: 'none' }}
                   />
                   <CardContent>
                     <Typography variant="h6">{trek.name}</Typography>
@@ -380,7 +416,7 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                         <Chip label={`↑ ${trek.elevationMaxM.toLocaleString()}m`} size="small" variant="outlined" />
                       )}
                     </Stack>
-                    <AppButton variant="outlined" sx={{ mt: 1.4 }} onClick={() => openRouteInMap(trek)}>
+                    <AppButton variant="outlined" sx={{ mt: 1.4 }} onClick={(e) => { e.stopPropagation(); openRouteInMap(trek); }}>
                       Open Route In Maps
                     </AppButton>
                   </CardContent>
@@ -414,6 +450,13 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                         : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
                   })}
                 >
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={stay.imageUrl || '/stays/lodge-exterior.jpg'}
+                    alt={stay.name}
+                    sx={{ objectFit: 'cover' }}
+                  />
                   <CardContent>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between">
                       <Box>
@@ -476,6 +519,8 @@ export default function HomePage({ featuredTreks, trekRegions, allTreks, stays, 
                     height="200"
                     image={getRegionImage(regionGroup.region, regionGroup.treks)}
                     alt={`${regionGroup.region} trekking region`}
+                    sx={{ cursor: 'pointer' }}
+                    onClick={() => setExpandedRegion(expandedRegion === regionGroup.region ? '' : regionGroup.region)}
                   />
                   <Accordion
                     disableGutters

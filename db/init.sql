@@ -75,7 +75,7 @@ ALTER TABLE stays
 
 UPDATE stays
 SET
-  image_url = COALESCE(image_url, 'https://placehold.co/1000x620?text=NepalTrex+Stay'),
+  image_url = COALESCE(image_url, '/stays/lodge-exterior.jpg'),
   menu_items = CASE
     WHEN jsonb_typeof(menu_items) = 'array' THEN menu_items
     ELSE '[]'::jsonb
@@ -163,25 +163,78 @@ SELECT
   'homestay',
   'Ghandruk, Kaski',
   'Warm local homestay with mountain views, home-cooked meals, and village cultural experiences.',
-  'https://placehold.co/1000x620?text=NepalTrex+Stay',
+  '/stays/lodge-exterior.jpg',
   jsonb_build_array(
     jsonb_build_object(
       'category', 'room',
       'name', 'Mountain View Room',
       'description', 'Private room with attached bathroom and sunrise views.',
       'price', 3000,
-      'imageUrl', 'https://placehold.co/600x380?text=Room+Option'
+      'imageUrl', '/stays/hotel-room.jpg'
     ),
     jsonb_build_object(
       'category', 'food',
       'name', 'Traditional Dal Bhat Set',
       'description', 'Rice, lentils, seasonal vegetables, and pickle.',
       'price', 600,
-      'imageUrl', 'https://placehold.co/600x380?text=Food+Option'
+      'imageUrl', '/stays/food-dal-bhat.jpg'
+    ),
+    jsonb_build_object(
+      'category', 'food',
+      'name', 'Vegetable Thukpa',
+      'description', 'Hearty Tibetan-style noodle soup with seasonal vegetables.',
+      'price', 450,
+      'imageUrl', '/stays/food-thukpa.jpg'
     )
   ),
   35,
   '+977-9800000000'
 FROM users u
 WHERE u.username = 'admin'
-ON CONFLICT (slug) DO NOTHING;
+ON CONFLICT (slug) DO UPDATE
+  SET image_url = EXCLUDED.image_url,
+      menu_items = EXCLUDED.menu_items;
+
+INSERT INTO stays (
+  owner_user_id,
+  name,
+  slug,
+  stay_type,
+  location,
+  description,
+  image_url,
+  menu_items,
+  price_per_night,
+  contact_phone
+)
+SELECT
+  u.id,
+  'Ghandruk Hotel',
+  'Ghandruk-Hotel',
+  'hotel',
+  'Ghandruk, Kaski',
+  'Comfortable mountain hotel with stunning Annapurna panoramas, en-suite rooms, and à la carte dining.',
+  '/stays/lodge-exterior.jpg',
+  jsonb_build_array(
+    jsonb_build_object(
+      'category', 'room',
+      'name', 'AC Room',
+      'description', 'Cozy air-conditioned room with mountain view.',
+      'price', 400,
+      'imageUrl', '/stays/hotel-room-2.jpg'
+    ),
+    jsonb_build_object(
+      'category', 'food',
+      'name', 'Momo Platter',
+      'description', 'Steamed vegetable or chicken momos served with tomato chutney.',
+      'price', 350,
+      'imageUrl', '/stays/food-momo.jpg'
+    )
+  ),
+  50,
+  '+977-9800000001'
+FROM users u
+WHERE u.username = 'admin'
+ON CONFLICT (slug) DO UPDATE
+  SET image_url = EXCLUDED.image_url,
+      menu_items = EXCLUDED.menu_items;
