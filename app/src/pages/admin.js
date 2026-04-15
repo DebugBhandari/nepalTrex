@@ -37,8 +37,8 @@ import AppButton from '../components/AppButton';
 
 const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
-const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay'\;
-const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item'\;
+const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
+const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 
 function makeSlug(input) {
   return input
