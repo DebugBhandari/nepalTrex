@@ -14,8 +14,7 @@ import {
 } from '@mui/material';
 import { getCsrfToken, getProviders, signIn } from 'next-auth/react';
 import AppButton from '../../components/AppButton';
-
-const BRAND_LOGO_SRC = '/brand/nepaltrex-logo.png';
+import BrandLogo from '../../components/BrandLogo';
 
 export default function SignInPage({ csrfToken, providers, error }) {
   const hasGoogle = Boolean(providers?.google);
@@ -49,13 +48,8 @@ export default function SignInPage({ csrfToken, providers, error }) {
           >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <Box
-                  component="img"
-                  src={BRAND_LOGO_SRC}
+                <BrandLogo
                   alt="NepalTrex logo"
-                  onError={(event) => {
-                    event.currentTarget.style.display = 'none';
-                  }}
                   sx={{
                     width: 56,
                     height: 56,

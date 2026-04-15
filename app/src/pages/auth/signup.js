@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Alert, Box, Card, CardContent, Container, LinearProgress, Stack, TextField, Typography } from '@mui/material';
 import AppButton from '../../components/AppButton';
-
-const BRAND_LOGO_SRC = '/brand/nepaltrex-logo.png';
+import BrandLogo from '../../components/BrandLogo';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -141,13 +140,8 @@ export default function SignUpPage() {
           >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <Box
-                  component="img"
-                  src={BRAND_LOGO_SRC}
+                <BrandLogo
                   alt="NepalTrex logo"
-                  onError={(event) => {
-                    event.currentTarget.style.display = 'none';
-                  }}
                   sx={{
                     width: 56,
                     height: 56,

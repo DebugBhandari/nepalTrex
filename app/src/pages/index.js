@@ -26,10 +26,8 @@ import {
 import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
-import AppIconButton from '../components/AppIconButton';
+import BrandLogo from '../components/BrandLogo';
 import { getTrekImage, slugifyTrekName } from '../lib/treks';
-
-const BRAND_LOGO_SRC = '/brand/nepaltrex-logo.png';
 
 const navItems = [
   { label: 'Treks', href: '#treks' },
@@ -110,13 +108,8 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               minWidth: 0,
             }}
           >
-            <Box
-              component="img"
-              src={BRAND_LOGO_SRC}
+            <BrandLogo
               alt="NepalTrex logo"
-              onError={(event) => {
-                event.currentTarget.style.display = 'none';
-              }}
               sx={{
                 width: { xs: 42, sm: 48 },
                 height: { xs: 42, sm: 48 },
@@ -143,13 +136,13 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             size="small"
             startIcon={<FavoriteIcon />}
             onClick={() => setShowWishlistOnly((prev) => !prev)}
-            sx={{ mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
+            sx={{ mr: 1 }}
           >
             {showWishlistOnly ? 'Showing Wishlist' : `${wishlist.length} wishlist`}
           </AppButton>
-          <AppIconButton onClick={() => setMenuOpen(true)} aria-label="Open menu">
-            <MenuIcon />
-          </AppIconButton>
+          <AppButton variant="outlined" size="small" startIcon={<MenuIcon />} onClick={() => setMenuOpen(true)}>
+            Menu
+          </AppButton>
         </Toolbar>
       </AppBar>
 
@@ -247,13 +240,8 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
               Trek Planning in Nepal
             </Typography>
-            <Box
-              component="img"
-              src={BRAND_LOGO_SRC}
+            <BrandLogo
               alt="NepalTrex mascot"
-              onError={(event) => {
-                event.currentTarget.style.display = 'none';
-              }}
               sx={{
                 width: { xs: 92, sm: 120 },
                 height: { xs: 92, sm: 120 },
@@ -336,6 +324,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                             theme.palette.mode === 'dark'
                               ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
                               : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                          color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                           transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                           '&:hover': {
                             transform: 'translateY(-3px)',
@@ -353,7 +342,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                           />
                         </Link>
                         <CardContent>
-                          <Typography variant="h6" sx={{ mb: 1 }}>
+                          <Typography variant="h6" sx={{ mb: 1, color: 'inherit' }}>
                             {trek.name}
                           </Typography>
                           <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
