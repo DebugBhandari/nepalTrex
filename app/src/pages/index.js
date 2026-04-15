@@ -18,7 +18,11 @@ import {
   Chip,
   Container,
   Drawer,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Stack,
   Toolbar,
   Typography,
@@ -26,7 +30,6 @@ import {
 import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
-import BrandLogo from '../components/BrandLogo';
 import { getTrekImage, slugifyTrekName } from '../lib/treks';
 
 const navItems = [
@@ -37,11 +40,38 @@ const navItems = [
 
 const WISHLIST_STORAGE_KEY = 'nepaltrex-trek-wishlist';
 
+const DURATION_FILTERS = [
+  { value: 'all', label: 'Any Duration' },
+  { value: 'short', label: 'Up to 7 days' },
+  { value: 'medium', label: '8 to 12 days' },
+  { value: 'long', label: '13+ days' },
+];
+
+const ALTITUDE_FILTERS = [
+  { value: 'all', label: 'Any Altitude' },
+  { value: 'low', label: 'Below 4,000m' },
+  { value: 'mid', label: '4,000m to 5,000m' },
+  { value: 'high', label: 'Above 5,000m' },
+  { value: 'unknown', label: 'Altitude not listed' },
+];
+
+function normalizeDifficulty(level) {
+  return (level || '').trim().toLowerCase();
+}
+
+function maxAltitude(trek) {
+  return Math.max(trek.elevationMaxM || 0, trek.elevationMinM || 0);
+}
+
 export default function HomePage({ allTreks, dataSource, dataError }) {
   const { data: session, status } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [wishlist, setWishlist] = useState([]);
   const [showWishlistOnly, setShowWishlistOnly] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [selectedDuration, setSelectedDuration] = useState('all');
+  const [selectedAltitude, setSelectedAltitude] = useState('all');
 
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
@@ -71,10 +101,76 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const wishlistedTreks = useMemo(() => allTreks.filter((trek) => wishlistSet.has(trek.slug)), [allTreks, wishlistSet]);
   const visibleTreks = showWishlistOnly ? wishlistedTreks : allTreks;
 
+  const regionOptions = useMemo(() => {
+    const regions = new Set(allTreks.map((trek) => trek.region || 'Other'));
+    return ['all', ...Array.from(regions).sort((a, b) => a.localeCompare(b))];
+  }, [allTreks]);
+
+  const difficultyOptions = useMemo(() => {
+    const values = new Set(
+      allTreks
+        .map((trek) => normalizeDifficulty(trek.level))
+        .filter(Boolean)
+    );
+
+    return ['all', ...Array.from(values).sort((a, b) => a.localeCompare(b))];
+  }, [allTreks]);
+
+  const filteredTreks = useMemo(() => {
+    return visibleTreks.filter((trek) => {
+      const region = trek.region || 'Other';
+      const difficulty = normalizeDifficulty(trek.level);
+      const duration = Number(trek.durationDays) || 0;
+      const altitude = maxAltitude(trek);
+
+      if (selectedRegion !== 'all' && region !== selectedRegion) {
+        return false;
+      }
+
+      if (selectedDifficulty !== 'all' && difficulty !== selectedDifficulty) {
+        return false;
+      }
+
+      if (selectedDuration === 'short' && duration > 7) {
+        return false;
+      }
+
+      if (selectedDuration === 'medium' && (duration < 8 || duration > 12)) {
+        return false;
+      }
+
+      if (selectedDuration === 'long' && duration < 13) {
+        return false;
+      }
+
+      if (selectedAltitude === 'low' && altitude >= 4000) {
+        return false;
+      }
+
+      if (selectedAltitude === 'mid' && (altitude < 4000 || altitude > 5000)) {
+        return false;
+      }
+
+      if (selectedAltitude === 'high' && altitude <= 5000) {
+        return false;
+      }
+
+      if (selectedAltitude === 'unknown' && altitude > 0) {
+        return false;
+      }
+
+      if (selectedAltitude !== 'unknown' && selectedAltitude !== 'all' && altitude <= 0) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [visibleTreks, selectedRegion, selectedDifficulty, selectedDuration, selectedAltitude]);
+
   const treksByRegion = useMemo(() => {
     const map = new Map();
 
-    visibleTreks.forEach((trek) => {
+    filteredTreks.forEach((trek) => {
       const region = trek.region || 'Other';
       if (!map.has(region)) {
         map.set(region, []);
@@ -88,7 +184,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
         region,
         treks: [...treks].sort((a, b) => a.name.localeCompare(b.name)),
       }));
-  }, [visibleTreks]);
+  }, [filteredTreks]);
 
   return (
     <>
@@ -104,21 +200,10 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 1,
+              gap: 0.5,
               minWidth: 0,
             }}
           >
-            <BrandLogo
-              alt="NepalTrex logo"
-              sx={{
-                width: { xs: 42, sm: 48 },
-                height: { xs: 42, sm: 48 },
-                objectFit: 'contain',
-                borderRadius: 2,
-                bgcolor: 'rgba(255,255,255,0.7)',
-                p: 0.25,
-              }}
-            />
             <Typography
               variant="h6"
               sx={{
@@ -240,20 +325,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
               Trek Planning in Nepal
             </Typography>
-            <BrandLogo
-              alt="NepalTrex mascot"
-              sx={{
-                width: { xs: 92, sm: 120 },
-                height: { xs: 92, sm: 120 },
-                objectFit: 'contain',
-                borderRadius: 3,
-                mb: 1.25,
-                mt: 1,
-                border: '1px solid rgba(15, 118, 110, 0.22)',
-                bgcolor: 'rgba(255,255,255,0.66)',
-                p: 0.5,
-              }}
-            />
             <Typography
               variant="h3"
               sx={(theme) => ({
@@ -290,6 +361,115 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               Click any trek image to open full route details, map, and nearby stay options.
             </Typography>
+
+            <Paper
+              sx={(theme) => ({
+                p: 2,
+                mb: 2.5,
+                background:
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                    : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+              })}
+            >
+              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
+                Filter Treks
+              </Typography>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 1.25,
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    lg: 'repeat(4, minmax(0, 1fr))',
+                  },
+                }}
+              >
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="region-filter-label">Region</InputLabel>
+                  <Select
+                    labelId="region-filter-label"
+                    label="Region"
+                    value={selectedRegion}
+                    onChange={(event) => setSelectedRegion(event.target.value)}
+                  >
+                    {regionOptions.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option === 'all' ? 'Any Region' : option}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="difficulty-filter-label">Difficulty</InputLabel>
+                  <Select
+                    labelId="difficulty-filter-label"
+                    label="Difficulty"
+                    value={selectedDifficulty}
+                    onChange={(event) => setSelectedDifficulty(event.target.value)}
+                  >
+                    {difficultyOptions.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option === 'all' ? 'Any Difficulty' : option.charAt(0).toUpperCase() + option.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="duration-filter-label">Duration</InputLabel>
+                  <Select
+                    labelId="duration-filter-label"
+                    label="Duration"
+                    value={selectedDuration}
+                    onChange={(event) => setSelectedDuration(event.target.value)}
+                  >
+                    {DURATION_FILTERS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="altitude-filter-label">Altitude</InputLabel>
+                  <Select
+                    labelId="altitude-filter-label"
+                    label="Altitude"
+                    value={selectedAltitude}
+                    onChange={(event) => setSelectedAltitude(event.target.value)}
+                  >
+                    {ALTITUDE_FILTERS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mt: 1.5 }}>
+                <AppButton
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    setSelectedRegion('all');
+                    setSelectedDifficulty('all');
+                    setSelectedDuration('all');
+                    setSelectedAltitude('all');
+                  }}
+                >
+                  Clear Filters
+                </AppButton>
+                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                  Showing {filteredTreks.length} trek{filteredTreks.length === 1 ? '' : 's'}
+                </Typography>
+              </Stack>
+            </Paper>
+
             {treksByRegion.map(({ region, treks }) => (
               <Box key={region} sx={{ mb: 3 }}>
                 <Typography
@@ -400,21 +580,53 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
           <Paper
             id="contact"
             sx={(theme) => ({
-              p: 3,
+              mt: 1,
+              p: { xs: 2.4, md: 3.2 },
               background:
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                  : undefined,
+                  ? 'linear-gradient(130deg, rgba(15,118,110,0.25), rgba(19,30,49,0.95) 55%, rgba(11,18,32,0.95))'
+                  : 'linear-gradient(130deg, rgba(15,118,110,0.12), rgba(255,255,255,0.98) 52%, rgba(242,251,249,0.98))',
+              border: '1px solid',
+              borderColor: 'divider',
             })}
           >
-            <Typography
-              variant="subtitle1"
-              sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary })}
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  md: '2fr 1fr 1fr',
+                },
+              }}
             >
-              nepaltrex.com
-            </Typography>
-            <Typography color="text.secondary">Email: hello@nepaltrex.com</Typography>
-            <Typography color="text.secondary">Kathmandu, Nepal</Typography>
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary })}
+                >
+                  NepalTrex
+                </Typography>
+                <Typography color="text.secondary" sx={{ mt: 0.6, maxWidth: 460 }}>
+                  Trusted planning companion for international trekkers exploring Nepal. Compare routes, manage your shortlist, and prepare with confidence.
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 0.7, fontWeight: 700 }}>
+                  Connect
+                </Typography>
+                <Typography color="text.secondary">hello@nepaltrex.com</Typography>
+                <Typography color="text.secondary">Kathmandu, Nepal</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 0.7, fontWeight: 700 }}>
+                  Explore
+                </Typography>
+                <Typography color="text.secondary">Everest Region</Typography>
+                <Typography color="text.secondary">Annapurna Region</Typography>
+                <Typography color="text.secondary">Langtang Region</Typography>
+              </Box>
+            </Box>
           </Paper>
         </Container>
       </Box>

@@ -49,6 +49,28 @@ body {
   color: var(--text-primary);
   font-family: 'Space Grotesk', sans-serif;
   background: var(--page-bg);
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  right: -115px;
+  bottom: -110px;
+  width: min(50vw, 520px);
+  aspect-ratio: 1 / 1;
+  background: url('/brand/nepaltrex-logo.png') no-repeat center;
+  background-size: contain;
+  opacity: 0.14;
+  filter: saturate(1.05);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body[data-theme='dark']::after {
+  opacity: 0.1;
+  filter: brightness(0.9) saturate(0.85);
 }
 
 a {
@@ -58,6 +80,8 @@ a {
 
 .app {
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
 }
 
 .landing-bg {

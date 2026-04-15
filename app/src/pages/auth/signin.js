@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import { getCsrfToken, getProviders, signIn } from 'next-auth/react';
 import AppButton from '../../components/AppButton';
-import BrandLogo from '../../components/BrandLogo';
 
 export default function SignInPage({ csrfToken, providers, error }) {
   const hasGoogle = Boolean(providers?.google);
@@ -48,18 +47,6 @@ export default function SignInPage({ csrfToken, providers, error }) {
           >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <BrandLogo
-                  alt="NepalTrex logo"
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    objectFit: 'contain',
-                    borderRadius: 2,
-                    border: '1px solid rgba(15, 118, 110, 0.24)',
-                    bgcolor: 'rgba(255,255,255,0.7)',
-                    p: 0.4,
-                  }}
-                />
                 <Typography variant="h4">Welcome Back</Typography>
                 <Typography color="text.secondary">Continue your trekking journey</Typography>
               </Stack>
