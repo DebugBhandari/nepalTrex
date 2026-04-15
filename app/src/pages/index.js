@@ -208,11 +208,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
           >
             <Typography
               variant="h6"
-              sx={{
+              sx={(theme) => ({
                 fontWeight: 800,
                 letterSpacing: 0.2,
-                color: '#0f766e',
-              }}
+                color: theme.palette.mode === 'dark' ? '#B0E4CC' : '#0f766e',
+              })}
             >
               NepalTrex
             </Typography>

@@ -78,7 +78,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
               <Box component="form" method="post" action="/api/auth/callback/credentials">
                 <input name="csrfToken" type="hidden" defaultValue={csrfToken} />
                 <Stack spacing={1.5}>
-                  <TextField label="Username" name="username" autoComplete="username" required fullWidth />
+                  <TextField label="Username or Email" name="username" autoComplete="username" required fullWidth />
                   <TextField
                     label="Password"
                     name="password"

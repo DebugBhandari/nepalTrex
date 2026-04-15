@@ -93,6 +93,7 @@ export function createAppTheme(mode = 'light') {
           },
           outlined: {
             borderColor: palette.border,
+            color: palette.text,
           },
         },
       },

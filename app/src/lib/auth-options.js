@@ -23,7 +23,7 @@ const providers = [
         `
           SELECT id, username, email, display_name, password_hash, role
           FROM users
-          WHERE username = $1 AND provider = 'credentials'
+          WHERE (username = $1 OR LOWER(email) = LOWER($1)) AND provider = 'credentials'
           LIMIT 1
         `,
         [username]

@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import HikingIcon from '@mui/icons-material/Hiking';
+import HotelIcon from '@mui/icons-material/Hotel';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AddIcon from '@mui/icons-material/Add';
@@ -120,7 +121,7 @@ function getRoutePointCount(routeGeojson) {
   return 0;
 }
 
-export default function DashboardPage({ user, treks }) {
+export default function DashboardPage({ user, treks, stays = [] }) {
   const [items, setItems] = useState(() =>
     treks.map((t) => ({ ...t, waypoints: parseWaypointsFromGeojson(t.routeGeojson) }))
   );
@@ -142,6 +143,12 @@ export default function DashboardPage({ user, treks }) {
   const [usersMessage, setUsersMessage] = useState('');
   const [updatingRoleById, setUpdatingRoleById] = useState({});
   const [draftRolesById, setDraftRolesById] = useState({});
+
+  // Stay management state
+  const [stayItems, setStayItems] = useState(() => stays.map((s) => ({ ...s })));
+  const [editingStayById, setEditingStayById] = useState({});
+  const [savingStayById, setSavingStayById] = useState({});
+  const [stayMessage, setStayMessage] = useState('');
 
   const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
 
@@ -371,6 +378,66 @@ export default function DashboardPage({ user, treks }) {
     }
   };
 
+  const handleStayFieldChange = (id, field, value) => {
+    setStayItems((prev) => prev.map((stay) => (stay.id === id ? { ...stay, [field]: value } : stay)));
+  };
+
+  const handleSaveStay = async (stayId) => {
+    const stay = stayItems.find((s) => s.id === stayId);
+    if (!stay) return;
+
+    setSavingStayById((prev) => ({ ...prev, [stayId]: true }));
+    setStayMessage('');
+
+    try {
+      const response = await fetch(`/api/stays/${stayId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: stay.name,
+          slug: stay.slug,
+          stayType: stay.stayType,
+          location: stay.location,
+          description: stay.description,
+          imageUrl: stay.imageUrl,
+          contactPhone: stay.contactPhone,
+          latitude: stay.latitude !== '' ? Number(stay.latitude) : null,
+          longitude: stay.longitude !== '' ? Number(stay.longitude) : null,
+          menuItems: stay.menuItems,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Failed to update stay');
+
+      setStayItems((prev) =>
+        prev.map((s) =>
+          s.id === stayId
+            ? {
+                ...s,
+                name: payload.stay.name,
+                slug: payload.stay.slug,
+                stayType: payload.stay.stay_type,
+                location: payload.stay.location,
+                description: payload.stay.description || '',
+                imageUrl: payload.stay.image_url || '',
+                contactPhone: payload.stay.contact_phone || '',
+                pricePerNight: payload.stay.price_per_night,
+                latitude: payload.stay.latitude || '',
+                longitude: payload.stay.longitude || '',
+              }
+            : s
+        )
+      );
+      setEditingStayById((prev) => ({ ...prev, [stayId]: false }));
+      setStayMessage(`Updated stay: ${payload.stay.name}`);
+    } catch (error) {
+      setStayMessage(error.message || 'Failed to update stay');
+    } finally {
+      setSavingStayById((prev) => ({ ...prev, [stayId]: false }));
+    }
+  };
+
   const menuList = (
     <Box sx={{ width: 280, p: 2 }} role="presentation">
       <Typography variant="h6" sx={{ mb: 1 }}>
@@ -396,6 +463,18 @@ export default function DashboardPage({ user, treks }) {
         >
           Trek Updates
         </AppButton>
+        {canManage && (
+          <AppButton
+            startIcon={<HotelIcon />}
+            variant={activeTab === 'stays' ? 'contained' : 'outlined'}
+            onClick={() => {
+              setActiveTab('stays');
+              setDrawerOpen(false);
+            }}
+          >
+            Stay Management
+          </AppButton>
+        )}
         {canManage && (
           <AppButton
             startIcon={<ManageAccountsIcon />}
@@ -480,6 +559,7 @@ export default function DashboardPage({ user, treks }) {
             sx={{ mt: 2 }}
           >
             <Tab value="treks" label="Trek Updates" />
+            {canManage && <Tab value="stays" label="Stay Management" />}
             {canManage && <Tab value="users" label="User Management" />}
           </Tabs>
 
@@ -888,6 +968,188 @@ export default function DashboardPage({ user, treks }) {
             </Box>
           )}
 
+          {activeTab === 'stays' && canManage && (
+            <Box sx={{ mt: 2 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                As superUser, you can update all stay fields. Menu items are preserved when saving.
+              </Alert>
+
+              {stayMessage && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {stayMessage}
+                </Alert>
+              )}
+
+              <Stack spacing={2}>
+                {stayItems.map((stay) => {
+                  const isEditing = Boolean(editingStayById[stay.id]);
+                  const isSaving = Boolean(savingStayById[stay.id]);
+
+                  return (
+                    <Card
+                      key={stay.id}
+                      sx={(theme) => ({
+                        background:
+                          theme.palette.mode === 'dark'
+                            ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                            : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
+                        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                        border: '1px solid',
+                        borderColor:
+                          theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(11, 31, 42, 0.08)',
+                      })}
+                    >
+                      <CardContent>
+                        {!isEditing ? (
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={1.5}
+                            justifyContent="space-between"
+                            alignItems={{ sm: 'center' }}
+                          >
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="subtitle1" fontWeight={600}>
+                                {stay.name}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
+                                {stay.location}
+                              </Typography>
+                              <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                                <Chip size="small" label={stay.stayType} sx={{ textTransform: 'capitalize' }} />
+                                {stay.pricePerNight && (
+                                  <Chip size="small" variant="outlined" label={`NPR ${Number(stay.pricePerNight).toLocaleString()}/night`} />
+                                )}
+                                <Chip
+                                  size="small"
+                                  color="secondary"
+                                  label={`Owner: ${stay.ownerEmail}`}
+                                />
+                              </Stack>
+                            </Box>
+                            <AppButton
+                              variant="outlined"
+                              onClick={() => setEditingStayById((prev) => ({ ...prev, [stay.id]: true }))}
+                            >
+                              Edit
+                            </AppButton>
+                          </Stack>
+                        ) : (
+                          <Stack spacing={1.5}>
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                              <TextField
+                                label="Name"
+                                value={stay.name}
+                                onChange={(e) => handleStayFieldChange(stay.id, 'name', e.target.value)}
+                                disabled={isSaving}
+                                fullWidth
+                              />
+                              <TextField
+                                label="Slug"
+                                value={stay.slug}
+                                onChange={(e) => handleStayFieldChange(stay.id, 'slug', e.target.value)}
+                                disabled={isSaving}
+                                fullWidth
+                              />
+                            </Stack>
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                              <FormControl fullWidth size="small" disabled={isSaving}>
+                                <InputLabel id={`stay-type-${stay.id}`}>Type</InputLabel>
+                                <Select
+                                  labelId={`stay-type-${stay.id}`}
+                                  label="Type"
+                                  value={stay.stayType}
+                                  onChange={(e) => handleStayFieldChange(stay.id, 'stayType', e.target.value)}
+                                >
+                                  <MenuItem value="hotel">Hotel</MenuItem>
+                                  <MenuItem value="homestay">Homestay</MenuItem>
+                                </Select>
+                              </FormControl>
+                              <TextField
+                                label="Contact Phone"
+                                value={stay.contactPhone}
+                                onChange={(e) => handleStayFieldChange(stay.id, 'contactPhone', e.target.value)}
+                                disabled={isSaving}
+                                fullWidth
+                              />
+                            </Stack>
+                            <TextField
+                              label="Location"
+                              value={stay.location}
+                              onChange={(e) => handleStayFieldChange(stay.id, 'location', e.target.value)}
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <TextField
+                              label="Description"
+                              multiline
+                              minRows={3}
+                              value={stay.description}
+                              onChange={(e) => handleStayFieldChange(stay.id, 'description', e.target.value)}
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <TextField
+                              label="Image URL"
+                              value={stay.imageUrl}
+                              onChange={(e) => handleStayFieldChange(stay.id, 'imageUrl', e.target.value)}
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                              <TextField
+                                label="Latitude"
+                                type="number"
+                                value={stay.latitude}
+                                onChange={(e) => handleStayFieldChange(stay.id, 'latitude', e.target.value)}
+                                disabled={isSaving}
+                                fullWidth
+                                inputProps={{ step: 'any' }}
+                              />
+                              <TextField
+                                label="Longitude"
+                                type="number"
+                                value={stay.longitude}
+                                onChange={(e) => handleStayFieldChange(stay.id, 'longitude', e.target.value)}
+                                disabled={isSaving}
+                                fullWidth
+                                inputProps={{ step: 'any' }}
+                              />
+                            </Stack>
+                            <Chip
+                              size="small"
+                              color="secondary"
+                              label={`Owner: ${stay.ownerEmail}`}
+                              sx={{ alignSelf: 'flex-start' }}
+                            />
+                            <Stack direction="row" spacing={1}>
+                              <AppButton
+                                variant="contained"
+                                onClick={() => handleSaveStay(stay.id)}
+                                disabled={isSaving}
+                              >
+                                {isSaving ? 'Saving...' : 'Save Stay'}
+                              </AppButton>
+                              <AppButton
+                                variant="outlined"
+                                onClick={() => setEditingStayById((prev) => ({ ...prev, [stay.id]: false }))}
+                                disabled={isSaving}
+                              >
+                                Cancel
+                              </AppButton>
+                            </Stack>
+                          </Stack>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {stayItems.length === 0 && (
+                  <Alert severity="info">No stays found in the database.</Alert>
+                )}
+              </Stack>
+            </Box>
+          )}
+
           {activeTab === 'users' && canManage && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" sx={{ mb: 1 }}>
@@ -943,10 +1205,13 @@ export default function DashboardPage({ user, treks }) {
                   return (
                     <Card
                       key={entry.id}
-                      sx={{
+                      sx={(theme) => ({
                         background:
-                          'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                      }}
+                          theme.palette.mode === 'dark'
+                            ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                            : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
+                        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                      })}
                     >
                       <CardContent>
                         <Stack
@@ -1054,6 +1319,36 @@ export async function getServerSideProps(context) {
     elevationMaxM: row.elevation_max_m || null,
   }));
 
+  let stays = [];
+  if (session.user?.role === 'superUser') {
+    const stayRows = await query(
+      `
+        SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.price_per_night,
+          s.contact_phone, s.image_url, s.menu_items, s.latitude, s.longitude, s.owner_user_id,
+          u.email AS owner_email
+        FROM stays s
+        LEFT JOIN users u ON u.id = s.owner_user_id
+        ORDER BY s.created_at DESC
+      `
+    );
+    stays = stayRows.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      stayType: row.stay_type,
+      location: row.location,
+      description: row.description || '',
+      pricePerNight: row.price_per_night,
+      contactPhone: row.contact_phone || '',
+      imageUrl: row.image_url || '',
+      menuItems: row.menu_items || [],
+      latitude: row.latitude ?? '',
+      longitude: row.longitude ?? '',
+      ownerEmail: row.owner_email || 'N/A',
+      ownerUserId: row.owner_user_id,
+    }));
+  }
+
   return {
     props: {
       user: {
@@ -1061,6 +1356,7 @@ export async function getServerSideProps(context) {
         role: session.user?.role || 'user',
       },
       treks,
+      stays,
     },
   };
 }
