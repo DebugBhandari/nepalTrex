@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../lib/auth-options';
-import { query } from '../../../lib/db';
+import { authOptions } from '../../../../lib/auth-options';
+import { query } from '../../../../lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
