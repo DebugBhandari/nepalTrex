@@ -42,8 +42,8 @@ function normalizeMenuItems(menuItems) {
       description,
       price,
       imageUrl,
+      available: item?.available !== false,
     });
-    available: item?.available !== false,
   }
 
   return normalized;
