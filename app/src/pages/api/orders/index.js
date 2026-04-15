@@ -1,8 +1,47 @@
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../../lib/auth-options';
 import { query } from '../../../lib/db';
 
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
 
 export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    const session = await getServerSession(req, res, authOptions);
+    if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
+    if (!['admin', 'superUser'].includes(session.user.role)) return res.status(403).json({ error: 'Forbidden' });
+
+    const isSuper = session.user.role === 'superUser';
+    const result = isSuper
+      ? await query(
+          `SELECT o.id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
+           FROM orders o JOIN stays s ON s.id = o.stay_id ORDER BY o.created_at DESC`
+        )
+      : await query(
+          `SELECT o.id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
+           FROM orders o JOIN stays s ON s.id = o.stay_id WHERE s.owner_user_id = $1 ORDER BY o.created_at DESC`,
+          [session.user.id]
+        );
+
+    return res.status(200).json({
+      orders: result.rows.map((r) => ({
+        id: r.id,
+        stayId: r.stay_id,
+        stayName: r.stay_name,
+        menuItemName: r.menu_item_name,
+        menuItemCategory: r.menu_item_category,
+        unitPrice: r.unit_price,
+        quantity: r.quantity,
+        totalPrice: r.total_price,
+        customerName: r.customer_name,
+        customerEmail: r.customer_email || '',
+        customerPhone: r.customer_phone || '',
+        notes: r.notes || '',
+        status: r.status,
+        createdAt: r.created_at,
+      })),
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

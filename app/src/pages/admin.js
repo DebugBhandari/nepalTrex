@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
 import HomeIcon from '@mui/icons-material/Home';
@@ -10,6 +10,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/Edit';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
 import {
   Alert,
   AppBar,
@@ -72,6 +74,17 @@ export default function AdminPage({ user, initialStays }) {
   const [editingById, setEditingById] = useState({});
   const [menuOpenById, setMenuOpenById] = useState({});
 
+  const [orders, setOrders] = useState([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState('');
+
+  useEffect(() => {
+    fetch('/api/orders')
+      .then((r) => r.json())
+      .then((data) => { setOrders(data.orders || []); setOrdersLoaded(true); })
+      .catch(() => setOrdersLoaded(true));
+  }, []);
+
   const [newStay, setNewStay] = useState({
     name: '', slug: '', stayType: 'homestay', location: '', latitude: '', longitude: '',
     description: '', imageUrl: DEFAULT_STAY_IMAGE, contactPhone: '',
@@ -90,6 +103,23 @@ export default function AdminPage({ user, initialStays }) {
         return { ...stay, menuItems: nextMenu };
       })
     );
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const r = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      const data = await r.json();
+      if (r.ok) {
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: data.order.status } : o)));
+      }
+    } finally {
+      setUpdatingOrderId('');
+    }
+  };
 
   const toggleMenuItemAvailable = (stayId, index) =>
     setStays((prev) =>
@@ -417,6 +447,70 @@ export default function AdminPage({ user, initialStays }) {
                 <Typography color="text.secondary">No stays yet. Click &ldquo;Add New Stay&rdquo; to register your first property.</Typography>
               </Paper>
             )}
+          </Stack>
+
+          <Divider sx={{ my: 4 }} />
+
+          <Typography variant="h6" sx={{ mb: 1.5 }}>
+            Orders{ordersLoaded ? ` (${orders.length})` : ''}
+          </Typography>
+
+          {!ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
+
+          {ordersLoaded && orders.length === 0 && (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography color="text.secondary">No orders yet.</Typography>
+            </Paper>
+          )}
+
+          <Stack spacing={2}>
+            {orders.map((order) => {
+              const isUpdating = updatingOrderId === order.id;
+              const statusColor = order.status === 'completed' ? 'success' : order.status === 'accepted' ? 'primary' : 'default';
+              return (
+                <Card key={order.id}>
+                  <CardContent>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography fontWeight={700}>{order.menuItemName}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
+                          {order.stayName} &middot; {order.menuItemCategory}
+                        </Typography>
+                        <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                          <Chip size="small" label={order.customerName} />
+                          {order.customerPhone && <Chip size="small" variant="outlined" label={order.customerPhone} />}
+                          {order.customerEmail && <Chip size="small" variant="outlined" label={order.customerEmail} />}
+                          <Chip size="small" variant="outlined" label={`NPR ${Number(order.totalPrice).toLocaleString()} (qty ${order.quantity})`} />
+                        </Stack>
+                        {order.notes && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                            Note: {order.notes}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.5}>
+                        <Chip size="small" color={statusColor} label={order.status} sx={{ textTransform: 'capitalize' }} />
+                        <Typography variant="caption" color="text.secondary">
+                          {new Date(order.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                    {order.status !== 'completed' && (
+                      <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                        {order.status === 'pending' && (
+                          <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateOrderStatus(order.id, 'accepted')} disabled={isUpdating}>
+                            Accept
+                          </AppButton>
+                        )}
+                        <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateOrderStatus(order.id, 'completed')} disabled={isUpdating}>
+                          Mark Complete
+                        </AppButton>
+                      </Stack>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </Stack>
         </Paper>
       </Container>

@@ -559,9 +559,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                           />
                         </Link>
                         <CardContent>
-                          <Typography variant="h6" sx={{ mb: 1, color: 'inherit' }}>
-                            {trek.name}
-                          </Typography>
+                          <Link href={`/${trek.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <Typography variant="h6" sx={{ mb: 1, color: 'inherit', '&:hover': { textDecoration: 'underline' } }}>
+                              {trek.name}
+                            </Typography>
+                          </Link>
                           <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
                             <Chip label={trek.level} size="small" color="secondary" />
                             <Chip label={`${trek.durationDays} days`} size="small" variant="outlined" />
