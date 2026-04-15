@@ -14,7 +14,7 @@ export function NepalTrexLogo({ className = '', width = 300 }) {
         {/* Mask for negative space text */}
         <mask id="text-mask">
           <rect width="300" height="135" fill="white" />
-          <text x="150" y="88" fontFamily="Arial, sans-serif" fontSize="44" fontWeight="900" fill="black" textAnchor="middle">
+          <text x="150" y="105" fontFamily="Arial, sans-serif" fontSize="52" fontWeight="900" fill="black" textAnchor="middle">
             NepalTrex
           </text>
         </mask>
