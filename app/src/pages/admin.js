@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/Edit';
@@ -15,6 +17,7 @@ import DoneAllIcon from '@mui/icons-material/TaskAlt';
 import {
   Alert,
   AppBar,
+  Avatar,
   Box,
   Card,
   CardContent,
@@ -23,7 +26,9 @@ import {
   Container,
   Divider,
   FormControl,
+  IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Paper,
   Select,
@@ -41,6 +46,24 @@ const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
 const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
+
+function normalizeHandle(value) {
+  return (value || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'user';
+}
+
+function initialsFromName(value) {
+  const text = String(value || '').trim();
+  if (!text) return 'NT';
+  const parts = text.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || '';
+  const second = parts[1]?.[0] || '';
+  return `${first}${second}`.toUpperCase() || first.toUpperCase() || 'NT';
+}
 
 function makeSlug(input) {
   return input
@@ -77,6 +100,12 @@ export default function AdminPage({ user, initialStays }) {
   const [orders, setOrders] = useState([]);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+
+  const isUserMenuOpen = Boolean(userMenuAnchor);
+  const isSuperUser = user?.role === 'superUser';
+  const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
+  const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
 
   useEffect(() => {
     fetch('/api/orders')
@@ -232,7 +261,58 @@ export default function AdminPage({ user, initialStays }) {
         <Toolbar>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>Admin Dashboard</Typography>
           <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>Home</AppButton>
-          <AppButton onClick={() => signOut({ callbackUrl: '/' })} startIcon={<LogoutIcon />} variant="outlined">Sign out</AppButton>
+          <IconButton
+            color="inherit"
+            onClick={(event) => setUserMenuAnchor(event.currentTarget)}
+            sx={(theme) => ({
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              borderRadius: 999,
+              p: 0.4,
+            })}
+            aria-label="Open user menu"
+          >
+            <Avatar
+              src={user?.image || ''}
+              alt={user?.name || user?.email || 'User'}
+              sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+            >
+              {initialsFromName(user?.name || user?.email)}
+            </Avatar>
+          </IconButton>
+          <Menu
+            anchorEl={userMenuAnchor}
+            open={isUserMenuOpen}
+            onClose={() => setUserMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
+              <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
+              Profile
+            </MenuItem>
+            {isSuperUser && (
+              <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
+                <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                Super Dashboard
+              </MenuItem>
+            )}
+            {isAdminOrSuperUser && (
+              <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
+                <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                Admin Dashboard
+              </MenuItem>
+            )}
+            <MenuItem
+              onClick={() => {
+                setUserMenuAnchor(null);
+                signOut({ callbackUrl: '/' });
+              }}
+            >
+              <LogoutIcon fontSize="small" style={{ marginRight: 8 }} />
+              Sign out
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -472,10 +552,19 @@ export default function AdminPage({ user, initialStays }) {
                   <CardContent>
                     <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
                       <Box sx={{ flex: 1 }}>
-                        <Typography fontWeight={700}>{order.menuItemName}</Typography>
+                        <Typography fontWeight={700}>{order.stayName}</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
-                          {order.stayName} &middot; {order.menuItemCategory}
+                          {order.items?.length || 0} item{(order.items?.length || 0) === 1 ? '' : 's'} in this order
                         </Typography>
+                        {Array.isArray(order.items) && order.items.length > 0 && (
+                          <Stack spacing={0.6} sx={{ mb: 1.1 }}>
+                            {order.items.map((entry) => (
+                              <Typography key={entry.id} variant="body2" color="text.secondary">
+                                {entry.menuItemName} ({entry.menuItemCategory}) &times; {entry.quantity} - NPR {Number(entry.totalPrice).toLocaleString()}
+                              </Typography>
+                            ))}
+                          </Stack>
+                        )}
                         <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
                           <Chip size="small" label={order.customerName} />
                           {order.customerPhone && <Chip size="small" variant="outlined" label={order.customerPhone} />}
@@ -499,11 +588,11 @@ export default function AdminPage({ user, initialStays }) {
                       <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                         {order.status === 'pending' && (
                           <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateOrderStatus(order.id, 'accepted')} disabled={isUpdating}>
-                            Accept
+                            Accept Order
                           </AppButton>
                         )}
                         <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateOrderStatus(order.id, 'completed')} disabled={isUpdating}>
-                          Mark Complete
+                          Mark Order Complete
                         </AppButton>
                       </Stack>
                     )}
@@ -536,5 +625,16 @@ export async function getServerSideProps(context) {
     contactPhone: row.contact_phone || '', ownerEmail: row.owner_email || null,
   }));
 
-  return { props: { user: { id: session.user.id, email: session.user.email, role: session.user.role }, initialStays } };
+  return {
+    props: {
+      user: {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+        name: session.user.name || '',
+        image: session.user.image || '',
+      },
+      initialStays,
+    },
+  };
 }

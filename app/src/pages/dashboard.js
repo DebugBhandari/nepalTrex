@@ -8,12 +8,15 @@ import HomeIcon from '@mui/icons-material/Home';
 import HikingIcon from '@mui/icons-material/Hiking';
 import HotelIcon from '@mui/icons-material/Hotel';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import {
   Alert,
   AppBar,
+  Avatar,
   Box,
   Card,
   CardContent,
@@ -23,7 +26,9 @@ import {
   Drawer,
   FormControl,
   FormControlLabel,
+  IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Paper,
   Select,
@@ -42,6 +47,25 @@ import AppIconButton from '../components/AppIconButton';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
+const DASHBOARD_TAB_STORAGE_KEY = 'nepaltrex-dashboard-active-tab';
+
+function normalizeHandle(value) {
+  return (value || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'user';
+}
+
+function initialsFromName(value) {
+  const text = String(value || '').trim();
+  if (!text) return 'NT';
+  const parts = text.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || '';
+  const second = parts[1]?.[0] || '';
+  return `${first}${second}`.toUpperCase() || first.toUpperCase() || 'NT';
+}
 
 function parseWaypointsFromGeojson(routeGeojson) {
   if (!routeGeojson) return [];
@@ -136,6 +160,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
 
   const [activeTab, setActiveTab] = useState('treks');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
 
   const [users, setUsers] = useState([]);
   const [userSearch, setUserSearch] = useState('');
@@ -151,6 +176,26 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [stayMessage, setStayMessage] = useState('');
 
   const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
+  const isSuperUser = user?.role === 'superUser';
+  const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
+  const isUserMenuOpen = Boolean(userMenuAnchor);
+  const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const persistedTab = window.localStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
+    if (!persistedTab) return;
+
+    const allowedTabs = canManage ? ['treks', 'stays', 'users'] : ['treks'];
+    if (allowedTabs.includes(persistedTab)) {
+      setActiveTab(persistedTab);
+    }
+  }, [canManage]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(DASHBOARD_TAB_STORAGE_KEY, activeTab);
+  }, [activeTab]);
 
   const availableRegions = useMemo(
     () => Array.from(new Set(items.map((trek) => trek.region).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
@@ -527,7 +572,59 @@ export default function DashboardPage({ user, treks, stays = [] }) {
           >
             Home
           </AppButton>
-          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" />
+          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ mr: 1 }} />
+          <IconButton
+            color="inherit"
+            onClick={(event) => setUserMenuAnchor(event.currentTarget)}
+            sx={(theme) => ({
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              borderRadius: 999,
+              p: 0.4,
+            })}
+            aria-label="Open user menu"
+          >
+            <Avatar
+              src={user?.image || ''}
+              alt={user?.name || user?.email || 'User'}
+              sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+            >
+              {initialsFromName(user?.name || user?.email)}
+            </Avatar>
+          </IconButton>
+          <Menu
+            anchorEl={userMenuAnchor}
+            open={isUserMenuOpen}
+            onClose={() => setUserMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
+              <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
+              Profile
+            </MenuItem>
+            {isSuperUser && (
+              <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
+                <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                Super Dashboard
+              </MenuItem>
+            )}
+            {isAdminOrSuperUser && (
+              <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
+                <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                Admin Dashboard
+              </MenuItem>
+            )}
+            <MenuItem
+              onClick={() => {
+                setUserMenuAnchor(null);
+                signOut({ callbackUrl: '/' });
+              }}
+            >
+              <LogoutIcon fontSize="small" style={{ marginRight: 8 }} />
+              Sign out
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 

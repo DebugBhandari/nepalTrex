@@ -23,24 +23,52 @@ export default async function handler(req, res) {
           [session.user.id]
         );
 
+    const groupedOrders = new Map();
+
+    for (const row of result.rows) {
+      const groupId = row.order_group_id || row.id;
+      const groupKey = String(groupId);
+
+      if (!groupedOrders.has(groupKey)) {
+        groupedOrders.set(groupKey, {
+          id: groupKey,
+          orderGroupId: row.order_group_id || null,
+          stayId: row.stay_id,
+          stayName: row.stay_name,
+          customerName: row.customer_name,
+          customerEmail: row.customer_email || '',
+          customerPhone: row.customer_phone || '',
+          notes: row.notes || '',
+          createdAt: row.created_at,
+          status: row.status,
+          totalPrice: 0,
+          quantity: 0,
+          items: [],
+        });
+      }
+
+      const group = groupedOrders.get(groupKey);
+      group.items.push({
+        id: row.id,
+        menuItemName: row.menu_item_name,
+        menuItemCategory: row.menu_item_category,
+        unitPrice: Number(row.unit_price),
+        quantity: Number(row.quantity),
+        totalPrice: Number(row.total_price),
+        status: row.status,
+      });
+      group.totalPrice += Number(row.total_price);
+      group.quantity += Number(row.quantity);
+
+      if (row.status === 'completed') {
+        group.status = 'completed';
+      } else if (row.status === 'accepted' && group.status === 'pending') {
+        group.status = 'accepted';
+      }
+    }
+
     return res.status(200).json({
-      orders: result.rows.map((r) => ({
-        id: r.id,
-        orderGroupId: r.order_group_id || null,
-        stayId: r.stay_id,
-        stayName: r.stay_name,
-        menuItemName: r.menu_item_name,
-        menuItemCategory: r.menu_item_category,
-        unitPrice: r.unit_price,
-        quantity: r.quantity,
-        totalPrice: r.total_price,
-        customerName: r.customer_name,
-        customerEmail: r.customer_email || '',
-        customerPhone: r.customer_phone || '',
-        notes: r.notes || '',
-        status: r.status,
-        createdAt: r.created_at,
-      })),
+      orders: Array.from(groupedOrders.values()),
     });
   }
 

@@ -2,7 +2,6 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
@@ -12,6 +11,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import {
   Alert,
   AppBar,
+  Avatar,
   Box,
   Card,
   CardContent,
@@ -68,6 +68,15 @@ function normalizeHandle(value) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'user';
+}
+
+function initialsFromName(value) {
+  const text = String(value || '').trim();
+  if (!text) return 'NT';
+  const parts = text.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || '';
+  const second = parts[1]?.[0] || '';
+  return `${first}${second}`.toUpperCase() || first.toUpperCase() || 'NT';
 }
 
 export default function HomePage({ allTreks, dataSource, dataError }) {
@@ -279,10 +288,17 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                   border: '1px solid',
                   borderColor: theme.palette.divider,
                   borderRadius: 999,
+                  p: 0.4,
                 })}
                 aria-label="Open user menu"
               >
-                <AccountCircleIcon />
+                <Avatar
+                  src={session?.user?.image || ''}
+                  alt={session?.user?.name || session?.user?.email || 'User'}
+                  sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+                >
+                  {initialsFromName(session?.user?.name || session?.user?.email)}
+                </Avatar>
               </IconButton>
               <Menu
                 anchorEl={userMenuAnchor}
@@ -349,6 +365,8 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
 
           <Paper
             sx={(theme) => ({
+              position: 'relative',
+              overflow: 'hidden',
               p: { xs: 3, md: 5 },
               mb: 4,
               background:
@@ -356,6 +374,20 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                   ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.95) 100%)'
                   : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.98) 100%)',
               boxShadow: '0 22px 44px rgba(15, 23, 42, 0.28)',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                right: { xs: -18, md: -12 },
+                bottom: { xs: -12, md: -16 },
+                width: { xs: '58%', sm: '46%', md: 360 },
+                height: { xs: 90, sm: 110, md: 140 },
+                backgroundImage: 'url(/brand/banner-mountains.svg)',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'bottom right',
+                backgroundSize: 'contain',
+                opacity: theme.palette.mode === 'dark' ? 0.2 : 0.16,
+                pointerEvents: 'none',
+              },
             })}
           >
             <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
