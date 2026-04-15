@@ -12,18 +12,24 @@ import {
   Alert,
   AppBar,
   Avatar,
+  Badge,
   Box,
   Card,
   CardContent,
   CardMedia,
   Chip,
   Container,
+  Divider,
   FormControl,
   IconButton,
   InputLabel,
+  List,
+  ListItem,
+  ListItemText,
   Menu,
   MenuItem,
   Paper,
+  Popover,
   Select,
   Stack,
   Toolbar,
@@ -82,6 +88,7 @@ function initialsFromName(value) {
 export default function HomePage({ allTreks, dataSource, dataError }) {
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [wishlistAnchor, setWishlistAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
@@ -240,23 +247,14 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               alignItems: 'center',
               gap: 0.5,
               minWidth: 0,
+              textDecoration: 'none',
             }}
           >
             <Box
-              sx={{
-                backgroundImage: 'url(/brand/banner-mountains.svg)',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: 'contain',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                fontSize: 18,
-                fontWeight: 700,
-                letterSpacing: 0.2,
-                width: 45,
-                height: 30,
-              }}
+              component="img"
+              src="/brand/banner-mountains.svg"
+              alt="NepalTrex mountain logo"
+              sx={{ width: 38, height: 28, objectFit: 'contain' }}
             />
             <Typography
               variant="h6"
@@ -270,6 +268,69 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
+
+          {/* Wishlist heart button */}
+          <IconButton
+            color="inherit"
+            onClick={(event) => setWishlistAnchor(event.currentTarget)}
+            aria-label="Open wishlist"
+            sx={{ mr: 0.5 }}
+          >
+            <Badge badgeContent={wishlistedTreks.length} color="error" max={99}>
+              <FavoriteIcon sx={{ color: wishlistedTreks.length > 0 ? '#ef4444' : 'inherit' }} />
+            </Badge>
+          </IconButton>
+
+          <Popover
+            open={Boolean(wishlistAnchor)}
+            anchorEl={wishlistAnchor}
+            onClose={() => setWishlistAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: { width: 310, maxHeight: 420, display: 'flex', flexDirection: 'column', borderRadius: 2 },
+            }}
+          >
+            <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FavoriteIcon sx={{ color: '#ef4444', fontSize: 18 }} />
+              <Typography variant="subtitle1" fontWeight={700}>
+                Wishlist · {wishlistedTreks.length} saved
+              </Typography>
+            </Box>
+            <Divider />
+            {wishlistedTreks.length === 0 ? (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No treks saved yet. Click the heart on any trek to save it.
+                </Typography>
+              </Box>
+            ) : (
+              <List dense disablePadding sx={{ overflow: 'auto', flex: 1 }}>
+                {wishlistedTreks.map((trek) => (
+                  <ListItem
+                    key={trek.slug}
+                    divider
+                    component={Link}
+                    href={`/treks/${trek.slug}`}
+                    onClick={() => setWishlistAnchor(null)}
+                    sx={{
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <ListItemText
+                      primary={trek.name}
+                      secondary={[trek.region, trek.level, trek.durationDays ? `${trek.durationDays} days` : null].filter(Boolean).join(' · ')}
+                      primaryTypographyProps={{ fontWeight: 600, variant: 'body2' }}
+                      secondaryTypographyProps={{ variant: 'caption' }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Popover>
 
           {status === 'authenticated' ? (
             <>
