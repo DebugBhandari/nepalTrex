@@ -2,7 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
-import MenuIcon from '@mui/icons-material/Menu';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
@@ -17,9 +17,10 @@ import {
   CardMedia,
   Chip,
   Container,
-  Drawer,
   FormControl,
+  IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Paper,
   Select,
@@ -31,12 +32,6 @@ import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
-
-const navItems = [
-  { label: 'Treks', href: '#treks' },
-  { label: 'About', href: '#about' },
-  { label: 'Contact', href: '#contact' },
-];
 
 const WISHLIST_STORAGE_KEY = 'nepaltrex-trek-wishlist';
 
@@ -67,7 +62,7 @@ function maxAltitude(trek) {
 
 export default function HomePage({ allTreks, dataSource, dataError }) {
   const { data: session, status } = useSession();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [showWishlistOnly, setShowWishlistOnly] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('all');
@@ -77,6 +72,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
 
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
+  const isUserMenuOpen = Boolean(userMenuAnchor);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -262,73 +258,60 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
           >
             {showWishlistOnly ? 'Showing Wishlist' : `${wishlist.length} wishlist`}
           </AppButton>
-          <AppButton variant="outlined" size="small" startIcon={<MenuIcon />} onClick={() => setMenuOpen(true)}>
-            Menu
-          </AppButton>
+
+          {status === 'authenticated' ? (
+            <>
+              <IconButton
+                color="inherit"
+                onClick={(event) => setUserMenuAnchor(event.currentTarget)}
+                sx={(theme) => ({
+                  border: '1px solid',
+                  borderColor: theme.palette.divider,
+                  borderRadius: 999,
+                })}
+                aria-label="Open user menu"
+              >
+                <AccountCircleIcon />
+              </IconButton>
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={isUserMenuOpen}
+                onClose={() => setUserMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                {isSuperUser && (
+                  <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
+                    <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                    Super Dashboard
+                  </MenuItem>
+                )}
+
+                {isAdminOrSuperUser && (
+                  <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
+                    <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                    Admin Dashboard
+                  </MenuItem>
+                )}
+
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null);
+                    signOut({ callbackUrl: '/' });
+                  }}
+                >
+                  <LogoutIcon fontSize="small" style={{ marginRight: 8 }} />
+                  Sign out
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <AppButton component={Link} href="/auth/signin" startIcon={<LoginIcon />} variant="outlined" size="small">
+              Sign in
+            </AppButton>
+          )}
         </Toolbar>
       </AppBar>
-
-      <Drawer anchor="right" open={menuOpen} onClose={() => setMenuOpen(false)}>
-        <Box sx={{ width: 300, p: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1.5 }}>
-            Navigation
-          </Typography>
-          <Stack spacing={1}>
-            {navItems.map((item) => (
-              <AppButton key={item.href} href={item.href} variant="outlined" onClick={() => setMenuOpen(false)}>
-                {item.label}
-              </AppButton>
-            ))}
-
-            {status === 'authenticated' && isSuperUser && (
-              <AppButton
-                component={Link}
-                href="/dashboard"
-                startIcon={<DashboardIcon />}
-                variant="contained"
-                onClick={() => setMenuOpen(false)}
-              >
-                Super Dashboard
-              </AppButton>
-            )}
-
-            {status === 'authenticated' && isAdminOrSuperUser && (
-              <AppButton
-                component={Link}
-                href="/admin"
-                startIcon={<DashboardIcon />}
-                variant="outlined"
-                onClick={() => setMenuOpen(false)}
-              >
-                Admin Dashboard
-              </AppButton>
-            )}
-
-            {status === 'authenticated' ? (
-              <AppButton
-                startIcon={<LogoutIcon />}
-                variant="outlined"
-                onClick={() => {
-                  setMenuOpen(false);
-                  signOut({ callbackUrl: '/' });
-                }}
-              >
-                Sign out
-              </AppButton>
-            ) : (
-              <AppButton
-                component={Link}
-                href="/auth/signin"
-                startIcon={<LoginIcon />}
-                variant="contained"
-                onClick={() => setMenuOpen(false)}
-              >
-                Sign in
-              </AppButton>
-            )}
-          </Stack>
-        </Box>
-      </Drawer>
 
       <Box
         sx={(theme) => ({
@@ -393,7 +376,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                 color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
               })}
             >
-              Treks by Region
+              Explore
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               Click any trek image to open full route details, map, and nearby stay options.
@@ -516,7 +499,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                     color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                   })}
                 >
-                  Explore — {region}
+                  {region}
                 </Typography>
 
                 <Box
