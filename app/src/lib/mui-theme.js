@@ -131,8 +131,10 @@ export function createAppTheme(mode = 'light') {
         styleOverrides: {
           root: {
             borderRadius: 8,
-            color: palette.text,
             borderColor: palette.border,
+          },
+          colorDefault: {
+            color: palette.text,
           },
         },
       },
