@@ -28,12 +28,6 @@ import {
   Select,
   Stack,
   Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Tab,
   Tabs,
   TextField,
@@ -133,7 +127,6 @@ export default function DashboardPage({ user, treks }) {
   const [editingById, setEditingById] = useState({});
   const [savingById, setSavingById] = useState({});
   const [trekMessage, setTrekMessage] = useState('');
-  const [trekSearch, setTrekSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
   const [routeFilter, setRouteFilter] = useState('all');
@@ -158,8 +151,6 @@ export default function DashboardPage({ user, treks }) {
   );
 
   const visibleItems = useMemo(() => {
-    const query = trekSearch.trim().toLowerCase();
-
     const filtered = items.filter((trek) => {
       if (regionFilter !== 'all' && trek.region !== regionFilter) {
         return false;
@@ -178,16 +169,7 @@ export default function DashboardPage({ user, treks }) {
         return false;
       }
 
-      if (!query) {
-        return true;
-      }
-
-      const haystack = [trek.name, trek.region, trek.level, trek.description]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(query);
+      return true;
     });
 
     const sorted = [...filtered].sort((a, b) => {
@@ -207,7 +189,7 @@ export default function DashboardPage({ user, treks }) {
     });
 
     return sorted;
-  }, [items, levelFilter, regionFilter, routeFilter, sortBy, sortDirection, trekSearch]);
+  }, [items, levelFilter, regionFilter, routeFilter, sortBy, sortDirection]);
 
   const fetchUsers = useCallback(
     async (search = '') => {
@@ -522,14 +504,6 @@ export default function DashboardPage({ user, treks }) {
               <Paper sx={{ p: 1.5, mb: 2 }}>
                 <Stack spacing={1.2}>
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
-                    <TextField
-                      label="Search treks"
-                      placeholder="Name, region, level, description"
-                      value={trekSearch}
-                      onChange={(event) => setTrekSearch(event.target.value)}
-                      size="small"
-                      fullWidth
-                    />
                     <FormControl size="small" sx={{ minWidth: 170 }}>
                       <InputLabel id="region-filter-label">Region</InputLabel>
                       <Select
@@ -608,7 +582,6 @@ export default function DashboardPage({ user, treks }) {
                     <AppButton
                       variant="outlined"
                       onClick={() => {
-                        setTrekSearch('');
                         setRegionFilter('all');
                         setLevelFilter('all');
                         setRouteFilter('all');
@@ -621,45 +594,6 @@ export default function DashboardPage({ user, treks }) {
                   </Stack>
                 </Stack>
               </Paper>
-
-              <TableContainer component={Paper} sx={{ mb: 2 }}>
-                <Table size="small" aria-label="Trek summary table">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Region</TableCell>
-                      <TableCell>Difficulty</TableCell>
-                      <TableCell align="right">Duration</TableCell>
-                      <TableCell>Elevation (m)</TableCell>
-                      <TableCell>Route</TableCell>
-                      <TableCell>Featured</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {visibleItems.map((trek) => {
-                      const routePoints = getRoutePointCount(trek.routeGeojson);
-
-                      return (
-                        <TableRow key={`summary-${trek.id}`} hover>
-                          <TableCell>{trek.name}</TableCell>
-                          <TableCell>{trek.region}</TableCell>
-                          <TableCell>{trek.level}</TableCell>
-                          <TableCell align="right">{trek.durationDays}d</TableCell>
-                          <TableCell>
-                            {trek.elevationMinM && trek.elevationMaxM
-                              ? `${trek.elevationMinM.toLocaleString()} – ${trek.elevationMaxM.toLocaleString()}`
-                              : '—'}
-                          </TableCell>
-                          <TableCell>
-                            {routePoints > 0 ? `${routePoints} pts` : '—'}
-                          </TableCell>
-                          <TableCell>{trek.isFeatured ? 'Yes' : 'No'}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
 
               <Stack spacing={2}>
                 {visibleItems.map((trek) => {
