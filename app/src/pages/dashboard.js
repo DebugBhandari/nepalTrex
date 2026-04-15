@@ -548,14 +548,16 @@ return (
               border: '1px solid',
               borderColor: theme.palette.divider,
               borderRadius: 999,
-              p: 0.4,
+              p: 0.25,
+              width: 42,
+              height: 42,
             })}
             aria-label="Open user menu"
           >
             <Avatar
               src={user?.image || ''}
               alt={user?.name || user?.email || 'User'}
-              sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+              sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
             >
               {initialsFromName(user?.name || user?.email)}
             </Avatar>
@@ -614,11 +616,6 @@ return (
                 Manage treks and users from one place.
               </Typography>
             </Box>
-            {isAdminOrSuperUser && (
-              <AppButton component={Link} href="/admin" variant="contained" startIcon={<DashboardIcon />}>
-                Admin Dashboard
-              </AppButton>
-            )}
           </Stack>
 
           {notification && <Alert severity="success" sx={{ mb: 2 }}>{notification}</Alert>}
@@ -814,6 +811,7 @@ return (
                                 onClick={() =>
                                   setEditingById((prev) => ({ ...prev, [trek.id]: true }))
                                 }
+                                sx={{ height: 40, minHeight: 40 }}
                               >
                                 Edit
                               </AppButton>
@@ -1101,6 +1099,7 @@ return (
                             <AppButton
                               variant="outlined"
                               onClick={() => setEditingStayById((prev) => ({ ...prev, [stay.id]: true }))}
+                              sx={{ height: 40, minHeight: 40 }}
                             >
                               Edit
                             </AppButton>

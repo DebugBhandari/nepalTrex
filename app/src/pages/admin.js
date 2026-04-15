@@ -315,14 +315,16 @@ export default function AdminPage({ user, initialStays }) {
               border: '1px solid',
               borderColor: theme.palette.divider,
               borderRadius: 999,
-              p: 0.4,
+              p: 0.25,
+              width: 42,
+              height: 42,
             })}
             aria-label="Open user menu"
           >
             <Avatar
               src={user?.image || ''}
               alt={user?.name || user?.email || 'User'}
-              sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+              sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
             >
               {initialsFromName(user?.name || user?.email)}
             </Avatar>
@@ -370,11 +372,6 @@ export default function AdminPage({ user, initialStays }) {
               <Typography variant="h4">Manage Your Hotels and Homestays</Typography>
               <Typography color="text.secondary" sx={{ mt: 0.5 }}>Signed in as {user.email} ({user.role})</Typography>
             </Box>
-            {isSuperUser && (
-              <AppButton component={Link} href="/dashboard" variant="contained" startIcon={<DashboardIcon />}>
-                Super Dashboard
-              </AppButton>
-            )}
           </Stack>
 
           {notification && <Alert sx={{ mb: 2 }} severity="success">{notification}</Alert>}

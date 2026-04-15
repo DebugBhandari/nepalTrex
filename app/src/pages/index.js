@@ -41,8 +41,6 @@ import AppButton from '../components/AppButton';
 import NepalTrexLogo from '../components/NepalTrexLogo';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
 
-const WISHLIST_STORAGE_KEY = 'nepaltrex-trek-wishlist';
-
 const DURATION_FILTERS = [
   { value: 'all', label: 'Any Duration' },
   { value: 'short', label: 'Up to 7 days' },
@@ -91,6 +89,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlistAnchor, setWishlistAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
+  const [wishlistLoginRequired, setWishlistLoginRequired] = useState(false);
   const [wishlistCountsBySlug, setWishlistCountsBySlug] = useState(() =>
     allTreks.reduce((acc, trek) => {
       acc[trek.slug] = Number(trek.wishlistCount || 0);
@@ -115,52 +114,42 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
         .then((data) => setWishlist(data.slugs || []))
         .catch(() => setWishlist([]));
     } else {
-      try {
-        const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        if (Array.isArray(parsed)) {
-          setWishlist(parsed.filter((slug) => typeof slug === 'string'));
-        }
-      } catch {
-        setWishlist([]);
-      }
+      setWishlist([]);
     }
   }, [status]);
 
   const wishlistSet = useMemo(() => new Set(wishlist), [wishlist]);
 
   const toggleWishlist = (slug) => {
-    if (status === 'authenticated') {
-      const isInList = wishlistSet.has(slug);
-      setWishlist((prev) => (isInList ? prev.filter((s) => s !== slug) : [...prev, slug]));
-      setWishlistCountsBySlug((prev) => ({
-        ...prev,
-        [slug]: Math.max(0, Number(prev[slug] || 0) + (isInList ? -1 : 1)),
-      }));
-
-      fetch('/api/users/wishlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, action: isInList ? 'remove' : 'add' }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.slugs) setWishlist(data.slugs);
-          if (typeof data.wishlistCount === 'number' && typeof data.slug === 'string') {
-            setWishlistCountsBySlug((prev) => ({
-              ...prev,
-              [data.slug]: data.wishlistCount,
-            }));
-          }
-        })
-        .catch(() => {});
-    } else {
-      setWishlist((prev) => {
-        const next = prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug];
-        window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(next));
-        return next;
-      });
+    if (status !== 'authenticated') {
+      setWishlistLoginRequired(true);
+      setWishlistAnchor(null);
+      return;
     }
+
+    const isInList = wishlistSet.has(slug);
+    setWishlist((prev) => (isInList ? prev.filter((s) => s !== slug) : [...prev, slug]));
+    setWishlistCountsBySlug((prev) => ({
+      ...prev,
+      [slug]: Math.max(0, Number(prev[slug] || 0) + (isInList ? -1 : 1)),
+    }));
+
+    fetch('/api/users/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, action: isInList ? 'remove' : 'add' }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.slugs) setWishlist(data.slugs);
+        if (typeof data.wishlistCount === 'number' && typeof data.slug === 'string') {
+          setWishlistCountsBySlug((prev) => ({
+            ...prev,
+            [data.slug]: data.wishlistCount,
+          }));
+        }
+      })
+      .catch(() => {});
   };
 
   const wishlistedTreks = useMemo(() => allTreks.filter((trek) => wishlistSet.has(trek.slug)), [allTreks, wishlistSet]);
@@ -277,12 +266,18 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
           {/* Wishlist heart button */}
           <IconButton
             color="inherit"
-            onClick={(event) => setWishlistAnchor(event.currentTarget)}
+            onClick={(event) => {
+              if (status !== 'authenticated') {
+                setWishlistLoginRequired(true);
+                return;
+              }
+              setWishlistAnchor(event.currentTarget);
+            }}
             aria-label="Open wishlist"
-            sx={{ mr: 0.5 }}
+            sx={{ mr: 0.5, width: 42, height: 42 }}
           >
             <Badge badgeContent={wishlistedTreks.length} color="error" max={99}>
-              <FavoriteIcon sx={{ color: wishlistedTreks.length > 0 ? '#ef4444' : 'inherit' }} />
+              <FavoriteIcon sx={{ fontSize: 24, color: wishlistedTreks.length > 0 ? '#ef4444' : 'inherit' }} />
             </Badge>
           </IconButton>
 
@@ -346,14 +341,16 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                   border: '1px solid',
                   borderColor: theme.palette.divider,
                   borderRadius: 999,
-                  p: 0.4,
+                  p: 0.25,
+                  width: 42,
+                  height: 42,
                 })}
                 aria-label="Open user menu"
               >
                 <Avatar
                   src={session?.user?.image || ''}
                   alt={session?.user?.name || session?.user?.email || 'User'}
-                  sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+                  sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
                 >
                   {initialsFromName(session?.user?.name || session?.user?.email)}
                 </Avatar>
@@ -414,6 +411,20 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
         })}
       >
         <Container maxWidth="lg" sx={{ pt: 6 }}>
+          {wishlistLoginRequired && (
+            <Alert
+              severity="info"
+              sx={{ mb: 2 }}
+              action={
+                <AppButton component={Link} href="/auth/signin" variant="contained" size="small">
+                  Login
+                </AppButton>
+              }
+            >
+              You need to be logged in to add treks to your wishlist.
+            </Alert>
+          )}
+
           {dataSource === 'fallback' && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               Showing fallback trek data because database routes could not be loaded.
