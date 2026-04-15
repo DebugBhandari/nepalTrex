@@ -91,6 +91,12 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlistAnchor, setWishlistAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
+  const [wishlistCountsBySlug, setWishlistCountsBySlug] = useState(() =>
+    allTreks.reduce((acc, trek) => {
+      acc[trek.slug] = Number(trek.wishlistCount || 0);
+      return acc;
+    }, {})
+  );
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedDuration, setSelectedDuration] = useState('all');
@@ -127,13 +133,26 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
     if (status === 'authenticated') {
       const isInList = wishlistSet.has(slug);
       setWishlist((prev) => (isInList ? prev.filter((s) => s !== slug) : [...prev, slug]));
+      setWishlistCountsBySlug((prev) => ({
+        ...prev,
+        [slug]: Math.max(0, Number(prev[slug] || 0) + (isInList ? -1 : 1)),
+      }));
+
       fetch('/api/users/wishlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, action: isInList ? 'remove' : 'add' }),
       })
         .then((r) => r.json())
-        .then((data) => { if (data.slugs) setWishlist(data.slugs); })
+        .then((data) => {
+          if (data.slugs) setWishlist(data.slugs);
+          if (typeof data.wishlistCount === 'number' && typeof data.slug === 'string') {
+            setWishlistCountsBySlug((prev) => ({
+              ...prev,
+              [data.slug]: data.wishlistCount,
+            }));
+          }
+        })
         .catch(() => {});
     } else {
       setWishlist((prev) => {
@@ -639,6 +658,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                               size="small"
                               variant="outlined"
                             />
+                            <Chip
+                              label={`${Number(wishlistCountsBySlug[trek.slug] ?? trek.wishlistCount ?? 0)} wishlists`}
+                              size="small"
+                              variant="outlined"
+                            />
                           </Stack>
                           <AppButton
                             variant={isSaved ? 'contained' : 'outlined'}
@@ -755,6 +779,19 @@ export async function getServerSideProps() {
       `
     );
 
+    const wishlistCountRows = await query(
+      `
+        SELECT trek_slug, COUNT(*)::int AS wishlist_count
+        FROM user_trek_wishlists
+        GROUP BY trek_slug
+      `
+    );
+
+    const wishlistCountBySlug = wishlistCountRows.rows.reduce((acc, row) => {
+      acc[row.trek_slug] = Number(row.wishlist_count || 0);
+      return acc;
+    }, {});
+
     const stayRows = await query(
       `
         SELECT latitude, longitude
@@ -800,6 +837,7 @@ export async function getServerSideProps() {
         elevationMinM: trek.elevationMinM,
         elevationMaxM: trek.elevationMaxM,
         nearbyStaysCount,
+        wishlistCount: Number(wishlistCountBySlug[trek.slug] || 0),
       };
     });
 

@@ -44,7 +44,17 @@ export default async function handler(req, res) {
       `SELECT trek_slug FROM user_trek_wishlists WHERE user_id = $1 ORDER BY created_at DESC`,
       [session.user.id]
     );
-    return res.status(200).json({ slugs: result.rows.map((r) => r.trek_slug) });
+
+    const countResult = await query(
+      `SELECT COUNT(*)::int AS wishlist_count FROM user_trek_wishlists WHERE trek_slug = $1`,
+      [slug]
+    );
+
+    return res.status(200).json({
+      slugs: result.rows.map((r) => r.trek_slug),
+      slug,
+      wishlistCount: countResult.rows[0]?.wishlist_count || 0,
+    });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
