@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Alert, Box, Card, CardContent, Container, LinearProgress, Stack, TextField, Typography } from '@mui/material';
 import AppButton from '../../components/AppButton';
-import { BabyTrexLogo } from '../../components/BabyTrexLogo';
+
+const BRAND_LOGO_SRC = '/brand/nepaltrex-logo.png';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -140,7 +141,23 @@ export default function SignUpPage() {
           >
             <CardContent sx={{ p: 4 }}>
               <Stack alignItems="center" spacing={1.5} sx={{ mb: 3 }}>
-                <BabyTrexLogo size={42} color="#d97745" />
+                <Box
+                  component="img"
+                  src={BRAND_LOGO_SRC}
+                  alt="NepalTrex logo"
+                  onError={(event) => {
+                    event.currentTarget.style.display = 'none';
+                  }}
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    objectFit: 'contain',
+                    borderRadius: 2,
+                    border: '1px solid rgba(15, 118, 110, 0.24)',
+                    bgcolor: 'rgba(255,255,255,0.7)',
+                    p: 0.4,
+                  }}
+                />
                 <Typography variant="h4">Create Account</Typography>
                 <Typography color="text.secondary">Start your trekking adventure today</Typography>
               </Stack>
