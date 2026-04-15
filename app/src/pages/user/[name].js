@@ -1,8 +1,8 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Alert, Avatar, Box, Card, CardContent, Container, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Card, CardContent, Chip, Container, Stack, TextField, Typography } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import AppButton from '../../components/AppButton';
 import { query } from '../../lib/db';
@@ -22,6 +22,26 @@ export default function UserProfilePage({ profile, wishlistItems }) {
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState(profile.name || '');
   const [imageUrl, setImageUrl] = useState(profile.imageUrl || '');
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch(`/api/users/${profile.email}/orders`);
+        if (response.ok) {
+          const data = await response.json();
+          setOrders(data.orders || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch orders:', error);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [profile.email]);
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
   const defaultGoogleImage = profile.provider === 'google' ? session?.user?.image || '' : '';
@@ -128,6 +148,50 @@ export default function UserProfilePage({ profile, wishlistItems }) {
             </CardContent>
           </Card>
 
+          {orders.length > 0 && (
+            <Card sx={{ mb: 2 }}>
+              <CardContent>
+                <Typography variant="h5" sx={{ mb: 1.5 }}>Your Orders</Typography>
+
+                <Stack spacing={1.5}>
+                  {orders.map((order) => (
+                    <Card key={order.id} variant="outlined">
+                      <CardContent>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="subtitle1">{order.stayName || 'N/A'}</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                            </Typography>
+                            <Stack spacing={0.5} sx={{ mt: 1 }}>
+                              {order.items.map((item, idx) => (
+                                <Typography key={idx} variant="body2" color="text.secondary">
+                                  {item.menuItemName} × {item.quantity}
+                                </Typography>
+                              ))}
+                            </Stack>
+                          </Box>
+
+                          <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
+                            <Chip 
+                              label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              color={order.status === 'completed' ? 'success' : 'default'}
+                              variant="outlined"
+                              size="small"
+                            />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                              Rs. {order.totalPrice.toLocaleString()}
+                            </Typography>
+                          </Stack>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardContent>
               <Typography variant="h5" sx={{ mb: 1.2 }}>Wishlist</Typography>
@@ -156,6 +220,7 @@ export default function UserProfilePage({ profile, wishlistItems }) {
                 )}
               </Stack>
             </CardContent>
+          </Card>
           </Card>
         </Container>
       </Box>

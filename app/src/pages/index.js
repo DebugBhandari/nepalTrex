@@ -402,9 +402,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               <AppButton href="#treks" variant="contained" size="large">
                 Explore Treks
               </AppButton>
-              <AppButton variant="outlined" size="large" disabled>
-                {wishlistedTreks.length} saved
-              </AppButton>
             </Stack>
           </Paper>
 

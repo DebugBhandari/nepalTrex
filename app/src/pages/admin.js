@@ -101,18 +101,45 @@ export default function AdminPage({ user, initialStays }) {
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [notification, setNotification] = useState('');
+  const [lastOrderCount, setLastOrderCount] = useState(0);
 
   const isUserMenuOpen = Boolean(userMenuAnchor);
   const isSuperUser = user?.role === 'superUser';
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
 
+  const fetchOrders = async () => {
+    try {
+      const response = await fetch('/api/orders');
+      const data = await response.json();
+      const fetchedOrders = data.orders || [];
+      
+      // Show notification if new orders arrived
+      if (ordersLoaded && fetchedOrders.length > lastOrderCount) {
+        const newOrderCount = fetchedOrders.length - lastOrderCount;
+        setNotification(`${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} received!`);
+        setTimeout(() => setNotification(''), 5000);
+      }
+      
+      setOrders(fetchedOrders);
+      setLastOrderCount(fetchedOrders.length);
+      if (!ordersLoaded) {
+        setOrdersLoaded(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      if (ordersLoaded) {
+        setOrdersLoaded(true);
+      }
+    }
+  };
+
   useEffect(() => {
-    fetch('/api/orders')
-      .then((r) => r.json())
-      .then((data) => { setOrders(data.orders || []); setOrdersLoaded(true); })
-      .catch(() => setOrdersLoaded(true));
-  }, []);
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, [ordersLoaded, lastOrderCount]);
 
   const [newStay, setNewStay] = useState({
     name: '', slug: '', stayType: 'homestay', location: '', latitude: '', longitude: '',
@@ -338,6 +365,7 @@ export default function AdminPage({ user, initialStays }) {
           <Typography variant="h4">Manage Your Hotels and Homestays</Typography>
           <Typography color="text.secondary" sx={{ mt: 0.5 }}>Signed in as {user.email} ({user.role})</Typography>
 
+          {notification && <Alert sx={{ mt: 2 }} severity="success">{notification}</Alert>}
           {message && <Alert sx={{ mt: 2 }} severity="info">{message}</Alert>}
 
           {/* Add New Stay */}

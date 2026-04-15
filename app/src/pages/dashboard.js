@@ -168,11 +168,49 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [savingStayById, setSavingStayById] = useState({});
   const [stayMessage, setStayMessage] = useState('');
 
+  const [orders, setOrders] = useState([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [notification, setNotification] = useState('');
+  const [lastOrderCount, setLastOrderCount] = useState(0);
+
   const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
   const isSuperUser = user?.role === 'superUser';
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const isUserMenuOpen = Boolean(userMenuAnchor);
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
+
+  // Fetch orders with notification on new arrivals
+  const fetchOrders = useCallback(async () => {
+    try {
+      const response = await fetch('/api/orders');
+      const data = await response.json();
+      const fetchedOrders = data.orders || [];
+      
+      // Show notification if new orders arrived
+      if (ordersLoaded && fetchedOrders.length > lastOrderCount) {
+        const newOrderCount = fetchedOrders.length - lastOrderCount;
+        setNotification(`${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} received!`);
+        setTimeout(() => setNotification(''), 5000);
+      }
+      
+      setOrders(fetchedOrders);
+      setLastOrderCount(fetchedOrders.length);
+      if (!ordersLoaded) {
+        setOrdersLoaded(true);
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      if (!ordersLoaded) {
+        setOrdersLoaded(true);
+      }
+    }
+  }, [ordersLoaded, lastOrderCount]);
+
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -588,6 +626,8 @@ return (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Manage treks and users from one place.
           </Typography>
+
+          {notification && <Alert severity="success" sx={{ mt: 2, mb: 2 }}>{notification}</Alert>}
 
           <Tabs
             value={activeTab}
@@ -1257,17 +1297,35 @@ return (
                           spacing={2}
                           justifyContent="space-between"
                         >
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle1">
-                              {entry.displayName || entry.username || 'N/A'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {entry.email || 'N/A'}
-                            </Typography>
-                            <Chip label={`Current role: ${entry.role || 'user'}`} size="small" sx={{ mt: 1 }} />
-                          </Box>
+                          <Stack direction="row" spacing={1.5} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ flex: 1 }}>
+                            <Avatar
+                              src={entry.profileImageUrl || ''}
+                              alt={entry.displayName || entry.username || 'User'}
+                              sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 18, fontWeight: 700 }}
+                            >
+                              {(entry.displayName || entry.username || 'U').charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="subtitle1">
+                                {entry.displayName || entry.username || 'N/A'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {entry.email || 'N/A'}
+                              </Typography>
+                              <Chip label={`Current role: ${entry.role || 'user'}`} size="small" sx={{ mt: 1 }} />
+                            </Box>
+                          </Stack>
 
                           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+                            <AppButton
+                              component={Link}
+                              href={`/user/${normalizeHandle(entry.displayName || entry.username || entry.email?.split('@')[0] || 'user')}`}
+                              variant="outlined"
+                              size="small"
+                              sx={{ minWidth: 120, height: 36 }}
+                            >
+                              View Profile
+                            </AppButton>
                             <FormControl size="small" sx={{ minWidth: 140 }}>
                               <InputLabel id={`role-input-${entry.id}`}>Role</InputLabel>
                               <Select
