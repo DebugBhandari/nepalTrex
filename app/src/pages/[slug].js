@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import PlaceIcon from '@mui/icons-material/Place';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
@@ -342,15 +341,12 @@ function TrekDetailView({ trek }) {
                         <Typography variant="h6">{stay.name}</Typography>
                         <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
                           <Chip label={stay.stayType} size="small" color="secondary" />
-                          <Chip icon={<PlaceIcon />} label={`${stay.location} (${stay.distanceKm.toFixed(1)} km)`} size="small" variant="outlined" />
+                          <Chip icon={<PlaceIcon />} label={`${stay.distanceKm.toFixed(1)} km from ${stay.location}`} size="small" variant="outlined" />
                         </Stack>
                       </Box>
                       <Stack direction="row" spacing={1}>
-                        <AppButton component={Link} href={`/${stay.slug}`} variant="outlined" size="small">
+                        <AppButton component={Link} href={`/${stay.slug}`} variant="outlined" size="small" sx={{ height: 36, whiteSpace: 'nowrap' }}>
                           View Stay
-                        </AppButton>
-                        <AppButton variant="outlined" size="small" startIcon={<FavoriteBorderIcon />}>
-                          Wishlist Stay
                         </AppButton>
                       </Stack>
                     </Stack>

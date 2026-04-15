@@ -516,7 +516,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                     color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                   })}
                 >
-                  {region}
+                  Explore — {region}
                 </Typography>
 
                 <Box
