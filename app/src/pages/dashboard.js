@@ -1308,11 +1308,11 @@ return (
                         >
                           <Stack direction="row" spacing={1.5} alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ flex: 1 }}>
                             <Avatar
-                              src={entry.profileImageUrl || ''}
+                              src={entry.profileImageUrl}
                               alt={entry.displayName || entry.username || 'User'}
-                              sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontSize: 18, fontWeight: 700 }}
+                              sx={{ width: 56, height: 56, bgcolor: entry.profileImageUrl ? 'transparent' : 'primary.main', color: entry.profileImageUrl ? 'inherit' : 'white', fontSize: 18, fontWeight: 700 }}
                             >
-                              {(entry.displayName || entry.username || 'U').charAt(0).toUpperCase()}
+                              {!entry.profileImageUrl && (entry.displayName || entry.username || 'U').charAt(0).toUpperCase()}
                             </Avatar>
                             <Box sx={{ flex: 1 }}>
                               <Typography variant="subtitle1">

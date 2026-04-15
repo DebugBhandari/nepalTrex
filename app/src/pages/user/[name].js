@@ -44,8 +44,8 @@ export default function UserProfilePage({ profile, wishlistItems }) {
   }, [profile.email]);
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
-  const defaultGoogleImage = profile.provider === 'google' ? session?.user?.image || '' : '';
-  const effectiveImage = imageUrl || defaultGoogleImage || '';
+  // Priority: 1. Uploaded profile image, 2. Google image (if own profile and is Google provider), 3. Empty (fallback to avatar)
+  const effectiveImage = imageUrl || (ownProfile && profile.provider === 'google' ? session?.user?.image || '' : '');
 
   const uploadImage = async (event) => {
     const file = event.target.files?.[0];
@@ -103,8 +103,11 @@ export default function UserProfilePage({ profile, wishlistItems }) {
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-                <Avatar src={effectiveImage || undefined} sx={{ width: 88, height: 88 }}>
-                  {(profile.name || profile.username || 'U').charAt(0).toUpperCase()}
+                <Avatar 
+                  src={effectiveImage} 
+                  sx={{ width: 88, height: 88, bgcolor: effectiveImage ? 'transparent' : 'primary.main', color: effectiveImage ? 'inherit' : 'white', fontSize: 32, fontWeight: 700 }}
+                >
+                  {!effectiveImage && (profile.name || profile.username || 'U').charAt(0).toUpperCase()}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="h4">{displayName || profile.username || 'User'}</Typography>
