@@ -30,7 +30,7 @@ import {
 import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
-import { getTrekImage, slugifyTrekName } from '../lib/treks';
+import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
 
 const navItems = [
   { label: 'Treks', href: '#treks' },
@@ -54,6 +54,8 @@ const ALTITUDE_FILTERS = [
   { value: 'high', label: 'Above 5,000m' },
   { value: 'unknown', label: 'Altitude not listed' },
 ];
+
+const NEARBY_STAY_THRESHOLD_KM = 35;
 
 function normalizeDifficulty(level) {
   return (level || '').trim().toLowerCase();
@@ -542,6 +544,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                           <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
                             <Chip label={trek.level} size="small" color="secondary" />
                             <Chip label={`${trek.durationDays} days`} size="small" variant="outlined" />
+                            <Chip
+                              label={`${trek.nearbyStaysCount || 0} nearby stays`}
+                              size="small"
+                              variant="outlined"
+                            />
                           </Stack>
                           <AppButton
                             variant={isSaved ? 'contained' : 'outlined'}
@@ -658,7 +665,23 @@ export async function getServerSideProps() {
       `
     );
 
+    const stayRows = await query(
+      `
+        SELECT latitude, longitude
+        FROM stays
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+      `
+    );
+
+    const stayCoordinates = stayRows.rows
+      .map((stay) => ({
+        lat: Number(stay.latitude),
+        lng: Number(stay.longitude),
+      }))
+      .filter((stay) => Number.isFinite(stay.lat) && Number.isFinite(stay.lng));
+
     const allTreks = trekRows.rows.map((row) => ({
+      routeWaypoints: parseRouteWaypoints(row.route_geojson),
       name: row.name,
       slug: slugifyTrekName(row.name),
       durationDays: row.duration_days,
@@ -669,7 +692,26 @@ export async function getServerSideProps() {
       isFeatured: row.is_featured,
       elevationMinM: row.elevation_min_m || null,
       elevationMaxM: row.elevation_max_m || null,
-    }));
+    })).map((trek) => {
+      const nearbyStaysCount = stayCoordinates.filter((stay) => {
+        const distanceKm = minDistanceToRouteKm(trek.routeWaypoints, stay.lat, stay.lng);
+        return Number.isFinite(distanceKm) && distanceKm <= NEARBY_STAY_THRESHOLD_KM;
+      }).length;
+
+      return {
+        name: trek.name,
+        slug: trek.slug,
+        durationDays: trek.durationDays,
+        level: trek.level,
+        region: trek.region,
+        description: trek.description,
+        routeGeojson: trek.routeGeojson,
+        isFeatured: trek.isFeatured,
+        elevationMinM: trek.elevationMinM,
+        elevationMaxM: trek.elevationMaxM,
+        nearbyStaysCount,
+      };
+    });
 
     return {
       props: {
@@ -689,6 +731,7 @@ export async function getServerSideProps() {
       isFeatured: true,
       elevationMinM: null,
       elevationMaxM: null,
+      nearbyStaysCount: 0,
     }));
 
     return {
