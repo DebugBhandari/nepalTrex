@@ -259,6 +259,23 @@ export default function AdminPage({ user, initialStays }) {
       <Head><title>Admin Dashboard | NepalTrex</title></Head>
       <AppBar position="sticky" elevation={0}>
         <Toolbar>
+          <Box
+            sx={{
+              backgroundImage: 'url(/brand/banner-mountains.svg)',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontSize: 18,
+              fontWeight: 700,
+              letterSpacing: 0.2,
+              mr: 0.8,
+              width: 45,
+              height: 30,
+            }}
+          />
           <Typography variant="h6" sx={{ flexGrow: 1 }}>Admin Dashboard</Typography>
           <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>Home</AppButton>
           <IconButton
@@ -422,7 +439,7 @@ export default function AdminPage({ user, initialStays }) {
                       {stay.description}
                     </Typography>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                      <AppButton variant={isEditing ? 'contained' : 'outlined'} startIcon={<EditIcon />} onClick={() => setEditingById((prev) => ({ ...prev, [stay.id]: !isEditing }))}>
+                      <AppButton variant={isEditing ? 'contained' : 'outlined'} startIcon={<EditIcon />} onClick={() => setEditingById((prev) => ({ ...prev, [stay.id]: !isEditing }))} sx={{ height: 40 }}>
                         {isEditing ? 'Close Edit' : 'Edit Details'}
                       </AppButton>
                       <AppButton variant={isMenuOpen ? 'contained' : 'outlined'} startIcon={<MenuBookIcon />} onClick={() => setMenuOpenById((prev) => ({ ...prev, [stay.id]: !isMenuOpen }))}>

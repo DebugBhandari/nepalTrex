@@ -83,7 +83,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
-  const [showWishlistOnly, setShowWishlistOnly] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedDuration, setSelectedDuration] = useState('all');
@@ -138,7 +137,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   };
 
   const wishlistedTreks = useMemo(() => allTreks.filter((trek) => wishlistSet.has(trek.slug)), [allTreks, wishlistSet]);
-  const visibleTreks = showWishlistOnly ? wishlistedTreks : allTreks;
+  const visibleTreks = allTreks;
 
   const regionOptions = useMemo(() => {
     const regions = new Set(allTreks.map((trek) => trek.region || 'Other'));
@@ -243,6 +242,22 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               minWidth: 0,
             }}
           >
+            <Box
+              sx={{
+                backgroundImage: 'url(/brand/banner-mountains.svg)',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'contain',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontSize: 18,
+                fontWeight: 700,
+                letterSpacing: 0.2,
+                width: 45,
+                height: 30,
+              }}
+            />
             <Typography
               variant="h6"
               sx={(theme) => ({
@@ -255,29 +270,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1 }} />
-          <AppButton
-            variant={showWishlistOnly ? 'contained' : 'outlined'}
-            size="small"
-            startIcon={<FavoriteIcon />}
-            onClick={() => setShowWishlistOnly((prev) => !prev)}
-            sx={(theme) => ({
-              mr: 1,
-              color: showWishlistOnly
-                ? '#ffffff'
-                : theme.palette.mode === 'dark'
-                ? '#e8f0f7'
-                : theme.palette.text.primary,
-              borderColor:
-                !showWishlistOnly && theme.palette.mode === 'dark'
-                  ? 'rgba(232, 240, 247, 0.5)'
-                  : undefined,
-              '& .MuiButton-startIcon': {
-                color: 'inherit',
-              },
-            })}
-          >
-            {showWishlistOnly ? 'Showing Wishlist' : `${wishlist.length} wishlist`}
-          </AppButton>
 
           {status === 'authenticated' ? (
             <>

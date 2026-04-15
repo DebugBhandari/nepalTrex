@@ -3,11 +3,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
-import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
-import HikingIcon from '@mui/icons-material/Hiking';
-import HotelIcon from '@mui/icons-material/Hotel';
-import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -22,8 +18,6 @@ import {
   CardContent,
   Chip,
   Container,
-  Divider,
-  Drawer,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -159,7 +153,6 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [sortDirection, setSortDirection] = useState('asc');
 
   const [activeTab, setActiveTab] = useState('treks');
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
 
   const [users, setUsers] = useState([]);
@@ -483,69 +476,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
     }
   };
 
-  const menuList = (
-    <Box sx={{ width: 280, p: 2 }} role="presentation">
-      <Typography variant="h6" sx={{ mb: 1 }}>
-        Menu
-      </Typography>
-      <Stack spacing={1}>
-        <AppButton
-          component={Link}
-          href="/"
-          startIcon={<HomeIcon />}
-          variant="outlined"
-          onClick={() => setDrawerOpen(false)}
-        >
-          Home
-        </AppButton>
-        <AppButton
-          startIcon={<HikingIcon />}
-          variant={activeTab === 'treks' ? 'contained' : 'outlined'}
-          onClick={() => {
-            setActiveTab('treks');
-            setDrawerOpen(false);
-          }}
-        >
-          Trek Updates
-        </AppButton>
-        {canManage && (
-          <AppButton
-            startIcon={<HotelIcon />}
-            variant={activeTab === 'stays' ? 'contained' : 'outlined'}
-            onClick={() => {
-              setActiveTab('stays');
-              setDrawerOpen(false);
-            }}
-          >
-            Stay Management
-          </AppButton>
-        )}
-        {canManage && (
-          <AppButton
-            startIcon={<ManageAccountsIcon />}
-            variant={activeTab === 'users' ? 'contained' : 'outlined'}
-            onClick={() => {
-              setActiveTab('users');
-              setDrawerOpen(false);
-            }}
-          >
-            User Management
-          </AppButton>
-        )}
-        <Divider sx={{ my: 1 }} />
-        <AppButton
-          color="inherit"
-          startIcon={<LogoutIcon />}
-          variant="outlined"
-          onClick={() => signOut({ callbackUrl: '/' })}
-        >
-          Sign out
-        </AppButton>
-      </Stack>
-    </Box>
-  );
-
-  return (
+return (
     <>
       <Head>
         <title>Dashboard | NepalTrex</title>
@@ -557,9 +488,23 @@ export default function DashboardPage({ user, treks, stays = [] }) {
         sx={{ backdropFilter: 'blur(8px)' }}
       >
         <Toolbar>
-          <AppIconButton edge="start" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }} aria-label="Open menu">
-            <MenuIcon />
-          </AppIconButton>
+          <Box
+            sx={{
+              backgroundImage: 'url(/brand/banner-mountains.svg)',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              fontSize: 18,
+              fontWeight: 700,
+              letterSpacing: 0.2,
+              mr: 0.8,
+              width: 45,
+              height: 30,
+            }}
+          />
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             NepalTrex Dashboard
           </Typography>
@@ -627,10 +572,6 @@ export default function DashboardPage({ user, treks, stays = [] }) {
           </Menu>
         </Toolbar>
       </AppBar>
-
-      <Drawer anchor="left" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        {menuList}
-      </Drawer>
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Paper
