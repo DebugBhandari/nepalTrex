@@ -84,31 +84,7 @@ function TrekRouteBounds({ routeGeojson }) {
 
 export default function TrekRouteMap({ selectedTrek }) {
   const routeGeojson = useMemo(() => normalizeGeoJson(selectedTrek?.routeGeojson), [selectedTrek]);
-  const selectedTrekName = selectedTrek?.name || '';
   const namedWaypoints = useMemo(() => extractNamedWaypoints(selectedTrek?.routeGeojson), [selectedTrek]);
-
-  const routeLabelOptions = useMemo(
-    () => ({
-      className: 'trek-route-label',
-      direction: 'top',
-      permanent: true,
-      sticky: false,
-    }),
-    []
-  );
-
-  const routeLayerOptions = useMemo(
-    () => ({
-      onEachFeature: (_, layer) => {
-        if (!selectedTrekName) {
-          return;
-        }
-
-        layer.bindTooltip(selectedTrekName, routeLabelOptions).openTooltip();
-      },
-    }),
-    [routeLabelOptions, selectedTrekName]
-  );
 
   return (
     <MapContainer
@@ -124,9 +100,8 @@ export default function TrekRouteMap({ selectedTrek }) {
       <TrekRouteBounds routeGeojson={routeGeojson} />
       {routeGeojson && (
         <GeoJSON
-          key={selectedTrekName || 'route-layer'}
+          key="route-layer"
           data={routeGeojson}
-          {...routeLayerOptions}
           style={{
             color: '#0f766e',
             weight: 5,
@@ -141,7 +116,7 @@ export default function TrekRouteMap({ selectedTrek }) {
           radius={5}
           pathOptions={{ color: '#285A48', fillColor: '#408A71', fillOpacity: 1, weight: 2 }}
         >
-          <Tooltip permanent direction="top" offset={[0, -8]}>
+          <Tooltip direction="top" offset={[0, -8]}>
             {name}
           </Tooltip>
         </CircleMarker>
