@@ -6,17 +6,20 @@ import { signOut } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import {
   Alert,
   AppBar,
   Avatar,
+  Badge,
   Box,
   Card,
   CardContent,
   Chip,
   Container,
+  Divider,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -170,31 +173,23 @@ export default function DashboardPage({ user, treks, stays = [] }) {
 
   const [orders, setOrders] = useState([]);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
-  const [notification, setNotification] = useState('');
-  const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [notificationsAnchor, setNotificationsAnchor] = useState(null);
 
   const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
   const isSuperUser = user?.role === 'superUser';
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const isUserMenuOpen = Boolean(userMenuAnchor);
+  const isNotificationsOpen = Boolean(notificationsAnchor);
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
+  const pendingOrders = useMemo(() => orders.filter((order) => order.status === 'pending'), [orders]);
 
-  // Fetch orders with notification on new arrivals
   const fetchOrders = useCallback(async () => {
     try {
       const response = await fetch('/api/orders');
       const data = await response.json();
       const fetchedOrders = data.orders || [];
-      
-      // Show notification if new orders arrived
-      if (ordersLoaded && fetchedOrders.length > lastOrderCount) {
-        const newOrderCount = fetchedOrders.length - lastOrderCount;
-        setNotification(`${newOrderCount} new order${newOrderCount > 1 ? 's' : ''} received!`);
-        setTimeout(() => setNotification(''), 5000);
-      }
-      
+
       setOrders(fetchedOrders);
-      setLastOrderCount(fetchedOrders.length);
       if (!ordersLoaded) {
         setOrdersLoaded(true);
       }
@@ -204,11 +199,11 @@ export default function DashboardPage({ user, treks, stays = [] }) {
         setOrdersLoaded(true);
       }
     }
-  }, [ordersLoaded, lastOrderCount]);
+  }, [ordersLoaded]);
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000); // Poll every 5 seconds
+    const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
@@ -543,6 +538,54 @@ return (
           <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ mr: 1 }} />
           <IconButton
             color="inherit"
+            onClick={(event) => setNotificationsAnchor(event.currentTarget)}
+            sx={(theme) => ({
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              borderRadius: 999,
+              p: 0.25,
+              width: 42,
+              height: 42,
+              mr: 1,
+            })}
+            aria-label="Open order notifications"
+          >
+            <Badge badgeContent={pendingOrders.length} color="error" max={99}>
+              <NotificationsNoneIcon sx={{ fontSize: 24 }} />
+            </Badge>
+          </IconButton>
+          <Menu
+            anchorEl={notificationsAnchor}
+            open={isNotificationsOpen}
+            onClose={() => setNotificationsAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{ sx: { width: 340, maxWidth: 'calc(100vw - 24px)' } }}
+          >
+            <MenuItem disabled sx={{ opacity: 1, fontWeight: 700 }}>
+              Pending Orders ({pendingOrders.length})
+            </MenuItem>
+            <Divider />
+            {pendingOrders.length === 0 ? (
+              <MenuItem disabled>No pending orders.</MenuItem>
+            ) : (
+              pendingOrders.map((order) => (
+                <MenuItem key={order.id} onClick={() => setNotificationsAnchor(null)} sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}>
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>{order.stayName}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {order.customerName} · {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice).toLocaleString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {new Date(order.createdAt).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))
+            )}
+          </Menu>
+          <IconButton
+            color="inherit"
             onClick={(event) => setUserMenuAnchor(event.currentTarget)}
             sx={(theme) => ({
               border: '1px solid',
@@ -617,8 +660,6 @@ return (
               </Typography>
             </Box>
           </Stack>
-
-          {notification && <Alert severity="success" sx={{ mb: 2 }}>{notification}</Alert>}
 
           <Tabs
             value={activeTab}
