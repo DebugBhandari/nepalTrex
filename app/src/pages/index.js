@@ -221,7 +221,21 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             size="small"
             startIcon={<FavoriteIcon />}
             onClick={() => setShowWishlistOnly((prev) => !prev)}
-            sx={{ mr: 1 }}
+            sx={(theme) => ({
+              mr: 1,
+              color: showWishlistOnly
+                ? '#ffffff'
+                : theme.palette.mode === 'dark'
+                ? '#e8f0f7'
+                : theme.palette.text.primary,
+              borderColor:
+                !showWishlistOnly && theme.palette.mode === 'dark'
+                  ? 'rgba(232, 240, 247, 0.5)'
+                  : undefined,
+              '& .MuiButton-startIcon': {
+                color: 'inherit',
+              },
+            })}
           >
             {showWishlistOnly ? 'Showing Wishlist' : `${wishlist.length} wishlist`}
           </AppButton>

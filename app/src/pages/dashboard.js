@@ -603,10 +603,16 @@ export default function DashboardPage({ user, treks }) {
                   return (
                     <Card
                       key={trek.id}
-                      sx={{
+                      sx={(theme) => ({
                         background:
-                          'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                      }}
+                          theme.palette.mode === 'dark'
+                            ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                            : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
+                        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                        border: '1px solid',
+                        borderColor:
+                          theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(11, 31, 42, 0.08)',
+                      })}
                     >
                       <CardContent>
                         {!isEditing ? (
@@ -981,6 +987,22 @@ export default function DashboardPage({ user, treks }) {
                               variant="contained"
                               disabled={isSaving || isSelf || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
+                              sx={{
+                                height: 36,
+                                minHeight: 36,
+                                px: 1.8,
+                                fontSize: '0.82rem',
+                                lineHeight: 1.15,
+                                background: '#0f766e',
+                                color: '#ffffff',
+                                '&:hover': {
+                                  background: '#0b5f58',
+                                },
+                                '&.Mui-disabled': {
+                                  background: '#94a3b8',
+                                  color: '#ffffff',
+                                },
+                              }}
                             >
                               {isSaving ? 'Saving...' : 'Update Role'}
                             </AppButton>
