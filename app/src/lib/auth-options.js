@@ -146,6 +146,24 @@ export const authOptions = {
       if (token?.userId && session?.user) {
         session.user.id = token.userId;
         session.user.role = token.role || 'user';
+
+        const result = await query(
+          `
+            SELECT display_name, profile_image_url
+            FROM users
+            WHERE id = $1
+            LIMIT 1
+          `,
+          [token.userId]
+        );
+
+        if (result.rows[0]?.display_name) {
+          session.user.name = result.rows[0].display_name;
+        }
+
+        if (result.rows[0]?.profile_image_url) {
+          session.user.image = result.rows[0].profile_image_url;
+        }
       }
       return session;
     },

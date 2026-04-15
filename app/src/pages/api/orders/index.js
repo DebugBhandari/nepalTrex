@@ -1,6 +1,7 @@
+import { randomUUID } from 'crypto';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
-import { query } from '../../../lib/db';
+import { pool, query } from '../../../lib/db';
 
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
 
@@ -13,11 +14,11 @@ export default async function handler(req, res) {
     const isSuper = session.user.role === 'superUser';
     const result = isSuper
       ? await query(
-          `SELECT o.id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
+          `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
            FROM orders o JOIN stays s ON s.id = o.stay_id ORDER BY o.created_at DESC`
         )
       : await query(
-          `SELECT o.id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
+          `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
            FROM orders o JOIN stays s ON s.id = o.stay_id WHERE s.owner_user_id = $1 ORDER BY o.created_at DESC`,
           [session.user.id]
         );
@@ -25,6 +26,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       orders: result.rows.map((r) => ({
         id: r.id,
+        orderGroupId: r.order_group_id || null,
         stayId: r.stay_id,
         stayName: r.stay_name,
         menuItemName: r.menu_item_name,
@@ -48,6 +50,7 @@ export default async function handler(req, res) {
 
   const {
     stayId,
+    items,
     menuItemName,
     menuItemCategory,
     unitPrice,
@@ -58,27 +61,45 @@ export default async function handler(req, res) {
     notes,
   } = req.body || {};
 
-  if (!stayId || !menuItemName || !customerName) {
+  if (!stayId || !customerName) {
     return res.status(400).json({ error: 'Missing required booking fields' });
   }
 
-  const category = (menuItemCategory || '').toString().trim().toLowerCase();
-  if (!ALLOWED_MENU_CATEGORIES.has(category)) {
-    return res.status(400).json({ error: 'menuItemCategory must be room or food' });
+  const normalizedItems = Array.isArray(items) && items.length > 0
+    ? items
+        .map((item) => ({
+          menuItemName: (item?.menuItemName || '').toString().trim(),
+          menuItemCategory: (item?.menuItemCategory || '').toString().trim().toLowerCase(),
+          unitPrice: Number(item?.unitPrice),
+          quantity: Number(item?.quantity),
+        }))
+        .filter((item) => item.menuItemName)
+    : [
+        {
+          menuItemName: (menuItemName || '').toString().trim(),
+          menuItemCategory: (menuItemCategory || '').toString().trim().toLowerCase(),
+          unitPrice: Number(unitPrice),
+          quantity: Number(quantity),
+        },
+      ];
+
+  if (normalizedItems.length === 0) {
+    return res.status(400).json({ error: 'At least one valid order item is required' });
   }
 
-  const parsedUnitPrice = Number(unitPrice);
-  const parsedQuantity = Number(quantity);
+  for (const item of normalizedItems) {
+    if (!ALLOWED_MENU_CATEGORIES.has(item.menuItemCategory)) {
+      return res.status(400).json({ error: 'menuItemCategory must be room or food' });
+    }
 
-  if (!Number.isFinite(parsedUnitPrice) || parsedUnitPrice < 0) {
-    return res.status(400).json({ error: 'Invalid item price' });
+    if (!Number.isFinite(item.unitPrice) || item.unitPrice < 0) {
+      return res.status(400).json({ error: 'Invalid item price' });
+    }
+
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+      return res.status(400).json({ error: 'Quantity must be a positive integer' });
+    }
   }
-
-  if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
-    return res.status(400).json({ error: 'Quantity must be a positive integer' });
-  }
-
-  const totalPrice = parsedUnitPrice * parsedQuantity;
 
   try {
     const stayExists = await query(
@@ -95,38 +116,63 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Stay not found' });
     }
 
-    const result = await query(
-      `
-        INSERT INTO orders (
-          stay_id,
-          menu_item_name,
-          menu_item_category,
-          unit_price,
-          quantity,
-          total_price,
-          customer_name,
-          customer_email,
-          customer_phone,
-          notes
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, status, created_at
-      `,
-      [
-        stayId,
-        menuItemName,
-        category,
-        parsedUnitPrice,
-        parsedQuantity,
-        totalPrice,
-        customerName.toString().trim(),
-        customerEmail?.toString().trim() || null,
-        customerPhone?.toString().trim() || null,
-        notes?.toString().trim() || null,
-      ]
-    );
+    const orderGroupId = randomUUID();
+    const client = await pool.connect();
 
-    return res.status(201).json({ order: result.rows[0] });
+    try {
+      await client.query('BEGIN');
+
+      const createdOrders = [];
+
+      for (const item of normalizedItems) {
+        const result = await client.query(
+          `
+            INSERT INTO orders (
+              order_group_id,
+              stay_id,
+              menu_item_name,
+              menu_item_category,
+              unit_price,
+              quantity,
+              total_price,
+              customer_name,
+              customer_email,
+              customer_phone,
+              notes
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING id, status, created_at
+          `,
+          [
+            orderGroupId,
+            stayId,
+            item.menuItemName,
+            item.menuItemCategory,
+            item.unitPrice,
+            item.quantity,
+            item.unitPrice * item.quantity,
+            customerName.toString().trim(),
+            customerEmail?.toString().trim() || null,
+            customerPhone?.toString().trim() || null,
+            notes?.toString().trim() || null,
+          ]
+        );
+
+        createdOrders.push(result.rows[0]);
+      }
+
+      await client.query('COMMIT');
+
+      return res.status(201).json({
+        orderGroupId,
+        orders: createdOrders,
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     return res.status(500).json({ error: error.message || 'Failed to place booking' });
   }

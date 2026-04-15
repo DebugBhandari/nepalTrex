@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT UNIQUE,
   email TEXT UNIQUE,
   display_name TEXT,
+  profile_image_url TEXT,
   role TEXT NOT NULL DEFAULT 'user',
   password_hash TEXT,
   provider TEXT NOT NULL DEFAULT 'credentials',
@@ -15,6 +16,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user';
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
 
 UPDATE users
 SET role = 'user', updated_at = NOW()
@@ -96,6 +100,7 @@ CREATE INDEX IF NOT EXISTS stays_owner_user_id_idx ON stays(owner_user_id);
 
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_group_id UUID,
   stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
   menu_item_name TEXT NOT NULL,
   menu_item_category TEXT NOT NULL CHECK (menu_item_category IN ('room', 'food')),
@@ -109,6 +114,9 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS order_group_id UUID;
 
 CREATE INDEX IF NOT EXISTS orders_stay_id_idx ON orders(stay_id);
 

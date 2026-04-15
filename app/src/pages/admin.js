@@ -349,7 +349,7 @@ export default function AdminPage({ user, initialStays }) {
                         {isMenuOpen ? 'Close Menu' : 'Manage Menu'}
                         <Chip size="small" label={`${availableCount}/${totalCount}`} variant="outlined" sx={{ ml: 1, height: 20, fontSize: '0.68rem', color: 'inherit', borderColor: 'currentColor' }} />
                       </AppButton>
-                      <AppButton component={Link} href={`/${stay.slug}`} variant="outlined" startIcon={<VisibilityIcon />} target="_blank">View Page</AppButton>
+                      <AppButton component={Link} href={`/stays/${stay.slug}`} variant="outlined" startIcon={<VisibilityIcon />} target="_blank">View Page</AppButton>
                     </Stack>
                   </CardContent>
 

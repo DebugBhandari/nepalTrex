@@ -6,6 +6,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
+import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import {
@@ -60,6 +61,15 @@ function maxAltitude(trek) {
   return Math.max(trek.elevationMaxM || 0, trek.elevationMinM || 0);
 }
 
+function normalizeHandle(value) {
+  return (value || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'user';
+}
+
 export default function HomePage({ allTreks, dataSource, dataError }) {
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
@@ -73,6 +83,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
   const isUserMenuOpen = Boolean(userMenuAnchor);
+  const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -280,6 +291,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
+                <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
+                  <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
+                  Profile
+                </MenuItem>
+
                 {isSuperUser && (
                   <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
                     <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
@@ -532,7 +548,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                           },
                         })}
                       >
-                        <Link href={`/${trek.slug}`}>
+                        <Link href={`/treks/${trek.slug}`}>
                           <CardMedia
                             component="img"
                             height="220"
@@ -542,7 +558,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                           />
                         </Link>
                         <CardContent>
-                          <Link href={`/${trek.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <Link href={`/treks/${trek.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                             <Typography variant="h6" sx={{ mb: 1, color: 'inherit', '&:hover': { textDecoration: 'underline' } }}>
                               {trek.name}
                             </Typography>

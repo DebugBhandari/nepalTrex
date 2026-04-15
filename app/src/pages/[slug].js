@@ -28,14 +28,13 @@ const DEFAULT_MENU_IMAGE = '/stays/food-thukpa.jpg';
 const NEARBY_THRESHOLD_KM = 35;
 
 function StayDetailView({ stay }) {
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
   const [bookingStatus, setBookingStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     customerName: '',
     customerEmail: '',
     customerPhone: '',
-    quantity: 1,
     notes: '',
   });
 
@@ -47,8 +46,41 @@ function StayDetailView({ stay }) {
     };
   }, [stay.menuItems]);
 
+  const addToCart = (item) => {
+    setCartItems((prev) => {
+      const idx = prev.findIndex((entry) => entry.menuItemName === item.name && entry.menuItemCategory === item.category);
+      if (idx === -1) {
+        return [
+          ...prev,
+          {
+            menuItemName: item.name,
+            menuItemCategory: item.category,
+            unitPrice: Number(item.price),
+            quantity: 1,
+          },
+        ];
+      }
+
+      const next = [...prev];
+      next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+      return next;
+    });
+  };
+
+  const updateCartQuantity = (index, quantity) => {
+    setCartItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], quantity: Math.max(1, Number(quantity || 1)) };
+      return next;
+    });
+  };
+
+  const removeFromCart = (index) => {
+    setCartItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleBook = async () => {
-    if (!selectedItem) return;
+    if (cartItems.length === 0) return;
 
     setSubmitting(true);
     setBookingStatus('');
@@ -59,10 +91,7 @@ function StayDetailView({ stay }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           stayId: stay.id,
-          menuItemName: selectedItem.name,
-          menuItemCategory: selectedItem.category,
-          unitPrice: selectedItem.price,
-          quantity: Number(bookingForm.quantity || 1),
+          items: cartItems,
           customerName: bookingForm.customerName,
           customerEmail: bookingForm.customerEmail,
           customerPhone: bookingForm.customerPhone,
@@ -77,11 +106,11 @@ function StayDetailView({ stay }) {
       }
 
       setBookingStatus('Booking placed successfully. The host will contact you soon.');
+      setCartItems([]);
       setBookingForm({
         customerName: '',
         customerEmail: '',
         customerPhone: '',
-        quantity: 1,
         notes: '',
       });
     } catch (error) {
@@ -150,8 +179,8 @@ function StayDetailView({ stay }) {
                       </Typography>
                       <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                         <Chip label={`NPR ${Number(item.price).toFixed(0)}`} color="secondary" />
-                        <AppButton variant="contained" onClick={() => setSelectedItem(item)}>
-                          Book this room
+                        <AppButton variant="contained" onClick={() => addToCart(item)}>
+                          Add to order
                         </AppButton>
                       </Stack>
                     </CardContent>
@@ -180,8 +209,8 @@ function StayDetailView({ stay }) {
                       </Typography>
                       <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
                         <Chip label={`NPR ${Number(item.price).toFixed(0)}`} color="secondary" />
-                        <AppButton variant="contained" onClick={() => setSelectedItem(item)}>
-                          Order this item
+                        <AppButton variant="contained" onClick={() => addToCart(item)}>
+                          Add to order
                         </AppButton>
                       </Stack>
                     </CardContent>
@@ -203,9 +232,7 @@ function StayDetailView({ stay }) {
                   Book / Purchase
                 </Typography>
                 <Typography color="text.secondary" sx={{ mb: 2 }}>
-                  {selectedItem
-                    ? `${selectedItem.name} (${selectedItem.category}) - NPR ${Number(selectedItem.price).toFixed(0)}`
-                    : 'Select a room or food item to continue.'}
+                  Add one or more items from this stay, then confirm in one order.
                 </Typography>
 
                 {bookingStatus && (
@@ -215,6 +242,33 @@ function StayDetailView({ stay }) {
                 )}
 
                 <Stack spacing={1.2}>
+                  {cartItems.length > 0 && (
+                    <Stack spacing={1} sx={{ mb: 0.6 }}>
+                      {cartItems.map((item, index) => (
+                        <Paper key={`${item.menuItemCategory}-${item.menuItemName}-${index}`} variant="outlined" sx={{ p: 1.1 }}>
+                          <Typography variant="subtitle2">{item.menuItemName}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {item.menuItemCategory} - NPR {Number(item.unitPrice).toFixed(0)} each
+                          </Typography>
+                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.8 }}>
+                            <TextField
+                              label="Qty"
+                              type="number"
+                              size="small"
+                              inputProps={{ min: 1 }}
+                              value={item.quantity}
+                              onChange={(event) => updateCartQuantity(index, event.target.value)}
+                              sx={{ width: 90 }}
+                            />
+                            <AppButton size="small" variant="outlined" color="error" onClick={() => removeFromCart(index)}>
+                              Remove
+                            </AppButton>
+                          </Stack>
+                        </Paper>
+                      ))}
+                    </Stack>
+                  )}
+
                   <TextField
                     label="Your Name"
                     value={bookingForm.customerName}
@@ -231,15 +285,6 @@ function StayDetailView({ stay }) {
                     onChange={(event) => setBookingForm((prev) => ({ ...prev, customerPhone: event.target.value }))}
                   />
                   <TextField
-                    label="Quantity"
-                    type="number"
-                    inputProps={{ min: 1 }}
-                    value={bookingForm.quantity}
-                    onChange={(event) =>
-                      setBookingForm((prev) => ({ ...prev, quantity: Number(event.target.value || 1) }))
-                    }
-                  />
-                  <TextField
                     label="Notes (optional)"
                     multiline
                     minRows={3}
@@ -248,7 +293,7 @@ function StayDetailView({ stay }) {
                   />
                   <AppButton
                     variant="contained"
-                    disabled={!selectedItem || !bookingForm.customerName || submitting}
+                    disabled={cartItems.length === 0 || !bookingForm.customerName || submitting}
                     onClick={handleBook}
                   >
                     {submitting ? 'Submitting...' : 'Confirm Booking'}
@@ -345,7 +390,7 @@ function TrekDetailView({ trek }) {
                         </Stack>
                       </Box>
                       <Stack direction="row" spacing={1}>
-                        <AppButton component={Link} href={`/${stay.slug}`} variant="outlined" size="small" sx={{ height: 36, whiteSpace: 'nowrap' }}>
+                        <AppButton component={Link} href={`/stays/${stay.slug}`} variant="outlined" size="small" sx={{ height: 36, whiteSpace: 'nowrap' }}>
                           View Stay
                         </AppButton>
                       </Stack>
