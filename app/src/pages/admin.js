@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import AddIcon from '@mui/icons-material/Add';
@@ -41,6 +40,7 @@ import {
 import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
+import NepalTrexLogo from '../components/NepalTrexLogo';
 
 const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
@@ -292,28 +292,13 @@ export default function AdminPage({ user, initialStays }) {
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 0.8,
+              gap: 0.3,
               minWidth: 0,
               textDecoration: 'none',
               mr: 'auto',
             }}
           >
-            <Box
-              component="img"
-              src="/brand/banner-mountains.svg"
-              alt="NepalTrex mountain logo"
-              sx={{ width: 44, height: 32, objectFit: 'contain' }}
-            />
-            <Typography
-              variant="h6"
-              sx={(theme) => ({
-                fontWeight: 800,
-                letterSpacing: 0.2,
-                color: theme.palette.mode === 'dark' ? '#B0E4CC' : '#0f766e',
-              })}
-            >
-              NepalTrex
-            </Typography>
+            <NepalTrexLogo width={180} />
           </Box>
           <IconButton
             color="inherit"

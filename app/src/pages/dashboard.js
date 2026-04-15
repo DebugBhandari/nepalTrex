@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
-import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -38,6 +37,7 @@ import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import AppIconButton from '../components/AppIconButton';
+import NepalTrexLogo from '../components/NepalTrexLogo';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
@@ -532,28 +532,13 @@ return (
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 0.8,
+              gap: 0.3,
               minWidth: 0,
               textDecoration: 'none',
               mr: 'auto',
             }}
           >
-            <Box
-              component="img"
-              src="/brand/banner-mountains.svg"
-              alt="NepalTrex mountain logo"
-              sx={{ width: 44, height: 32, objectFit: 'contain' }}
-            />
-            <Typography
-              variant="h6"
-              sx={(theme) => ({
-                fontWeight: 800,
-                letterSpacing: 0.2,
-                color: theme.palette.mode === 'dark' ? '#B0E4CC' : '#0f766e',
-              })}
-            >
-              NepalTrex
-            </Typography>
+            <NepalTrexLogo width={180} />
           </Box>
           <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ mr: 1 }} />
           <IconButton

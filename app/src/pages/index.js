@@ -38,6 +38,7 @@ import {
 import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
+import NepalTrexLogo from '../components/NepalTrexLogo';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
 
 const WISHLIST_STORAGE_KEY = 'nepaltrex-trek-wishlist';
@@ -245,27 +246,12 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 0.5,
+              gap: 0.3,
               minWidth: 0,
               textDecoration: 'none',
             }}
           >
-            <Box
-              component="img"
-              src="/brand/banner-mountains.svg"
-              alt="NepalTrex mountain logo"
-              sx={{ width: 38, height: 28, objectFit: 'contain' }}
-            />
-            <Typography
-              variant="h6"
-              sx={(theme) => ({
-                fontWeight: 800,
-                letterSpacing: 0.2,
-                color: theme.palette.mode === 'dark' ? '#B0E4CC' : '#0f766e',
-              })}
-            >
-              NepalTrex
-            </Typography>
+            <NepalTrexLogo width={180} />
           </Box>
           <Box sx={{ flexGrow: 1 }} />
 
