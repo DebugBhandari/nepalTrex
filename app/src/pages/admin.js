@@ -10,8 +10,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import EditIcon from '@mui/icons-material/Edit';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import DoneAllIcon from '@mui/icons-material/DoneAll';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import DoneAllIcon from '@mui/icons-material/TaskAlt';
 import {
   Alert,
   AppBar,
