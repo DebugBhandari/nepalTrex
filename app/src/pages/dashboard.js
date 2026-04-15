@@ -527,34 +527,34 @@ return (
       >
         <Toolbar>
           <Box
-            sx={{
-              backgroundImage: 'url(/brand/banner-mountains.svg)',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: 0.2,
-              mr: 0.8,
-              width: 45,
-              height: 30,
-            }}
-          />
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            NepalTrex Dashboard
-          </Typography>
-          <AppButton
             component={Link}
             href="/"
-            startIcon={<HomeIcon />}
-            variant="outlined"
-            sx={{ mr: 1, display: { xs: 'none', sm: 'inline-flex' } }}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.8,
+              minWidth: 0,
+              textDecoration: 'none',
+              mr: 'auto',
+            }}
           >
-            Home
-          </AppButton>
+            <Box
+              component="img"
+              src="/brand/banner-mountains.svg"
+              alt="NepalTrex mountain logo"
+              sx={{ width: 44, height: 32, objectFit: 'contain' }}
+            />
+            <Typography
+              variant="h6"
+              sx={(theme) => ({
+                fontWeight: 800,
+                letterSpacing: 0.2,
+                color: theme.palette.mode === 'dark' ? '#B0E4CC' : '#0f766e',
+              })}
+            >
+              NepalTrex
+            </Typography>
+          </Box>
           <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ mr: 1 }} />
           <IconButton
             color="inherit"
@@ -622,12 +622,21 @@ return (
             boxShadow: '0 18px 36px rgba(15, 23, 42, 0.14)',
           })}
         >
-          <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Manage treks and users from one place.
-          </Typography>
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ mb: 2.5 }}>
+            <Box>
+              <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Manage treks and users from one place.
+              </Typography>
+            </Box>
+            {isAdminOrSuperUser && (
+              <AppButton component={Link} href="/admin" variant="contained" startIcon={<DashboardIcon />}>
+                Admin Dashboard
+              </AppButton>
+            )}
+          </Stack>
 
-          {notification && <Alert severity="success" sx={{ mt: 2, mb: 2 }}>{notification}</Alert>}
+          {notification && <Alert severity="success" sx={{ mb: 2 }}>{notification}</Alert>}
 
           <Tabs
             value={activeTab}

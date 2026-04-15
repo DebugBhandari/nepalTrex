@@ -287,24 +287,34 @@ export default function AdminPage({ user, initialStays }) {
       <AppBar position="sticky" elevation={0}>
         <Toolbar>
           <Box
+            component={Link}
+            href="/"
             sx={{
-              backgroundImage: 'url(/brand/banner-mountains.svg)',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: 0.2,
-              mr: 0.8,
-              width: 45,
-              height: 30,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.8,
+              minWidth: 0,
+              textDecoration: 'none',
+              mr: 'auto',
             }}
-          />
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>Admin Dashboard</Typography>
-          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mr: 1 }}>Home</AppButton>
+          >
+            <Box
+              component="img"
+              src="/brand/banner-mountains.svg"
+              alt="NepalTrex mountain logo"
+              sx={{ width: 44, height: 32, objectFit: 'contain' }}
+            />
+            <Typography
+              variant="h6"
+              sx={(theme) => ({
+                fontWeight: 800,
+                letterSpacing: 0.2,
+                color: theme.palette.mode === 'dark' ? '#B0E4CC' : '#0f766e',
+              })}
+            >
+              NepalTrex
+            </Typography>
+          </Box>
           <IconButton
             color="inherit"
             onClick={(event) => setUserMenuAnchor(event.currentTarget)}
@@ -362,11 +372,20 @@ export default function AdminPage({ user, initialStays }) {
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Paper sx={(theme) => ({ p: { xs: 2, md: 3 }, background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)' : 'linear-gradient(145deg, #ffffff 0%, #f2fbf9 100%)' })}>
-          <Typography variant="h4">Manage Your Hotels and Homestays</Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.5 }}>Signed in as {user.email} ({user.role})</Typography>
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ mb: 2.5 }}>
+            <Box>
+              <Typography variant="h4">Manage Your Hotels and Homestays</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.5 }}>Signed in as {user.email} ({user.role})</Typography>
+            </Box>
+            {isSuperUser && (
+              <AppButton component={Link} href="/dashboard" variant="contained" startIcon={<DashboardIcon />}>
+                Super Dashboard
+              </AppButton>
+            )}
+          </Stack>
 
-          {notification && <Alert sx={{ mt: 2 }} severity="success">{notification}</Alert>}
-          {message && <Alert sx={{ mt: 2 }} severity="info">{message}</Alert>}
+          {notification && <Alert sx={{ mb: 2 }} severity="success">{notification}</Alert>}
+          {message && <Alert sx={{ mb: 2 }} severity="info">{message}</Alert>}
 
           {/* Add New Stay */}
           <Box sx={{ mt: 3 }}>
