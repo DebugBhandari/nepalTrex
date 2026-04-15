@@ -221,7 +221,6 @@ export default function UserProfilePage({ profile, wishlistItems }) {
               </Stack>
             </CardContent>
           </Card>
-          </Card>
         </Container>
       </Box>
     </>
