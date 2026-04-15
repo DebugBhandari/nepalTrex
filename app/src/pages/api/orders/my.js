@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../../../lib/auth-options';
-import { query } from '../../../../lib/db';
+import { authOptions } from '../../../lib/auth-options';
+import { query } from '../../../lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -12,45 +12,20 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const { id } = req.query;
-
-  // Parse the id parameter - it could be userId, email, or handle
-  let userEmail = null;
-  let userId = null;
-
-  // If the id looks like a UUID, search by user id; otherwise treat as email or handle
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(String(id).toLowerCase());
-
-  if (isUuid) {
-    userId = id;
-  } else {
-    // Try fetching user by email first, then by handle
-    const result = await query(
-      `SELECT id, email FROM users WHERE email = $1 OR username = $1 OR "handle" = $1 LIMIT 1`,
-      [id]
-    );
-
-    if (result.rows.length > 0) {
-      userEmail = result.rows[0].email;
-      userId = result.rows[0].id;
-    }
-  }
-
-  if (!userId && !userEmail) {
-    return res.status(404).json({ error: 'User not found' });
+  const email = (session.user.email || '').toString().trim();
+  if (!email) {
+    return res.status(200).json({ orders: [] });
   }
 
   try {
-    // Get all orders where the customer email matches the user's email
     const result = await query(
       `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
        FROM orders o JOIN stays s ON s.id = o.stay_id
-       WHERE o.customer_email = $1
+       WHERE LOWER(COALESCE(o.customer_email, '')) = LOWER($1)
        ORDER BY o.created_at DESC`,
-      [userEmail || '']
+      [email]
     );
 
-    // Group orders by order_group_id
     const groupedOrders = new Map();
 
     for (const row of result.rows) {
@@ -103,6 +78,6 @@ export default async function handler(req, res) {
       orders: Array.from(groupedOrders.values()),
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Failed to fetch user orders' });
+    return res.status(500).json({ error: error.message || 'Failed to fetch your orders' });
   }
 }

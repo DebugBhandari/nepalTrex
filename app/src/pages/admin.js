@@ -14,6 +14,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import DoneAllIcon from '@mui/icons-material/TaskAlt';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import {
   Alert,
   AppBar,
@@ -642,7 +643,16 @@ export default function AdminPage({ user, initialStays }) {
           <Stack spacing={2}>
             {orders.map((order) => {
               const isUpdating = updatingOrderId === order.id;
-              const statusColor = order.status === 'completed' ? 'success' : order.status === 'accepted' ? 'primary' : 'default';
+              const statusColor =
+                order.status === 'completed'
+                  ? 'success'
+                  : order.status === 'accepted'
+                    ? 'primary'
+                    : order.status === 'declined'
+                      ? 'error'
+                      : order.status === 'cancelled'
+                        ? 'warning'
+                        : 'default';
               return (
                 <Card key={order.id}>
                   <CardContent>
@@ -680,13 +690,16 @@ export default function AdminPage({ user, initialStays }) {
                         </Typography>
                       </Stack>
                     </Stack>
-                    {order.status !== 'completed' && (
+                    {!['completed', 'declined', 'cancelled'].includes(order.status) && (
                       <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                         {order.status === 'pending' && (
                           <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateOrderStatus(order.id, 'accepted')} disabled={isUpdating}>
                             Accept Order
                           </AppButton>
                         )}
+                        <AppButton size="small" color="error" variant="outlined" startIcon={<HighlightOffIcon />} onClick={() => updateOrderStatus(order.id, 'declined')} disabled={isUpdating}>
+                          Decline Order
+                        </AppButton>
                         <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateOrderStatus(order.id, 'completed')} disabled={isUpdating}>
                           Mark Order Complete
                         </AppButton>

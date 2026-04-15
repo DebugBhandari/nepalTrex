@@ -1,10 +1,30 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { Alert, Avatar, Box, Card, CardContent, Chip, Container, Stack, TextField, Typography } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
+import { useState } from 'react';
+import { signOut, useSession } from 'next-auth/react';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import {
+  Alert,
+  AppBar,
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  IconButton,
+  Menu,
+  MenuItem,
+  Stack,
+  TextField,
+  Toolbar,
+  Typography,
+} from '@mui/material';
 import AppButton from '../../components/AppButton';
+import NepalTrexLogo from '../../components/NepalTrexLogo';
 import { query } from '../../lib/db';
 
 function normalizeHandle(value) {
@@ -16,35 +36,39 @@ function normalizeHandle(value) {
     .replace(/^-+|-+$/g, '') || 'user';
 }
 
-export default function UserProfilePage({ profile, wishlistItems }) {
-  const { data: session } = useSession();
+function initialsFromName(value) {
+  const text = String(value || '').trim();
+  if (!text) return 'NT';
+  const parts = text.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || '';
+  const second = parts[1]?.[0] || '';
+  return `${first}${second}`.toUpperCase() || first.toUpperCase() || 'NT';
+}
+
+function orderChipColor(status) {
+  if (status === 'completed') return 'success';
+  if (status === 'accepted') return 'primary';
+  if (status === 'declined') return 'error';
+  if (status === 'cancelled') return 'warning';
+  return 'default';
+}
+
+export default function UserProfilePage({ profile, wishlistItems, initialOrders }) {
+  const { data: session, status } = useSession();
   const [statusMessage, setStatusMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState(profile.name || '');
   const [imageUrl, setImageUrl] = useState(profile.imageUrl || '');
-  const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch(`/api/users/${profile.email}/orders`);
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data.orders || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setOrdersLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [profile.email]);
+  const [orders, setOrders] = useState(initialOrders || []);
+  const [updatingOrderId, setUpdatingOrderId] = useState('');
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
-  // Priority: 1. Uploaded profile image, 2. Google image (if own profile and is Google provider), 3. Empty (fallback to avatar)
+  const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
+  const isSuperUser = session?.user?.role === 'superUser';
+  const isUserMenuOpen = Boolean(userMenuAnchor);
+  const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
+
   const effectiveImage = imageUrl || (ownProfile && profile.provider === 'google' ? session?.user?.image || '' : '');
 
   const uploadImage = async (event) => {
@@ -73,7 +97,6 @@ export default function UserProfilePage({ profile, wishlistItems }) {
       });
 
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update profile');
       }
@@ -88,23 +111,130 @@ export default function UserProfilePage({ profile, wishlistItems }) {
     }
   };
 
+  const cancelOrder = async (orderId) => {
+    if (!ownProfile) return;
+
+    setUpdatingOrderId(orderId);
+    setStatusMessage('');
+    try {
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel order');
+      }
+
+      setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status: 'cancelled' } : order)));
+      setStatusMessage('Order cancelled successfully.');
+    } catch (error) {
+      setStatusMessage(error.message || 'Failed to cancel order');
+    } finally {
+      setUpdatingOrderId('');
+    }
+  };
+
   return (
     <>
       <Head>
         <title>{profile.name || profile.username || 'User'} | NepalTrex</title>
       </Head>
 
+      <AppBar position="sticky" elevation={0} sx={{ backdropFilter: 'blur(8px)' }}>
+        <Toolbar>
+          <Box
+            component={Link}
+            href="/"
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.3,
+              minWidth: 0,
+              textDecoration: 'none',
+              mr: 'auto',
+            }}
+          >
+            <NepalTrexLogo width={180} />
+          </Box>
+
+          {status === 'authenticated' ? (
+            <>
+              <IconButton
+                color="inherit"
+                onClick={(event) => setUserMenuAnchor(event.currentTarget)}
+                sx={(theme) => ({
+                  border: '1px solid',
+                  borderColor: theme.palette.divider,
+                  borderRadius: 999,
+                  p: 0.25,
+                  width: 42,
+                  height: 42,
+                })}
+                aria-label="Open user menu"
+              >
+                <Avatar
+                  src={session?.user?.image || ''}
+                  alt={session?.user?.name || session?.user?.email || 'User'}
+                  sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+                >
+                  {initialsFromName(session?.user?.name || session?.user?.email)}
+                </Avatar>
+              </IconButton>
+              <Menu
+                anchorEl={userMenuAnchor}
+                open={isUserMenuOpen}
+                onClose={() => setUserMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+              >
+                <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
+                  <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
+                  Profile
+                </MenuItem>
+
+                {isSuperUser && (
+                  <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
+                    <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                    Super Dashboard
+                  </MenuItem>
+                )}
+
+                {isAdminOrSuperUser && (
+                  <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
+                    <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
+                    Admin Dashboard
+                  </MenuItem>
+                )}
+
+                <MenuItem
+                  onClick={() => {
+                    setUserMenuAnchor(null);
+                    signOut({ callbackUrl: '/' });
+                  }}
+                >
+                  <LogoutIcon fontSize="small" style={{ marginRight: 8 }} />
+                  Sign out
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <AppButton component={Link} href="/auth/signin" startIcon={<LoginIcon />} variant="outlined" size="small">
+              Sign in
+            </AppButton>
+          )}
+        </Toolbar>
+      </AppBar>
+
       <Box sx={(theme) => ({ minHeight: '100vh', py: 4, background: theme.palette.background.default })}>
         <Container maxWidth="md">
-          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mb: 2 }}>
-            Back to Home
-          </AppButton>
-
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-                <Avatar 
-                  src={effectiveImage} 
+                <Avatar
+                  src={effectiveImage}
                   sx={{ width: 88, height: 88, bgcolor: effectiveImage ? 'transparent' : 'primary.main', color: effectiveImage ? 'inherit' : 'white', fontSize: 32, fontWeight: 700 }}
                 >
                   {!effectiveImage && (profile.name || profile.username || 'U').charAt(0).toUpperCase()}
@@ -151,49 +281,62 @@ export default function UserProfilePage({ profile, wishlistItems }) {
             </CardContent>
           </Card>
 
-          {orders.length > 0 && (
-            <Card sx={{ mb: 2 }}>
-              <CardContent>
-                <Typography variant="h5" sx={{ mb: 1.5 }}>Your Orders</Typography>
+          <Card sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography variant="h5" sx={{ mb: 1.5 }}>Orders</Typography>
 
-                <Stack spacing={1.5}>
-                  {orders.map((order) => (
-                    <Card key={order.id} variant="outlined">
-                      <CardContent>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle1">{order.stayName || 'N/A'}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                            </Typography>
-                            <Stack spacing={0.5} sx={{ mt: 1 }}>
-                              {order.items.map((item, idx) => (
-                                <Typography key={idx} variant="body2" color="text.secondary">
-                                  {item.menuItemName} × {item.quantity}
-                                </Typography>
-                              ))}
-                            </Stack>
-                          </Box>
-
-                          <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
-                            <Chip 
-                              label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                              color={order.status === 'completed' ? 'success' : 'default'}
-                              variant="outlined"
-                              size="small"
-                            />
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                              Rs. {order.totalPrice.toLocaleString()}
-                            </Typography>
+              <Stack spacing={1.5}>
+                {orders.map((order) => (
+                  <Card key={order.id} variant="outlined">
+                    <CardContent>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="subtitle1">{order.stayName || 'N/A'}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                          </Typography>
+                          <Stack spacing={0.5} sx={{ mt: 1 }}>
+                            {order.items.map((item, idx) => (
+                              <Typography key={idx} variant="body2" color="text.secondary">
+                                {item.menuItemName} x {item.quantity}
+                              </Typography>
+                            ))}
                           </Stack>
+                        </Box>
+
+                        <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
+                          <Chip
+                            label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            color={orderChipColor(order.status)}
+                            variant="outlined"
+                            size="small"
+                          />
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            Rs. {order.totalPrice.toLocaleString()}
+                          </Typography>
+                          {ownProfile && !['completed', 'cancelled'].includes(order.status) && (
+                            <AppButton
+                              size="small"
+                              variant="outlined"
+                              color="error"
+                              disabled={updatingOrderId === order.id}
+                              onClick={() => cancelOrder(order.id)}
+                            >
+                              {updatingOrderId === order.id ? 'Cancelling...' : 'Cancel Order'}
+                            </AppButton>
+                          )}
                         </Stack>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-          )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {orders.length === 0 && (
+                  <Typography color="text.secondary">No orders yet.</Typography>
+                )}
+              </Stack>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent>
@@ -271,6 +414,63 @@ export async function getServerSideProps(context) {
     [row.id]
   );
 
+  const ordersResult = await query(
+    `
+      SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
+      FROM orders o JOIN stays s ON s.id = o.stay_id
+      WHERE LOWER(COALESCE(o.customer_email, '')) = LOWER($1)
+      ORDER BY o.created_at DESC
+    `,
+    [row.email || '']
+  );
+
+  const groupedOrders = new Map();
+  for (const orderRow of ordersResult.rows) {
+    const groupId = orderRow.order_group_id || orderRow.id;
+    const groupKey = String(groupId);
+
+    if (!groupedOrders.has(groupKey)) {
+      groupedOrders.set(groupKey, {
+        id: groupKey,
+        orderGroupId: orderRow.order_group_id || null,
+        stayId: orderRow.stay_id,
+        stayName: orderRow.stay_name,
+        customerName: orderRow.customer_name,
+        customerEmail: orderRow.customer_email || '',
+        customerPhone: orderRow.customer_phone || '',
+        notes: orderRow.notes || '',
+        createdAt: orderRow.created_at,
+        status: orderRow.status,
+        totalPrice: 0,
+        quantity: 0,
+        items: [],
+      });
+    }
+
+    const group = groupedOrders.get(groupKey);
+    group.items.push({
+      id: orderRow.id,
+      menuItemName: orderRow.menu_item_name,
+      menuItemCategory: orderRow.menu_item_category,
+      unitPrice: Number(orderRow.unit_price),
+      quantity: Number(orderRow.quantity),
+      totalPrice: Number(orderRow.total_price),
+      status: orderRow.status,
+    });
+    group.totalPrice += Number(orderRow.total_price);
+    group.quantity += Number(orderRow.quantity);
+
+    if (orderRow.status === 'completed') {
+      group.status = 'completed';
+    } else if (orderRow.status === 'declined' && !['completed'].includes(group.status)) {
+      group.status = 'declined';
+    } else if (orderRow.status === 'cancelled' && !['completed', 'declined'].includes(group.status)) {
+      group.status = 'cancelled';
+    } else if (orderRow.status === 'accepted' && group.status === 'pending') {
+      group.status = 'accepted';
+    }
+  }
+
   return {
     props: {
       profile: {
@@ -290,6 +490,7 @@ export async function getServerSideProps(context) {
         level: item.level || '',
         region: item.region || '',
       })),
+      initialOrders: Array.from(groupedOrders.values()),
     },
   };
 }

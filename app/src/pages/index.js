@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -100,6 +100,9 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedDuration, setSelectedDuration] = useState('all');
   const [selectedAltitude, setSelectedAltitude] = useState('all');
+  const [orderNotification, setOrderNotification] = useState(null);
+  const previousPendingCountRef = useRef(0);
+  const knownUserOrderStatusesRef = useRef(new Map());
 
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
@@ -117,6 +120,87 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
       setWishlist([]);
     }
   }, [status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setOrderNotification(null);
+      previousPendingCountRef.current = 0;
+      knownUserOrderStatusesRef.current = new Map();
+      return;
+    }
+
+    let active = true;
+    const role = session?.user?.role || 'user';
+
+    const pollNotifications = async () => {
+      try {
+        if (['admin', 'superUser'].includes(role)) {
+          const response = await fetch('/api/orders');
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!active) return;
+
+          const pendingCount = (data.orders || []).filter((order) => order.status === 'pending').length;
+          if (previousPendingCountRef.current > 0 && pendingCount > previousPendingCountRef.current) {
+            setOrderNotification({
+              severity: 'info',
+              text: `You have ${pendingCount} pending order${pendingCount === 1 ? '' : 's'} waiting for action.`,
+            });
+          } else if (pendingCount === 0) {
+            setOrderNotification(null);
+          }
+
+          previousPendingCountRef.current = pendingCount;
+          return;
+        }
+
+        const response = await fetch('/api/orders/my');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!active) return;
+
+        const orders = data.orders || [];
+        const previousStatuses = knownUserOrderStatusesRef.current;
+        const nextStatuses = new Map();
+        const updates = [];
+
+        orders.forEach((order) => {
+          const orderId = String(order.id);
+          const nextStatus = order.status;
+          const previousStatus = previousStatuses.get(orderId);
+          nextStatuses.set(orderId, nextStatus);
+
+          if (previousStatuses.size > 0 && previousStatus && previousStatus !== nextStatus) {
+            if (nextStatus === 'accepted') {
+              updates.push(`Your order for ${order.stayName || 'a stay'} was accepted.`);
+            }
+            if (nextStatus === 'declined') {
+              updates.push(`Your order for ${order.stayName || 'a stay'} was declined.`);
+            }
+          }
+        });
+
+        knownUserOrderStatusesRef.current = nextStatuses;
+
+        if (updates.length > 0) {
+          setOrderNotification({
+            severity: updates.some((message) => message.includes('declined')) ? 'warning' : 'success',
+            text: updates[0],
+          });
+        }
+      } catch {
+        // Keep the landing page quiet when polling fails temporarily.
+      }
+    };
+
+    pollNotifications();
+    const intervalId = setInterval(pollNotifications, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(intervalId);
+    };
+  }, [status, session?.user?.role]);
 
   const wishlistSet = useMemo(() => new Set(wishlist), [wishlist]);
 
@@ -422,6 +506,12 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               }
             >
               You need to be logged in to add treks to your wishlist.
+            </Alert>
+          )}
+
+          {orderNotification && (
+            <Alert severity={orderNotification.severity} sx={{ mb: 2 }}>
+              {orderNotification.text}
             </Alert>
           )}
 

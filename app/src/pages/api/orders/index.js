@@ -62,6 +62,10 @@ export default async function handler(req, res) {
 
       if (row.status === 'completed') {
         group.status = 'completed';
+      } else if (row.status === 'declined' && !['completed'].includes(group.status)) {
+        group.status = 'declined';
+      } else if (row.status === 'cancelled' && !['completed', 'declined'].includes(group.status)) {
+        group.status = 'cancelled';
       } else if (row.status === 'accepted' && group.status === 'pending') {
         group.status = 'accepted';
       }

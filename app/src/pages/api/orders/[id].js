@@ -2,7 +2,8 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { query } from '../../../lib/db';
 
-const ALLOWED_STATUSES = new Set(['accepted', 'completed']);
+const ADMIN_ALLOWED_STATUSES = new Set(['accepted', 'completed', 'declined']);
+const USER_ALLOWED_STATUSES = new Set(['cancelled']);
 
 export default async function handler(req, res) {
   if (req.method !== 'PATCH') {
@@ -11,39 +12,59 @@ export default async function handler(req, res) {
 
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
-  if (!['admin', 'superUser'].includes(session.user.role)) return res.status(403).json({ error: 'Forbidden' });
 
   const { id } = req.query;
   const { status } = req.body || {};
+  const role = session.user.role || 'user';
+  const isAdminLike = ['admin', 'superUser'].includes(role);
 
   if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Invalid order id' });
-  if (!ALLOWED_STATUSES.has(status)) return res.status(400).json({ error: 'status must be accepted or completed' });
 
-  const isSuper = session.user.role === 'superUser';
+  if (isAdminLike) {
+    if (!ADMIN_ALLOWED_STATUSES.has(status)) {
+      return res.status(400).json({ error: 'status must be accepted, completed or declined' });
+    }
+  } else {
+    if (!USER_ALLOWED_STATUSES.has(status)) {
+      return res.status(403).json({ error: 'Users can only cancel orders' });
+    }
+  }
 
-  // For admins, verify the grouped order belongs to a stay they own.
-  const ownerCheck = isSuper
-    ? await query(
-        `
-          SELECT o.id, o.order_group_id, o.status
-          FROM orders o
-          WHERE o.id::text = $1 OR o.order_group_id::text = $1
-          ORDER BY o.created_at ASC
-          LIMIT 1
-        `,
-        [id]
-      )
+  const isSuper = role === 'superUser';
+  const ownerCheck = isAdminLike
+    ? isSuper
+      ? await query(
+          `
+            SELECT o.id, o.order_group_id, o.status
+            FROM orders o
+            WHERE o.id::text = $1 OR o.order_group_id::text = $1
+            ORDER BY o.created_at ASC
+            LIMIT 1
+          `,
+          [id]
+        )
+      : await query(
+          `
+            SELECT o.id, o.order_group_id, o.status
+            FROM orders o
+            JOIN stays s ON s.id = o.stay_id
+            WHERE (o.id::text = $1 OR o.order_group_id::text = $1)
+              AND s.owner_user_id = $2
+            ORDER BY o.created_at ASC
+            LIMIT 1
+          `,
+          [id, session.user.id]
+        )
     : await query(
         `
           SELECT o.id, o.order_group_id, o.status
           FROM orders o
-          JOIN stays s ON s.id = o.stay_id
           WHERE (o.id::text = $1 OR o.order_group_id::text = $1)
-            AND s.owner_user_id = $2
+            AND LOWER(COALESCE(o.customer_email, '')) = LOWER($2)
           ORDER BY o.created_at ASC
           LIMIT 1
         `,
-        [id, session.user.id]
+        [id, (session.user.email || '').toString().trim()]
       );
 
   if (ownerCheck.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
