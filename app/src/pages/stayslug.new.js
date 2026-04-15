@@ -35,8 +35,8 @@ export default function StayDetailPage({ stay }) {
   const groupedMenu = useMemo(() => {
     const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
     return {
-      rooms: items.filter((item) => item.category === 'room'),
-      foods: items.filter((item) => item.category === 'food'),
+      rooms: items.filter((item) => item.category === 'room' && item.available !== false),
+      foods: items.filter((item) => item.category === 'food' && item.available !== false),
     };
   }, [stay.menuItems]);
 

@@ -79,25 +79,46 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const isSuperUser = session?.user?.role === 'superUser';
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(parsed)) {
-        setWishlist(parsed.filter((slug) => typeof slug === 'string'));
+    if (status === 'loading') return;
+    if (status === 'authenticated') {
+      fetch('/api/users/wishlist')
+        .then((r) => r.json())
+        .then((data) => setWishlist(data.slugs || []))
+        .catch(() => setWishlist([]));
+    } else {
+      try {
+        const raw = window.localStorage.getItem(WISHLIST_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(parsed)) {
+          setWishlist(parsed.filter((slug) => typeof slug === 'string'));
+        }
+      } catch {
+        setWishlist([]);
       }
-    } catch {
-      setWishlist([]);
     }
-  }, []);
+  }, [status]);
 
   const wishlistSet = useMemo(() => new Set(wishlist), [wishlist]);
 
   const toggleWishlist = (slug) => {
-    setWishlist((prev) => {
-      const next = prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug];
-      window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
+    if (status === 'authenticated') {
+      const isInList = wishlistSet.has(slug);
+      setWishlist((prev) => (isInList ? prev.filter((s) => s !== slug) : [...prev, slug]));
+      fetch('/api/users/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, action: isInList ? 'remove' : 'add' }),
+      })
+        .then((r) => r.json())
+        .then((data) => { if (data.slugs) setWishlist(data.slugs); })
+        .catch(() => {});
+    } else {
+      setWishlist((prev) => {
+        const next = prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug];
+        window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    }
   };
 
   const wishlistedTreks = useMemo(() => allTreks.filter((trek) => wishlistSet.has(trek.slug)), [allTreks, wishlistSet]);

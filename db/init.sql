@@ -211,6 +211,14 @@ ON CONFLICT (slug) DO UPDATE
       latitude = EXCLUDED.latitude,
       longitude = EXCLUDED.longitude;
 
+CREATE TABLE IF NOT EXISTS user_trek_wishlists (
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  trek_slug TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, trek_slug)
+);
+
+CREATE INDEX IF NOT EXISTS user_trek_wishlists_user_id_idx ON user_trek_wishlists(user_id);
 INSERT INTO stays (
   owner_user_id,
   name,
