@@ -74,6 +74,8 @@ export default function AdminPage({ user, initialStays }) {
     slug: '',
     stayType: 'homestay',
     location: '',
+    latitude: '',
+    longitude: '',
     description: '',
     imageUrl: DEFAULT_STAY_IMAGE,
     contactPhone: '',
@@ -165,6 +167,8 @@ export default function AdminPage({ user, initialStays }) {
       const payload = {
         ...newStay,
         slug: newStay.slug.trim() || makeSlug(newStay.name),
+        latitude: newStay.latitude === '' ? null : Number(newStay.latitude),
+        longitude: newStay.longitude === '' ? null : Number(newStay.longitude),
         menuItems: normalizeMenuItems(newStay.menuItems),
       };
 
@@ -187,6 +191,8 @@ export default function AdminPage({ user, initialStays }) {
           slug: data.stay.slug,
           stayType: data.stay.stay_type,
           location: data.stay.location,
+          latitude: data.stay.latitude ?? '',
+          longitude: data.stay.longitude ?? '',
           description: data.stay.description,
           imageUrl: data.stay.image_url || DEFAULT_STAY_IMAGE,
           menuItems: data.stay.menu_items || [],
@@ -202,6 +208,8 @@ export default function AdminPage({ user, initialStays }) {
         slug: '',
         stayType: 'homestay',
         location: '',
+        latitude: '',
+        longitude: '',
         description: '',
         imageUrl: DEFAULT_STAY_IMAGE,
         contactPhone: '',
@@ -224,6 +232,8 @@ export default function AdminPage({ user, initialStays }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...stay,
+          latitude: stay.latitude === '' ? null : Number(stay.latitude),
+          longitude: stay.longitude === '' ? null : Number(stay.longitude),
           menuItems: normalizeMenuItems(stay.menuItems),
         }),
       });
@@ -243,6 +253,8 @@ export default function AdminPage({ user, initialStays }) {
                 slug: data.stay.slug,
                 stayType: data.stay.stay_type,
                 location: data.stay.location,
+                latitude: data.stay.latitude ?? '',
+                longitude: data.stay.longitude ?? '',
                 description: data.stay.description,
                 imageUrl: data.stay.image_url || DEFAULT_STAY_IMAGE,
                 menuItems: data.stay.menu_items || [],
@@ -342,6 +354,20 @@ export default function AdminPage({ user, initialStays }) {
                   value={newStay.location}
                   onChange={(event) => setNewStay((prev) => ({ ...prev, location: event.target.value }))}
                 />
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                  <TextField
+                    label="Latitude"
+                    type="number"
+                    value={newStay.latitude}
+                    onChange={(event) => setNewStay((prev) => ({ ...prev, latitude: event.target.value }))}
+                  />
+                  <TextField
+                    label="Longitude"
+                    type="number"
+                    value={newStay.longitude}
+                    onChange={(event) => setNewStay((prev) => ({ ...prev, longitude: event.target.value }))}
+                  />
+                </Stack>
                 <TextField
                   label="Description"
                   multiline
@@ -464,6 +490,9 @@ export default function AdminPage({ user, initialStays }) {
                           >
                             <Chip size="small" color="secondary" label={stay.stayType} />
                             {stay.location && <Chip size="small" variant="outlined" label={stay.location} />}
+                            {stay.latitude !== '' && stay.longitude !== '' && (
+                              <Chip size="small" variant="outlined" label={`${stay.latitude}, ${stay.longitude}`} />
+                            )}
                             {stay.ownerEmail && (
                               <Chip size="small" variant="outlined" label={stay.ownerEmail} />
                             )}
@@ -512,6 +541,22 @@ export default function AdminPage({ user, initialStays }) {
                           onChange={(event) => updateDraft(stay.id, 'location', event.target.value)}
                           disabled={isSaving}
                         />
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                          <TextField
+                            label="Latitude"
+                            type="number"
+                            value={stay.latitude}
+                            onChange={(event) => updateDraft(stay.id, 'latitude', event.target.value)}
+                            disabled={isSaving}
+                          />
+                          <TextField
+                            label="Longitude"
+                            type="number"
+                            value={stay.longitude}
+                            onChange={(event) => updateDraft(stay.id, 'longitude', event.target.value)}
+                            disabled={isSaving}
+                          />
+                        </Stack>
                         <TextField
                           label="Description"
                           multiline
@@ -707,7 +752,7 @@ export async function getServerSideProps(context) {
     ? await query(
         `
           SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description,
-                 s.image_url, s.menu_items, s.contact_phone, u.email AS owner_email
+               s.image_url, s.menu_items, s.contact_phone, s.latitude, s.longitude, u.email AS owner_email
           FROM stays s
           JOIN users u ON u.id = s.owner_user_id
           ORDER BY s.created_at DESC
@@ -716,6 +761,7 @@ export async function getServerSideProps(context) {
     : await query(
         `
           SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
+               , latitude, longitude
           FROM stays
           WHERE owner_user_id = $1
           ORDER BY created_at DESC
@@ -729,6 +775,8 @@ export async function getServerSideProps(context) {
     slug: row.slug,
     stayType: row.stay_type,
     location: row.location,
+    latitude: row.latitude ?? '',
+    longitude: row.longitude ?? '',
     description: row.description,
     imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
     menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],

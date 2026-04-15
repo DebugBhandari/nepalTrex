@@ -22,7 +22,6 @@ import {
   Drawer,
   FormControl,
   FormControlLabel,
-  IconButton,
   InputLabel,
   MenuItem,
   Paper,
@@ -44,6 +43,7 @@ import {
 import { authOptions } from '../lib/auth-options';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
+import AppIconButton from '../components/AppIconButton';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
@@ -451,9 +451,9 @@ export default function DashboardPage({ user, treks }) {
         sx={{ backdropFilter: 'blur(8px)' }}
       >
         <Toolbar>
-          <IconButton edge="start" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }}>
+          <AppIconButton edge="start" onClick={() => setDrawerOpen(true)} sx={{ mr: 1 }} aria-label="Open menu">
             <MenuIcon />
-          </IconButton>
+          </AppIconButton>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             NepalTrex Dashboard
           </Typography>

@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS stays (
   menu_items JSONB NOT NULL DEFAULT '[]'::jsonb,
   price_per_night NUMERIC(10, 2) NOT NULL DEFAULT 0,
   contact_phone TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -73,6 +75,12 @@ ALTER TABLE stays
 ALTER TABLE stays
   ADD COLUMN IF NOT EXISTS menu_items JSONB NOT NULL DEFAULT '[]'::jsonb;
 
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
+
 UPDATE stays
 SET
   image_url = COALESCE(image_url, '/stays/lodge-exterior.jpg'),
@@ -80,6 +88,8 @@ SET
     WHEN jsonb_typeof(menu_items) = 'array' THEN menu_items
     ELSE '[]'::jsonb
   END,
+  latitude = CASE WHEN latitude BETWEEN -90 AND 90 THEN latitude ELSE NULL END,
+  longitude = CASE WHEN longitude BETWEEN -180 AND 180 THEN longitude ELSE NULL END,
   updated_at = NOW();
 
 CREATE INDEX IF NOT EXISTS stays_owner_user_id_idx ON stays(owner_user_id);
@@ -154,7 +164,9 @@ INSERT INTO stays (
   image_url,
   menu_items,
   price_per_night,
-  contact_phone
+  contact_phone,
+  latitude,
+  longitude
 )
 SELECT
   u.id,
@@ -188,12 +200,16 @@ SELECT
     )
   ),
   35,
-  '+977-9800000000'
+  '+977-9800000000',
+  28.3735,
+  83.8082
 FROM users u
 WHERE u.username = 'admin'
 ON CONFLICT (slug) DO UPDATE
   SET image_url = EXCLUDED.image_url,
-      menu_items = EXCLUDED.menu_items;
+      menu_items = EXCLUDED.menu_items,
+      latitude = EXCLUDED.latitude,
+      longitude = EXCLUDED.longitude;
 
 INSERT INTO stays (
   owner_user_id,
@@ -205,7 +221,9 @@ INSERT INTO stays (
   image_url,
   menu_items,
   price_per_night,
-  contact_phone
+  contact_phone,
+  latitude,
+  longitude
 )
 SELECT
   u.id,
@@ -232,9 +250,13 @@ SELECT
     )
   ),
   50,
-  '+977-9800000001'
+  '+977-9800000001',
+  28.3719,
+  83.8070
 FROM users u
 WHERE u.username = 'admin'
 ON CONFLICT (slug) DO UPDATE
   SET image_url = EXCLUDED.image_url,
-      menu_items = EXCLUDED.menu_items;
+      menu_items = EXCLUDED.menu_items,
+      latitude = EXCLUDED.latitude,
+      longitude = EXCLUDED.longitude;

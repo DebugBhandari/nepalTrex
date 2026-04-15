@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import {
   Alert,
@@ -9,18 +10,25 @@ import {
   CardMedia,
   Chip,
   Container,
+  Paper,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
+import PlaceIcon from '@mui/icons-material/Place';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
+import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
 
-const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
-const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
+const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
 
-export default function StayDetailPage({ stay }) {
+const DEFAULT_STAY_IMAGE = '/stays/lodge-exterior.jpg';
+const DEFAULT_MENU_IMAGE = '/stays/food-thukpa.jpg';
+const NEARBY_THRESHOLD_KM = 35;
+
+function StayDetailView({ stay }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [bookingStatus, setBookingStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -41,9 +49,7 @@ export default function StayDetailPage({ stay }) {
   }, [stay.menuItems]);
 
   const handleBook = async () => {
-    if (!selectedItem) {
-      return;
-    }
+    if (!selectedItem) return;
 
     setSubmitting(true);
     setBookingStatus('');
@@ -99,37 +105,16 @@ export default function StayDetailPage({ stay }) {
           py: 5,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(195,122,84,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
               : theme.palette.background.default,
         })}
       >
         <Container maxWidth="lg">
-          <AppButton
-            component={Link}
-            href="/"
-            startIcon={<HomeIcon />}
-            variant="outlined"
-            sx={(theme) => ({
-              mb: 2,
-              color: theme.palette.mode === 'dark' ? '#fff7ed' : theme.palette.text.primary,
-              borderColor: theme.palette.mode === 'dark' ? '#fff7ed' : 'rgba(148,163,184,0.45)',
-            })}
-          >
+          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mb: 2 }}>
             Back to Home
           </AppButton>
 
-          <Card
-            sx={(theme) => ({
-              mb: 2,
-              background:
-                theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                  : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(242,251,249,0.98) 100%)',
-              border: '1px solid',
-              borderColor: 'divider',
-              boxShadow: '0 22px 44px rgba(15, 23, 42, 0.24)',
-            })}
-          >
+          <Card sx={{ mb: 2 }}>
             <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />
             <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
               <Typography variant="h3" sx={{ mb: 1.5 }}>
@@ -279,6 +264,118 @@ export default function StayDetailPage({ stay }) {
   );
 }
 
+function TrekDetailView({ trek }) {
+  return (
+    <>
+      <Head>
+        <title>{trek.name} | NepalTrex</title>
+        <meta name="description" content={trek.description || `${trek.name} detailed itinerary, route and nearby stays.`} />
+      </Head>
+
+      <Box
+        sx={(theme) => ({
+          minHeight: '100vh',
+          py: 5,
+          background:
+            theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              : theme.palette.background.default,
+        })}
+      >
+        <Container maxWidth="lg">
+          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mb: 2 }}>
+            Back to Home
+          </AppButton>
+
+          <Card sx={{ mb: 3 }}>
+            <CardMedia
+              component="img"
+              height="360"
+              image={getTrekImage(trek.name)}
+              alt={trek.name}
+              sx={{ objectFit: 'cover', objectPosition: 'center' }}
+            />
+            <CardContent>
+              <Typography variant="h3" sx={{ mb: 1 }}>
+                {trek.name}
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
+                <Chip label={trek.region} color="secondary" />
+                <Chip label={trek.level} variant="outlined" />
+                <Chip label={`${trek.durationDays} days`} variant="outlined" />
+                {trek.elevationMinM && trek.elevationMaxM && (
+                  <Chip label={`${trek.elevationMinM.toLocaleString()}m - ${trek.elevationMaxM.toLocaleString()}m`} variant="outlined" />
+                )}
+              </Stack>
+              <Typography color="text.secondary">
+                {trek.description || 'Detailed trek description is coming soon.'}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Paper sx={{ p: 2, mb: 3 }}>
+            <Typography variant="h5" sx={{ mb: 0.8 }}>
+              Route Map
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 1.2 }}>
+              GeoJSON waypoints for this trek are always displayed below.
+            </Typography>
+            <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+              <TrekRouteMap selectedTrek={{ name: trek.name, routeGeojson: trek.routeGeojson }} />
+            </Box>
+          </Paper>
+
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h5" sx={{ mb: 0.8 }}>
+              Nearby Stays (within {NEARBY_THRESHOLD_KM} km of route)
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 1.5 }}>
+              Only stays around this trek's route coordinates are shown.
+            </Typography>
+
+            <Stack spacing={1.5}>
+              {trek.nearbyStays.map((stay) => (
+                <Card key={stay.id}>
+                  <CardContent>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ md: 'center' }}>
+                      <Box>
+                        <Typography variant="h6">{stay.name}</Typography>
+                        <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                          <Chip label={stay.stayType} size="small" color="secondary" />
+                          <Chip icon={<PlaceIcon />} label={`${stay.location} (${stay.distanceKm.toFixed(1)} km)`} size="small" variant="outlined" />
+                        </Stack>
+                      </Box>
+                      <Stack direction="row" spacing={1}>
+                        <AppButton component={Link} href={`/${stay.slug}`} variant="outlined" size="small">
+                          View Stay
+                        </AppButton>
+                        <AppButton variant="outlined" size="small" startIcon={<FavoriteBorderIcon />}>
+                          Wishlist Stay
+                        </AppButton>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+              {trek.nearbyStays.length === 0 && (
+                <Alert severity="info">No mapped stays are currently near this route.</Alert>
+              )}
+            </Stack>
+          </Paper>
+        </Container>
+      </Box>
+    </>
+  );
+}
+
+export default function SlugPage(props) {
+  if (props.pageType === 'trek') {
+    return <TrekDetailView trek={props.trek} />;
+  }
+
+  return <StayDetailView stay={props.stay} />;
+}
+
 export async function getServerSideProps(context) {
   const slug = context.params?.slug;
 
@@ -286,7 +383,69 @@ export async function getServerSideProps(context) {
     return { notFound: true };
   }
 
-  const result = await query(
+  const trekResult = await query(
+    `
+      SELECT id, name, duration_days, level, region, description, route_geojson, elevation_min_m, elevation_max_m
+      FROM treks
+      WHERE trim(both '-' from regexp_replace(lower(name), '[^a-z0-9]+', '-', 'g')) = $1
+      LIMIT 1
+    `,
+    [slug.toLowerCase()]
+  );
+
+  if (trekResult.rows.length > 0) {
+    const row = trekResult.rows[0];
+    const routeWaypoints = parseRouteWaypoints(row.route_geojson);
+
+    const stayRows = await query(
+      `
+        SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone, latitude, longitude
+        FROM stays
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+      `
+    );
+
+    const nearbyStays = stayRows.rows
+      .map((stay) => {
+        const distanceKm = minDistanceToRouteKm(routeWaypoints, Number(stay.latitude), Number(stay.longitude));
+        return {
+          id: stay.id,
+          name: stay.name,
+          slug: stay.slug,
+          stayType: stay.stay_type,
+          location: stay.location,
+          description: stay.description,
+          imageUrl: stay.image_url || DEFAULT_STAY_IMAGE,
+          menuItems: Array.isArray(stay.menu_items) ? stay.menu_items : [],
+          contactPhone: stay.contact_phone || '',
+          latitude: stay.latitude,
+          longitude: stay.longitude,
+          distanceKm,
+        };
+      })
+      .filter((stay) => Number.isFinite(stay.distanceKm) && stay.distanceKm <= NEARBY_THRESHOLD_KM)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+
+    return {
+      props: {
+        pageType: 'trek',
+        trek: {
+          id: row.id,
+          name: row.name,
+          durationDays: row.duration_days,
+          level: row.level,
+          region: row.region,
+          description: row.description || '',
+          routeGeojson: row.route_geojson,
+          elevationMinM: row.elevation_min_m || null,
+          elevationMaxM: row.elevation_max_m || null,
+          nearbyStays,
+        },
+      },
+    };
+  }
+
+  const stayResult = await query(
     `
       SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
       FROM stays
@@ -296,14 +455,15 @@ export async function getServerSideProps(context) {
     [slug]
   );
 
-  if (result.rows.length === 0) {
+  if (stayResult.rows.length === 0) {
     return { notFound: true };
   }
 
-  const row = result.rows[0];
+  const row = stayResult.rows[0];
 
   return {
     props: {
+      pageType: 'stay',
       stay: {
         id: row.id,
         name: row.name,

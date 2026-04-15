@@ -5,6 +5,19 @@ import { query } from '../../../lib/db';
 const ALLOWED_STAY_TYPES = new Set(['hotel', 'homestay']);
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
 
+function normalizeCoordinate(value, min, max) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < min || num > max) {
+    return Number.NaN;
+  }
+
+  return num;
+}
+
 function normalizeMenuItems(menuItems) {
   if (!Array.isArray(menuItems) || menuItems.length === 0) {
     return null;
@@ -54,6 +67,7 @@ async function handleGet(req, res) {
     const result = await query(
       `
         SELECT id, name, slug, stay_type, location, description, image_url, menu_items, price_per_night, contact_phone
+               , latitude, longitude
         FROM stays
         ORDER BY created_at DESC
       `
@@ -78,7 +92,7 @@ async function handleGet(req, res) {
     ? await query(
         `
           SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.price_per_night, s.contact_phone,
-               s.image_url, s.menu_items,
+            s.image_url, s.menu_items, s.latitude, s.longitude,
                  s.owner_user_id, u.email AS owner_email
           FROM stays s
           JOIN users u ON u.id = s.owner_user_id
@@ -88,7 +102,7 @@ async function handleGet(req, res) {
     : await query(
         `
           SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.price_per_night, s.contact_phone,
-               s.image_url, s.menu_items,
+            s.image_url, s.menu_items, s.latitude, s.longitude,
                  s.owner_user_id
           FROM stays s
           WHERE s.owner_user_id = $1
@@ -111,7 +125,7 @@ async function handlePost(req, res) {
     return res.status(403).json({ error: 'Only admin or superUser can create stays' });
   }
 
-  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone } = req.body || {};
+  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone, latitude, longitude } = req.body || {};
 
   if (!name?.trim() || !slug?.trim() || !location?.trim() || !description?.trim()) {
     return res.status(400).json({ error: 'Name, slug, location, and description are required' });
@@ -124,6 +138,13 @@ async function handlePost(req, res) {
   const normalizedMenuItems = normalizeMenuItems(menuItems);
   if (!normalizedMenuItems) {
     return res.status(400).json({ error: 'At least one valid menu item is required' });
+  }
+
+  const normalizedLatitude = normalizeCoordinate(latitude, -90, 90);
+  const normalizedLongitude = normalizeCoordinate(longitude, -180, 180);
+
+  if (Number.isNaN(normalizedLatitude) || Number.isNaN(normalizedLongitude)) {
+    return res.status(400).json({ error: 'Latitude or longitude is invalid' });
   }
 
   const roomPrices = normalizedMenuItems.filter((item) => item.category === 'room').map((item) => item.price);
@@ -142,10 +163,12 @@ async function handlePost(req, res) {
           image_url,
           menu_items,
           price_per_night,
-          contact_phone
+          contact_phone,
+          latitude,
+          longitude
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
-        RETURNING id, owner_user_id, name, slug, stay_type, location, description, image_url, menu_items, price_per_night, contact_phone
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12)
+        RETURNING id, owner_user_id, name, slug, stay_type, location, description, image_url, menu_items, price_per_night, contact_phone, latitude, longitude
       `,
       [
         session.user.id,
@@ -158,6 +181,8 @@ async function handlePost(req, res) {
         JSON.stringify(normalizedMenuItems),
         fallbackPrice,
         contactPhone?.trim() || null,
+        normalizedLatitude,
+        normalizedLongitude,
       ]
     );
 

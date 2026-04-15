@@ -5,6 +5,19 @@ import { query } from '../../../../lib/db';
 const ALLOWED_STAY_TYPES = new Set(['hotel', 'homestay']);
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
 
+function normalizeCoordinate(value, min, max) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  const num = Number(value);
+  if (!Number.isFinite(num) || num < min || num > max) {
+    return Number.NaN;
+  }
+
+  return num;
+}
+
 function normalizeMenuItems(menuItems) {
   if (!Array.isArray(menuItems) || menuItems.length === 0) {
     return null;
@@ -51,7 +64,7 @@ export default async function handler(req, res) {
   }
 
   const stayId = req.query.id;
-  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone } = req.body || {};
+  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone, latitude, longitude } = req.body || {};
 
   if (!stayId) {
     return res.status(400).json({ error: 'Missing stay id' });
@@ -68,6 +81,13 @@ export default async function handler(req, res) {
   const normalizedMenuItems = normalizeMenuItems(menuItems);
   if (!normalizedMenuItems) {
     return res.status(400).json({ error: 'At least one valid menu item is required' });
+  }
+
+  const normalizedLatitude = normalizeCoordinate(latitude, -90, 90);
+  const normalizedLongitude = normalizeCoordinate(longitude, -180, 180);
+
+  if (Number.isNaN(normalizedLatitude) || Number.isNaN(normalizedLongitude)) {
+    return res.status(400).json({ error: 'Latitude or longitude is invalid' });
   }
 
   const roomPrices = normalizedMenuItems.filter((item) => item.category === 'room').map((item) => item.price);
@@ -109,9 +129,11 @@ export default async function handler(req, res) {
           menu_items = $7::jsonb,
           price_per_night = $8,
           contact_phone = $9,
+          latitude = $10,
+          longitude = $11,
           updated_at = NOW()
-        WHERE id = $10
-        RETURNING id, owner_user_id, name, slug, stay_type, location, description, image_url, menu_items, price_per_night, contact_phone
+        WHERE id = $12
+        RETURNING id, owner_user_id, name, slug, stay_type, location, description, image_url, menu_items, price_per_night, contact_phone, latitude, longitude
       `,
       [
         name.trim(),
@@ -123,6 +145,8 @@ export default async function handler(req, res) {
         JSON.stringify(normalizedMenuItems),
         fallbackPrice,
         contactPhone?.trim() || null,
+        normalizedLatitude,
+        normalizedLongitude,
         stayId,
       ]
     );

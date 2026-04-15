@@ -1,9 +1,10 @@
 import Head from 'next/head';
 import { useEffect, useMemo, useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
-import { Box, CssBaseline, IconButton, ThemeProvider, Tooltip } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, Tooltip } from '@mui/material';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import AppIconButton from '../components/AppIconButton';
 import { createAppTheme } from '../lib/mui-theme';
 import './styles.css';
 import 'leaflet/dist/leaflet.css';
@@ -37,19 +38,13 @@ function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
             <Component {...pageProps} />
             <Box sx={{ position: 'fixed', right: 16, bottom: 16, zIndex: 1400 }}>
               <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-                <IconButton
-                  color="primary"
+                <AppIconButton
                   onClick={() => setMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-                  sx={{
-                    bgcolor: 'background.paper',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: '0 8px 20px rgba(2, 12, 27, 0.2)',
-                  }}
+                  sx={{ boxShadow: '0 8px 20px rgba(2, 12, 27, 0.2)' }}
                   aria-label="Toggle dark mode"
                 >
                   {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-                </IconButton>
+                </AppIconButton>
               </Tooltip>
             </Box>
           </SessionProvider>
