@@ -129,7 +129,7 @@ export default function AdminPage({ user, initialStays }) {
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
-      if (ordersLoaded) {
+      if (!ordersLoaded) {
         setOrdersLoaded(true);
       }
     }
@@ -162,6 +162,7 @@ export default function AdminPage({ user, initialStays }) {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     setUpdatingOrderId(orderId);
+    setMessage('');
     try {
       const r = await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
@@ -169,9 +170,16 @@ export default function AdminPage({ user, initialStays }) {
         body: JSON.stringify({ status: newStatus }),
       });
       const data = await r.json();
+      if (!r.ok) {
+        throw new Error(data.error || 'Failed to update order status');
+      }
+
       if (r.ok) {
         setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: data.order.status } : o)));
+        setMessage(`Order status updated to ${data.order.status}.`);
       }
+    } catch (error) {
+      setMessage(error.message || 'Failed to update order status');
     } finally {
       setUpdatingOrderId('');
     }

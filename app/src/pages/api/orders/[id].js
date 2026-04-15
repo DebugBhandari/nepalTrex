@@ -27,7 +27,7 @@ export default async function handler(req, res) {
         `
           SELECT o.id, o.order_group_id, o.status
           FROM orders o
-          WHERE o.id = $1 OR o.order_group_id::text = $1
+          WHERE o.id::text = $1 OR o.order_group_id::text = $1
           ORDER BY o.created_at ASC
           LIMIT 1
         `,
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
           SELECT o.id, o.order_group_id, o.status
           FROM orders o
           JOIN stays s ON s.id = o.stay_id
-          WHERE (o.id = $1 OR o.order_group_id::text = $1)
+          WHERE (o.id::text = $1 OR o.order_group_id::text = $1)
             AND s.owner_user_id = $2
           ORDER BY o.created_at ASC
           LIMIT 1
@@ -57,9 +57,9 @@ export default async function handler(req, res) {
         BOOL_OR(status = 'completed') AS has_completed,
         SUM(total_price)::numeric AS group_total
       FROM orders
-      WHERE COALESCE(order_group_id, id) = $1
+      WHERE COALESCE(order_group_id::text, id::text) = $1
     `,
-    [targetGroupId]
+    [String(targetGroupId)]
   );
 
   if (groupedStatus.rows[0]?.has_completed) {
@@ -70,10 +70,10 @@ export default async function handler(req, res) {
     `
       UPDATE orders
       SET status = $1
-      WHERE COALESCE(order_group_id, id) = $2
+      WHERE COALESCE(order_group_id::text, id::text) = $2
       RETURNING id
     `,
-    [status, targetGroupId]
+    [status, String(targetGroupId)]
   );
 
   return res.status(200).json({
