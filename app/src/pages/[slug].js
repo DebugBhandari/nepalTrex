@@ -381,6 +381,8 @@ function StayDetailView({ stay }) {
 }
 
 function TrekDetailView({ trek }) {
+  const [hoveredStayId, setHoveredStayId] = useState(null);
+
   return (
     <>
       <Head>
@@ -436,46 +438,90 @@ function TrekDetailView({ trek }) {
               Route Map
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 1.2 }}>
-              GeoJSON waypoints for this trek are always displayed below.
+              Hover over a nearby stay card below to highlight it on the map.
             </Typography>
             <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-              <TrekRouteMap selectedTrek={{ name: trek.name, routeGeojson: trek.routeGeojson }} />
+              <TrekRouteMap
+                selectedTrek={{ name: trek.name, routeGeojson: trek.routeGeojson }}
+                nearbyStays={trek.nearbyStays}
+                hoveredStayId={hoveredStayId}
+              />
             </Box>
           </Paper>
 
           <Paper sx={{ p: 2 }}>
             <Typography variant="h5" sx={{ mb: 0.8 }}>
-              Nearby Stays (within {NEARBY_THRESHOLD_KM} km of route)
+              Nearby Stays ({trek.nearbyStays.length} within {NEARBY_THRESHOLD_KM} km)
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 1.5 }}>
-              Only stays around this trek's route coordinates are shown.
+              Hover a card to pin it on the route map above.
             </Typography>
 
-            <Stack spacing={1.5}>
-              {trek.nearbyStays.map((stay) => (
-                <Card key={stay.id}>
-                  <CardContent>
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" alignItems={{ md: 'center' }}>
-                      <Box>
-                        <Typography variant="h6">{stay.name}</Typography>
-                        <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
-                          <Chip label={stay.stayType} size="small" color="secondary" />
-                          <Chip icon={<PlaceIcon />} label={`${stay.distanceKm.toFixed(1)} km from ${stay.location}`} size="small" variant="outlined" />
-                        </Stack>
-                      </Box>
-                      <Stack direction="row" spacing={1}>
-                        <AppButton component={Link} href={`/stays/${stay.slug}`} variant="outlined" size="small" sx={{ height: 36, whiteSpace: 'nowrap' }}>
-                          View Stay
-                        </AppButton>
+            {trek.nearbyStays.length === 0 ? (
+              <Alert severity="info">No mapped stays are currently near this route.</Alert>
+            ) : (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    md: 'repeat(3, minmax(0, 1fr))',
+                  },
+                }}
+              >
+                {trek.nearbyStays.map((stay) => (
+                  <Card
+                    key={stay.id}
+                    onMouseEnter={() => setHoveredStayId(stay.id)}
+                    onMouseLeave={() => setHoveredStayId(null)}
+                    sx={(theme) => ({
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      outline: hoveredStayId === stay.id ? '2px solid' : '2px solid transparent',
+                      outlineColor: hoveredStayId === stay.id ? theme.palette.primary.main : 'transparent',
+                      '&:hover': {
+                        transform: 'translateY(-3px)',
+                        boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
+                      },
+                    })}
+                  >
+                    <Link href={`/stays/${stay.slug}`}>
+                      <CardMedia
+                        component="img"
+                        height="180"
+                        image={stay.imageUrl || DEFAULT_STAY_IMAGE}
+                        alt={stay.name}
+                        sx={{ objectFit: 'cover', objectPosition: 'center' }}
+                      />
+                    </Link>
+                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                      <Link href={`/stays/${stay.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <Typography
+                          variant="h6"
+                          sx={{ mb: 0.8, fontSize: '1rem', '&:hover': { textDecoration: 'underline' } }}
+                        >
+                          {stay.name}
+                        </Typography>
+                      </Link>
+                      <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5, mb: 0.8 }}>
+                        <Chip label={stay.stayType} size="small" color="secondary" />
+                        <Chip
+                          icon={<PlaceIcon />}
+                          label={`${stay.distanceKm.toFixed(1)} km`}
+                          size="small"
+                          variant="outlined"
+                        />
                       </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-              {trek.nearbyStays.length === 0 && (
-                <Alert severity="info">No mapped stays are currently near this route.</Alert>
-              )}
-            </Stack>
+                      <Typography variant="caption" color="text.secondary">
+                        {stay.location}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            )}
           </Paper>
         </Container>
       </Box>

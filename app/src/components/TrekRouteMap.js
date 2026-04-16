@@ -82,7 +82,7 @@ function TrekRouteBounds({ routeGeojson }) {
   return null;
 }
 
-export default function TrekRouteMap({ selectedTrek }) {
+export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredStayId = null }) {
   const routeGeojson = useMemo(() => normalizeGeoJson(selectedTrek?.routeGeojson), [selectedTrek]);
   const namedWaypoints = useMemo(() => extractNamedWaypoints(selectedTrek?.routeGeojson), [selectedTrek]);
 
@@ -90,7 +90,7 @@ export default function TrekRouteMap({ selectedTrek }) {
     <MapContainer
       center={NEPAL_CENTER}
       zoom={NEPAL_ZOOM}
-      style={{ width: '100%', height: '420px' }}
+      style={{ width: '100%', height: '480px' }}
       scrollWheelZoom
     >
       <TileLayer
@@ -109,6 +109,31 @@ export default function TrekRouteMap({ selectedTrek }) {
           }}
         />
       )}
+      {nearbyStays.map((stay) => {
+        if (!stay.latitude || !stay.longitude) return null;
+        const isHovered = stay.id === hoveredStayId;
+        return (
+          <CircleMarker
+            key={`stay-${stay.id}`}
+            center={[Number(stay.latitude), Number(stay.longitude)]}
+            radius={isHovered ? 11 : 7}
+            pathOptions={{
+              color: isHovered ? '#92400e' : '#1e40af',
+              fillColor: isHovered ? '#f59e0b' : '#3b82f6',
+              fillOpacity: 0.92,
+              weight: isHovered ? 3 : 2,
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -10]} permanent={isHovered}>
+              <strong>{stay.name}</strong>
+              <br />
+              <span style={{ fontSize: '0.75em', opacity: 0.8 }}>
+                {Number(stay.latitude).toFixed(5)}, {Number(stay.longitude).toFixed(5)}
+              </span>
+            </Tooltip>
+          </CircleMarker>
+        );
+      })}
       {namedWaypoints.map(([lat, lng, name], i) => (
         <CircleMarker
           key={`wp-${i}`}
