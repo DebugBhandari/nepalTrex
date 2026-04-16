@@ -87,6 +87,7 @@ function StayDetailView({ stay }) {
         return [
           ...prev,
           {
+            menuItemId: item.id || null,
             menuItemName: item.name,
             menuItemCategory: item.category,
             unitPrice: Number(item.price),
@@ -508,9 +509,20 @@ export async function getServerSideProps(context) {
 
     const stayRows = await query(
       `
-        SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone, latitude, longitude
-        FROM stays
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone, s.latitude, s.longitude,
+               COALESCE(
+                 json_agg(
+                   json_build_object(
+                     'id', m.id, 'category', m.category, 'name', m.name, 'description', m.description,
+                     'price', m.price, 'imageUrl', m.image_url, 'available', m.available
+                   ) ORDER BY m.sort_order, m.created_at
+                 ) FILTER (WHERE m.id IS NOT NULL),
+                 '[]'::json
+               ) AS menu_items
+        FROM stays s
+        LEFT JOIN menu_items m ON m.stay_id = s.id
+        WHERE s.latitude IS NOT NULL AND s.longitude IS NOT NULL
+        GROUP BY s.id
       `
     );
 
@@ -556,9 +568,20 @@ export async function getServerSideProps(context) {
 
   const stayResult = await query(
     `
-      SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone, owner_user_id
-      FROM stays
-      WHERE slug = $1
+      SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone, s.owner_user_id,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', m.id, 'category', m.category, 'name', m.name, 'description', m.description,
+                   'price', m.price, 'imageUrl', m.image_url, 'available', m.available
+                 ) ORDER BY m.sort_order, m.created_at
+               ) FILTER (WHERE m.id IS NOT NULL),
+               '[]'::json
+             ) AS menu_items
+      FROM stays s
+      LEFT JOIN menu_items m ON m.stay_id = s.id
+      WHERE s.slug = $1
+      GROUP BY s.id
       LIMIT 1
     `,
     [slug]

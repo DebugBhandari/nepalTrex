@@ -133,6 +133,7 @@ export default async function handler(req, res) {
   const normalizedItems = Array.isArray(items) && items.length > 0
     ? items
         .map((item) => ({
+          menuItemId: item?.menuItemId || null,
           menuItemName: (item?.menuItemName || '').toString().trim(),
           menuItemCategory: (item?.menuItemCategory || '').toString().trim().toLowerCase(),
           unitPrice: Number(item?.unitPrice),
@@ -141,6 +142,7 @@ export default async function handler(req, res) {
         .filter((item) => item.menuItemName)
     : [
         {
+          menuItemId: null,
           menuItemName: (menuItemName || '').toString().trim(),
           menuItemCategory: (menuItemCategory || '').toString().trim().toLowerCase(),
           unitPrice: Number(unitPrice),
@@ -195,6 +197,7 @@ export default async function handler(req, res) {
             INSERT INTO orders (
               order_group_id,
               stay_id,
+              menu_item_id,
               menu_item_name,
               menu_item_category,
               unit_price,
@@ -205,12 +208,13 @@ export default async function handler(req, res) {
               customer_phone,
               notes
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING id, status, created_at
           `,
           [
             orderGroupId,
             stayId,
+            item.menuItemId || null,
             item.menuItemName,
             item.menuItemCategory,
             item.unitPrice,

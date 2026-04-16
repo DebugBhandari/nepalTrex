@@ -64,7 +64,6 @@ CREATE TABLE IF NOT EXISTS stays (
   location TEXT NOT NULL,
   description TEXT NOT NULL,
   image_url TEXT,
-  menu_items JSONB NOT NULL DEFAULT '[]'::jsonb,
   price_per_night NUMERIC(10, 2) NOT NULL DEFAULT 0,
   contact_phone TEXT,
   latitude DOUBLE PRECISION,
@@ -77,31 +76,38 @@ ALTER TABLE stays
   ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 ALTER TABLE stays
-  ADD COLUMN IF NOT EXISTS menu_items JSONB NOT NULL DEFAULT '[]'::jsonb;
-
-ALTER TABLE stays
   ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
 
 ALTER TABLE stays
   ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 
-UPDATE stays
-SET
-  image_url = COALESCE(image_url, '/stays/lodge-exterior.jpg'),
-  menu_items = CASE
-    WHEN jsonb_typeof(menu_items) = 'array' THEN menu_items
-    ELSE '[]'::jsonb
-  END,
-  latitude = CASE WHEN latitude BETWEEN -90 AND 90 THEN latitude ELSE NULL END,
-  longitude = CASE WHEN longitude BETWEEN -180 AND 180 THEN longitude ELSE NULL END,
-  updated_at = NOW();
+-- Remove legacy JSONB column if migrating from old schema
+ALTER TABLE stays DROP COLUMN IF EXISTS menu_items;
 
 CREATE INDEX IF NOT EXISTS stays_owner_user_id_idx ON stays(owner_user_id);
+
+-- Separate menu_items table (replaces the JSONB column on stays)
+CREATE TABLE IF NOT EXISTS menu_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  category TEXT NOT NULL CHECK (category IN ('room', 'food')),
+  name TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  price NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (price >= 0),
+  image_url TEXT,
+  available BOOLEAN NOT NULL DEFAULT true,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS menu_items_stay_id_idx ON menu_items(stay_id);
 
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_group_id UUID,
   stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
   menu_item_name TEXT NOT NULL,
   menu_item_category TEXT NOT NULL CHECK (menu_item_category IN ('room', 'food')),
   unit_price NUMERIC(10, 2) NOT NULL,
@@ -117,6 +123,9 @@ CREATE TABLE IF NOT EXISTS orders (
 
 ALTER TABLE orders
   ADD COLUMN IF NOT EXISTS order_group_id UUID;
+
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS orders_stay_id_idx ON orders(stay_id);
 
@@ -162,63 +171,6 @@ SET
   is_featured = EXCLUDED.is_featured,
   updated_at = NOW();
 
-INSERT INTO stays (
-  owner_user_id,
-  name,
-  slug,
-  stay_type,
-  location,
-  description,
-  image_url,
-  menu_items,
-  price_per_night,
-  contact_phone,
-  latitude,
-  longitude
-)
-SELECT
-  u.id,
-  'Ghandruk Homestay',
-  'ghandrukHomestay',
-  'homestay',
-  'Ghandruk, Kaski',
-  'Warm local homestay with mountain views, home-cooked meals, and village cultural experiences.',
-  '/stays/lodge-exterior.jpg',
-  jsonb_build_array(
-    jsonb_build_object(
-      'category', 'room',
-      'name', 'Mountain View Room',
-      'description', 'Private room with attached bathroom and sunrise views.',
-      'price', 3000,
-      'imageUrl', '/stays/hotel-room.jpg'
-    ),
-    jsonb_build_object(
-      'category', 'food',
-      'name', 'Traditional Dal Bhat Set',
-      'description', 'Rice, lentils, seasonal vegetables, and pickle.',
-      'price', 600,
-      'imageUrl', '/stays/food-dal-bhat.jpg'
-    ),
-    jsonb_build_object(
-      'category', 'food',
-      'name', 'Vegetable Thukpa',
-      'description', 'Hearty Tibetan-style noodle soup with seasonal vegetables.',
-      'price', 450,
-      'imageUrl', '/stays/food-thukpa.jpg'
-    )
-  ),
-  35,
-  '+977-9800000000',
-  28.3735,
-  83.8082
-FROM users u
-WHERE u.username = 'admin'
-ON CONFLICT (slug) DO UPDATE
-  SET image_url = EXCLUDED.image_url,
-      menu_items = EXCLUDED.menu_items,
-      latitude = EXCLUDED.latitude,
-      longitude = EXCLUDED.longitude;
-
 CREATE TABLE IF NOT EXISTS user_trek_wishlists (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   trek_slug TEXT NOT NULL,
@@ -227,52 +179,126 @@ CREATE TABLE IF NOT EXISTS user_trek_wishlists (
 );
 
 CREATE INDEX IF NOT EXISTS user_trek_wishlists_user_id_idx ON user_trek_wishlists(user_id);
-INSERT INTO stays (
-  owner_user_id,
-  name,
-  slug,
-  stay_type,
-  location,
-  description,
-  image_url,
-  menu_items,
-  price_per_night,
-  contact_phone,
-  latitude,
-  longitude
+
+-- ============================================================
+-- DUMMY DATA: STAYS + MENU ITEMS + ORDERS
+-- Truncate and re-seed on every fresh init
+-- ============================================================
+TRUNCATE TABLE orders, menu_items, stays RESTART IDENTITY CASCADE;
+
+-- Stay 1: Ghandruk Homestay
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
+  SELECT u.id, 'Ghandruk Homestay', 'ghandruk-homestay', 'homestay', 'Ghandruk, Kaski',
+    'Warm local homestay nestled in the Gurung village of Ghandruk with stunning Annapurna panoramas, home-cooked Nepali meals, and authentic village cultural experiences.',
+    '/stays/lodge-exterior.jpg', 2500, '+977-9800000001', 28.3735, 83.8082
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
 )
-SELECT
-  u.id,
-  'Ghandruk Hotel',
-  'Ghandruk-Hotel',
-  'hotel',
-  'Ghandruk, Kaski',
-  'Comfortable mountain hotel with stunning Annapurna panoramas, en-suite rooms, and à la carte dining.',
-  '/stays/lodge-exterior.jpg',
-  jsonb_build_array(
-    jsonb_build_object(
-      'category', 'room',
-      'name', 'AC Room',
-      'description', 'Cozy air-conditioned room with mountain view.',
-      'price', 400,
-      'imageUrl', '/stays/hotel-room-2.jpg'
-    ),
-    jsonb_build_object(
-      'category', 'food',
-      'name', 'Momo Platter',
-      'description', 'Steamed vegetable or chicken momos served with tomato chutney.',
-      'price', 350,
-      'imageUrl', '/stays/food-momo.jpg'
-    )
-  ),
-  50,
-  '+977-9800000001',
-  28.3719,
-  83.8070
-FROM users u
-WHERE u.username = 'admin'
-ON CONFLICT (slug) DO UPDATE
-  SET image_url = EXCLUDED.image_url,
-      menu_items = EXCLUDED.menu_items,
-      latitude = EXCLUDED.latitude,
-      longitude = EXCLUDED.longitude;
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Mountain View Room', 'Private room with attached bathroom and sunrise Annapurna views.', 2500::NUMERIC, '/stays/hotel-room.jpg', 1),
+  ('room'::TEXT, 'Dormitory Bed', 'Shared dormitory with 6 beds, great for solo trekkers on a budget.', 800::NUMERIC, '/stays/hotel-room.jpg', 2),
+  ('food'::TEXT, 'Traditional Dal Bhat Set', 'Unlimited rice, lentils, seasonal vegetables, pickle, and papad.', 600::NUMERIC, '/stays/food-dal-bhat.jpg', 3),
+  ('food'::TEXT, 'Vegetable Thukpa', 'Hearty Tibetan-style noodle soup packed with seasonal vegetables.', 450::NUMERIC, '/stays/food-thukpa.jpg', 4),
+  ('food'::TEXT, 'Gurung Bread with Honey', 'Freshly baked local flatbread served with wild mountain honey.', 350::NUMERIC, '/stays/food-dal-bhat.jpg', 5)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 2: Namche Teahouse Hotel
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
+  SELECT u.id, 'Namche Teahouse Hotel', 'namche-teahouse-hotel', 'hotel', 'Namche Bazaar, Solukhumbu',
+    'Comfortable teahouse-style hotel in the heart of Namche Bazaar — the gateway to Everest. Enjoy panoramic Himalayan views, hot showers, and reliable WiFi after a day on the trail.',
+    '/stays/lodge-exterior.jpg', 3500, '+977-9800000002', 27.8050, 86.7140
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Standard Twin Room', 'Twin-bed room with mountain view, hot shower, and attached bath.', 3500::NUMERIC, '/stays/hotel-room.jpg', 1),
+  ('room'::TEXT, 'Deluxe Everest View Room', 'Premium room with floor-to-ceiling windows framing the Everest range.', 6000::NUMERIC, '/stays/hotel-room.jpg', 2),
+  ('food'::TEXT, 'Sherpa Stew', 'Slow-cooked potato and vegetable stew with local spices — a trekker favourite.', 700::NUMERIC, '/stays/food-thukpa.jpg', 3),
+  ('food'::TEXT, 'Yak Cheese Omelette & Toast', 'Two-egg omelette with locally produced yak cheese and sourdough toast.', 550::NUMERIC, '/stays/food-dal-bhat.jpg', 4),
+  ('food'::TEXT, 'Momo Platter (12 pcs)', 'Steamed pork or vegetable momos served with house tomato achar.', 650::NUMERIC, '/stays/food-momo.jpg', 5),
+  ('food'::TEXT, 'Butter Tea & Tsampa Porridge', 'Traditional Tibetan butter tea paired with roasted barley porridge.', 400::NUMERIC, '/stays/food-dal-bhat.jpg', 6)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 3: Pokhara Lakeside Boutique Inn
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
+  SELECT u.id, 'Pokhara Lakeside Inn', 'pokhara-lakeside-inn', 'hotel', 'Lakeside, Pokhara',
+    'Charming boutique inn steps from Phewa Lake offering peaceful garden rooms, a rooftop breakfast terrace with Machhapuchhre views, and curated local dining.',
+    '/stays/lodge-exterior.jpg', 4500, '+977-9800000003', 28.2096, 83.9556
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Garden View Room', 'Quiet room overlooking our lush garden, queen bed, AC, and en-suite.', 4500::NUMERIC, '/stays/hotel-room.jpg', 1),
+  ('room'::TEXT, 'Lake View Suite', 'Spacious suite with private balcony directly facing Phewa Lake.', 8000::NUMERIC, '/stays/hotel-room.jpg', 2),
+  ('food'::TEXT, 'Continental Breakfast Platter', 'Fresh fruit, yogurt, eggs your way, toast, and filter coffee.', 900::NUMERIC, '/stays/food-dal-bhat.jpg', 3),
+  ('food'::TEXT, 'Newari Khaja Set', 'Beaten rice, black-eyed peas, spiced buffalo meat, egg, and achar.', 850::NUMERIC, '/stays/food-thukpa.jpg', 4),
+  ('food'::TEXT, 'Grilled Trout with Vegetables', 'Locally farmed Phewa Lake trout, grilled with seasonal vegetables.', 1200::NUMERIC, '/stays/food-momo.jpg', 5)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 4: Chitwan Jungle Camp
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
+  SELECT u.id, 'Chitwan Jungle Camp', 'chitwan-jungle-camp', 'homestay', 'Sauraha, Chitwan',
+    'Eco-friendly jungle camp on the edge of Chitwan National Park. Wake up to elephant calls, explore the park on foot or by canoe, and enjoy organic farm-to-table meals with your hosting Tharu family.',
+    '/stays/lodge-exterior.jpg', 3200, '+977-9800000004', 27.5749, 84.5057
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Jungle Cottage', 'Private thatched cottage with two beds, mosquito net, fan, and en-suite bathroom.', 3200::NUMERIC, '/stays/hotel-room.jpg', 1),
+  ('room'::TEXT, 'Tharu Mud House Room', 'Authentic Tharu-style mud-walled room for a genuine village stay experience.', 2000::NUMERIC, '/stays/hotel-room.jpg', 2),
+  ('food'::TEXT, 'Tharu Feast Dinner', 'Five-dish Tharu community dinner: rice, fish curry, seasonal greens, lentils, and pickle.', 900::NUMERIC, '/stays/food-dal-bhat.jpg', 3),
+  ('food'::TEXT, 'Jungle Breakfast', 'Local millet porridge, fresh papaya, scrambled eggs, and masala tea.', 600::NUMERIC, '/stays/food-thukpa.jpg', 4),
+  ('food'::TEXT, 'Bamboo Shoot Curry Lunch', 'Traditional Tharu bamboo shoot and lentil curry served with steamed rice.', 700::NUMERIC, '/stays/food-momo.jpg', 5)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Sample accepted order for Ghandruk Homestay
+DO $$
+DECLARE
+  v_stay_id UUID;
+  v_room_id UUID;
+  v_food_id UUID;
+  v_group_id UUID := gen_random_uuid();
+BEGIN
+  SELECT id INTO v_stay_id FROM stays WHERE slug = 'ghandruk-homestay';
+  SELECT id INTO v_room_id FROM menu_items WHERE stay_id = v_stay_id AND category = 'room' LIMIT 1;
+  SELECT id INTO v_food_id FROM menu_items WHERE stay_id = v_stay_id AND category = 'food' ORDER BY sort_order LIMIT 1;
+
+  INSERT INTO orders (order_group_id, stay_id, menu_item_id, menu_item_name, menu_item_category, unit_price, quantity, total_price, customer_name, customer_email, customer_phone, notes, status)
+  SELECT v_group_id, v_stay_id, v_room_id, 'Mountain View Room', 'room', price, 2, price * 2,
+         'Priya Sharma', 'priya@example.com', '+977-9811234567', 'Arriving evening of the 15th.', 'accepted'
+  FROM menu_items WHERE id = v_room_id;
+
+  INSERT INTO orders (order_group_id, stay_id, menu_item_id, menu_item_name, menu_item_category, unit_price, quantity, total_price, customer_name, customer_email, customer_phone, notes, status)
+  SELECT v_group_id, v_stay_id, v_food_id, name, 'food', price, 4, price * 4,
+         'Priya Sharma', 'priya@example.com', '+977-9811234567', 'Arriving evening of the 15th.', 'accepted'
+  FROM menu_items WHERE id = v_food_id;
+END $$;
+
+-- Pending order for Namche Teahouse Hotel
+DO $$
+DECLARE
+  v_stay_id UUID;
+  v_room_id UUID;
+  v_group_id UUID := gen_random_uuid();
+BEGIN
+  SELECT id INTO v_stay_id FROM stays WHERE slug = 'namche-teahouse-hotel';
+  SELECT id INTO v_room_id FROM menu_items WHERE stay_id = v_stay_id AND category = 'room' AND name LIKE 'Standard%' LIMIT 1;
+
+  INSERT INTO orders (order_group_id, stay_id, menu_item_id, menu_item_name, menu_item_category, unit_price, quantity, total_price, customer_name, customer_email, customer_phone, status)
+  SELECT v_group_id, v_stay_id, v_room_id, name, 'room', price, 3, price * 3,
+         'James Walker', 'james@example.com', '+44-7700900123', 'pending'
+  FROM menu_items WHERE id = v_room_id;
+END $$;
+

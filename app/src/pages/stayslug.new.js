@@ -288,9 +288,25 @@ export async function getServerSideProps(context) {
 
   const result = await query(
     `
-      SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
-      FROM stays
-      WHERE slug = $1
+      SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone,
+             COALESCE(
+               json_agg(
+                 json_build_object(
+                   'id', m.id,
+                   'category', m.category,
+                   'name', m.name,
+                   'description', m.description,
+                   'price', m.price,
+                   'imageUrl', m.image_url,
+                   'available', m.available
+                 ) ORDER BY m.sort_order, m.created_at
+               ) FILTER (WHERE m.id IS NOT NULL),
+               '[]'::json
+             ) AS menu_items
+      FROM stays s
+      LEFT JOIN menu_items m ON m.stay_id = s.id
+      WHERE s.slug = $1
+      GROUP BY s.id
       LIMIT 1
     `,
     [slug]

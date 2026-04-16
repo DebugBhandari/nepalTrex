@@ -610,18 +610,50 @@ export async function getServerSideProps(context) {
     ? await query(
         `
           SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description,
-                 s.image_url, s.menu_items, s.contact_phone, u.email AS owner_email
+                 s.image_url, s.contact_phone, u.email AS owner_email,
+                 COALESCE(
+                   json_agg(
+                     json_build_object(
+                       'id', m.id,
+                       'category', m.category,
+                       'name', m.name,
+                       'description', m.description,
+                       'price', m.price,
+                       'imageUrl', m.image_url,
+                       'available', m.available
+                     ) ORDER BY m.sort_order, m.created_at
+                   ) FILTER (WHERE m.id IS NOT NULL),
+                   '[]'::json
+                 ) AS menu_items
           FROM stays s
           JOIN users u ON u.id = s.owner_user_id
+          LEFT JOIN menu_items m ON m.stay_id = s.id
+          GROUP BY s.id, u.email
           ORDER BY s.created_at DESC
         `
       )
     : await query(
         `
-          SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
-          FROM stays
-          WHERE owner_user_id = $1
-          ORDER BY created_at DESC
+          SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone,
+                 COALESCE(
+                   json_agg(
+                     json_build_object(
+                       'id', m.id,
+                       'category', m.category,
+                       'name', m.name,
+                       'description', m.description,
+                       'price', m.price,
+                       'imageUrl', m.image_url,
+                       'available', m.available
+                     ) ORDER BY m.sort_order, m.created_at
+                   ) FILTER (WHERE m.id IS NOT NULL),
+                   '[]'::json
+                 ) AS menu_items
+          FROM stays s
+          LEFT JOIN menu_items m ON m.stay_id = s.id
+          WHERE s.owner_user_id = $1
+          GROUP BY s.id
+          ORDER BY s.created_at DESC
         `,
         [session.user.id]
       );

@@ -1752,10 +1752,21 @@ export async function getServerSideProps(context) {
     const stayRows = await query(
       `
         SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.price_per_night,
-          s.contact_phone, s.image_url, s.menu_items, s.latitude, s.longitude, s.owner_user_id,
-          u.email AS owner_email, u.username AS owner_username, u.display_name AS owner_display_name
+          s.contact_phone, s.image_url, s.latitude, s.longitude, s.owner_user_id,
+          u.email AS owner_email, u.username AS owner_username, u.display_name AS owner_display_name,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id', m.id, 'category', m.category, 'name', m.name, 'description', m.description,
+                'price', m.price, 'imageUrl', m.image_url, 'available', m.available
+              ) ORDER BY m.sort_order, m.created_at
+            ) FILTER (WHERE m.id IS NOT NULL),
+            '[]'::json
+          ) AS menu_items
         FROM stays s
         LEFT JOIN users u ON u.id = s.owner_user_id
+        LEFT JOIN menu_items m ON m.stay_id = s.id
+        GROUP BY s.id, u.email, u.username, u.display_name
         ORDER BY s.created_at DESC
       `
     );
@@ -1769,7 +1780,7 @@ export async function getServerSideProps(context) {
       pricePerNight: row.price_per_night,
       contactPhone: row.contact_phone || '',
       imageUrl: row.image_url || '',
-      menuItems: row.menu_items || [],
+      menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],
       latitude: row.latitude ?? '',
       longitude: row.longitude ?? '',
       ownerEmail: row.owner_email || 'N/A',
