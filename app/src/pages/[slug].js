@@ -33,6 +33,7 @@ function StayDetailView({ stay }) {
   const [cartItems, setCartItems] = useState([]);
   const [bookingStatus, setBookingStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [loginPrompt, setLoginPrompt] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     customerName: '',
     customerEmail: '',
@@ -71,6 +72,10 @@ function StayDetailView({ stay }) {
   }, [stay.menuItems]);
 
   const addToCart = (item) => {
+    if (status !== 'authenticated') {
+      setLoginPrompt(true);
+      return;
+    }
     setCartItems((prev) => {
       const idx = prev.findIndex((entry) => entry.menuItemName === item.name && entry.menuItemCategory === item.category);
       if (idx === -1) {
@@ -104,6 +109,10 @@ function StayDetailView({ stay }) {
   };
 
   const handleBook = async () => {
+    if (status !== 'authenticated') {
+      setLoginPrompt(true);
+      return;
+    }
     if (cartItems.length === 0) return;
 
     setSubmitting(true);
@@ -257,6 +266,23 @@ function StayDetailView({ stay }) {
                 <Typography color="text.secondary" sx={{ mb: 2 }}>
                   Add one or more items from this stay, then confirm in one order.
                 </Typography>
+
+                {loginPrompt && status !== 'authenticated' && (
+                  <Alert
+                    severity="warning"
+                    sx={{ mb: 2 }}
+                    onClose={() => setLoginPrompt(false)}
+                  >
+                    Please{' '}
+                    <Link
+                      href={`/auth/signin?callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
+                      style={{ fontWeight: 700 }}
+                    >
+                      sign in
+                    </Link>
+                    {' '}to place an order.
+                  </Alert>
+                )}
 
                 {bookingStatus && (
                   <Alert sx={{ mb: 2 }} severity="info">
