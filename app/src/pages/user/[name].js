@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
+import { getServerSession } from 'next-auth/next';
 import { signOut, useSession } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
@@ -32,6 +33,7 @@ import {
   Typography,
 } from '@mui/material';
 import AppButton from '../../components/AppButton';
+import { authOptions } from '../../lib/auth-options';
 import NepalTrexLogo from '../../components/NepalTrexLogo';
 import { query } from '../../lib/db';
 
@@ -113,6 +115,12 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
     if (typeof window === 'undefined') return;
     window.localStorage.setItem('nepaltrex-profile-active-tab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!ownProfile && activeTab === 'purchases') {
+      setActiveTab('wishlist');
+    }
+  }, [activeTab, ownProfile]);
 
   const uploadImage = async (event) => {
     const file = event.target.files?.[0];
@@ -336,7 +344,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
                 variant="scrollable"
                 allowScrollButtonsMobile
               >
-                <Tab value="purchases" label="Purchases" />
+                {ownProfile && <Tab value="purchases" label="Purchases" />}
                 <Tab value="wishlist" label="Wishlist" />
               </Tabs>
             </CardContent>
@@ -448,6 +456,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
 }
 
 export async function getServerSideProps(context) {
+  const session = await getServerSession(context.req, context.res, authOptions);
   const requestedHandle = normalizeHandle(context.params?.name || '');
 
   if (!requestedHandle) {
@@ -488,60 +497,62 @@ export async function getServerSideProps(context) {
     [row.id]
   );
 
-  const ordersResult = await query(
-    `
-      SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
-      FROM orders o JOIN stays s ON s.id = o.stay_id
-      WHERE LOWER(COALESCE(o.customer_email, '')) = LOWER($1)
-      ORDER BY o.created_at DESC
-    `,
-    [row.email || '']
-  );
-
   const groupedOrders = new Map();
-  for (const orderRow of ordersResult.rows) {
-    const groupId = orderRow.order_group_id || orderRow.id;
-    const groupKey = String(groupId);
+  if (session?.user?.id && String(session.user.id) === String(row.id) && row.email) {
+    const ordersResult = await query(
+      `
+        SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
+        FROM orders o JOIN stays s ON s.id = o.stay_id
+        WHERE LOWER(COALESCE(o.customer_email, '')) = LOWER($1)
+        ORDER BY o.created_at DESC
+      `,
+      [row.email]
+    );
 
-    if (!groupedOrders.has(groupKey)) {
-      groupedOrders.set(groupKey, {
-        id: groupKey,
-        orderGroupId: orderRow.order_group_id || null,
-        stayId: orderRow.stay_id,
-        stayName: orderRow.stay_name,
-        customerName: orderRow.customer_name,
-        customerEmail: orderRow.customer_email || '',
-        customerPhone: orderRow.customer_phone || '',
-        notes: orderRow.notes || '',
-        createdAt: orderRow.created_at,
+    for (const orderRow of ordersResult.rows) {
+      const groupId = orderRow.order_group_id || orderRow.id;
+      const groupKey = String(groupId);
+
+      if (!groupedOrders.has(groupKey)) {
+        groupedOrders.set(groupKey, {
+          id: groupKey,
+          orderGroupId: orderRow.order_group_id || null,
+          stayId: orderRow.stay_id,
+          stayName: orderRow.stay_name,
+          customerName: orderRow.customer_name,
+          customerEmail: orderRow.customer_email || '',
+          customerPhone: orderRow.customer_phone || '',
+          notes: orderRow.notes || '',
+          createdAt: orderRow.created_at,
+          status: orderRow.status,
+          totalPrice: 0,
+          quantity: 0,
+          items: [],
+        });
+      }
+
+      const group = groupedOrders.get(groupKey);
+      group.items.push({
+        id: orderRow.id,
+        menuItemName: orderRow.menu_item_name,
+        menuItemCategory: orderRow.menu_item_category,
+        unitPrice: Number(orderRow.unit_price),
+        quantity: Number(orderRow.quantity),
+        totalPrice: Number(orderRow.total_price),
         status: orderRow.status,
-        totalPrice: 0,
-        quantity: 0,
-        items: [],
       });
-    }
+      group.totalPrice += Number(orderRow.total_price);
+      group.quantity += Number(orderRow.quantity);
 
-    const group = groupedOrders.get(groupKey);
-    group.items.push({
-      id: orderRow.id,
-      menuItemName: orderRow.menu_item_name,
-      menuItemCategory: orderRow.menu_item_category,
-      unitPrice: Number(orderRow.unit_price),
-      quantity: Number(orderRow.quantity),
-      totalPrice: Number(orderRow.total_price),
-      status: orderRow.status,
-    });
-    group.totalPrice += Number(orderRow.total_price);
-    group.quantity += Number(orderRow.quantity);
-
-    if (orderRow.status === 'completed') {
-      group.status = 'completed';
-    } else if (orderRow.status === 'declined' && !['completed'].includes(group.status)) {
-      group.status = 'declined';
-    } else if (orderRow.status === 'cancelled' && !['completed', 'declined'].includes(group.status)) {
-      group.status = 'cancelled';
-    } else if (orderRow.status === 'accepted' && group.status === 'pending') {
-      group.status = 'accepted';
+      if (orderRow.status === 'completed') {
+        group.status = 'completed';
+      } else if (orderRow.status === 'declined' && !['completed'].includes(group.status)) {
+        group.status = 'declined';
+      } else if (orderRow.status === 'cancelled' && !['completed', 'declined'].includes(group.status)) {
+        group.status = 'cancelled';
+      } else if (orderRow.status === 'accepted' && group.status === 'pending') {
+        group.status = 'accepted';
+      }
     }
   }
 

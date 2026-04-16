@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     if (!['admin', 'superUser'].includes(session.user.role)) return res.status(403).json({ error: 'Forbidden' });
 
     const isSuper = session.user.role === 'superUser';
+    const viewerEmail = (session.user.email || '').toString().trim();
     const result = isSuper
       ? await query(
           `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id,
@@ -19,7 +20,9 @@ export default async function handler(req, res) {
            FROM orders o
            JOIN stays s ON s.id = o.stay_id
            JOIN users owner ON owner.id = s.owner_user_id
-           ORDER BY o.created_at DESC`
+           WHERE LOWER(COALESCE(o.customer_email, '')) <> LOWER($1)
+           ORDER BY o.created_at DESC`,
+          [viewerEmail]
         )
       : await query(
           `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id,
@@ -28,8 +31,9 @@ export default async function handler(req, res) {
            JOIN stays s ON s.id = o.stay_id
            JOIN users owner ON owner.id = s.owner_user_id
            WHERE s.owner_user_id = $1
+             AND LOWER(COALESCE(o.customer_email, '')) <> LOWER($2)
            ORDER BY o.created_at DESC`,
-          [session.user.id]
+          [session.user.id, viewerEmail]
         );
 
     const groupedOrders = new Map();
