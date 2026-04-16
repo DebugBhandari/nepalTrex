@@ -95,6 +95,15 @@ function normalizeMenuItems(items) {
   }));
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function AdminPage({ user, initialStays }) {
   const router = useRouter();
   const [stays, setStays] = useState(initialStays);
@@ -313,6 +322,50 @@ export default function AdminPage({ user, initialStays }) {
       const nextMenu = prev.menuItems.filter((_, i) => i !== index);
       return { ...prev, menuItems: nextMenu.length > 0 ? nextMenu : [newMenuItem('room')] };
     });
+
+  const handleNewStayImageUpload = async (file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (!dataUrl) return;
+      setNewStay((prev) => ({ ...prev, imageUrl: dataUrl }));
+    } catch (error) {
+      setMessage(error.message || 'Failed to upload stay image');
+    }
+  };
+
+  const handleStayImageUpload = async (stayId, file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (!dataUrl) return;
+      updateDraft(stayId, 'imageUrl', dataUrl);
+    } catch (error) {
+      setMessage(error.message || 'Failed to upload stay image');
+    }
+  };
+
+  const handleNewMenuImageUpload = async (index, file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (!dataUrl) return;
+      updateNewMenuItem(index, 'imageUrl', dataUrl);
+    } catch (error) {
+      setMessage(error.message || 'Failed to upload menu image');
+    }
+  };
+
+  const handleStayMenuImageUpload = async (stayId, index, file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (!dataUrl) return;
+      updateStayMenuItem(stayId, index, 'imageUrl', dataUrl);
+    } catch (error) {
+      setMessage(error.message || 'Failed to upload menu image');
+    }
+  };
 
   const createStay = async () => {
     setCreating(true);
@@ -544,7 +597,27 @@ export default function AdminPage({ user, initialStays }) {
                     <TextField label="Longitude" type="number" value={newStay.longitude} onChange={(e) => setNewStay((p) => ({ ...p, longitude: e.target.value }))} fullWidth inputProps={{ step: 'any' }} />
                   </Stack>
                   <TextField label="Description" multiline minRows={3} value={newStay.description} onChange={(e) => setNewStay((p) => ({ ...p, description: e.target.value }))} fullWidth />
-                  <TextField label="Stay Image URL" value={newStay.imageUrl} onChange={(e) => setNewStay((p) => ({ ...p, imageUrl: e.target.value }))} fullWidth />
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
+                    <TextField
+                      label="Stay Image URL"
+                      value={newStay.imageUrl}
+                      onChange={(e) => setNewStay((p) => ({ ...p, imageUrl: e.target.value }))}
+                      fullWidth
+                    />
+                    <AppButton component="label" variant="outlined" sx={{ whiteSpace: 'nowrap' }}>
+                      Upload Stay Image
+                      <input
+                        hidden
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          handleNewStayImageUpload(file);
+                          event.target.value = '';
+                        }}
+                      />
+                    </AppButton>
+                  </Stack>
                   <Divider />
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="subtitle2">Menu Items</Typography>
@@ -571,7 +644,26 @@ export default function AdminPage({ user, initialStays }) {
                             <TextField label="Item Name" value={item.name} size="small" fullWidth onChange={(e) => updateNewMenuItem(index, 'name', e.target.value)} />
                             <TextField label="Description" value={item.description} size="small" fullWidth onChange={(e) => updateNewMenuItem(index, 'description', e.target.value)} />
                             <TextField label="Price (NPR)" type="number" value={item.price} size="small" fullWidth onChange={(e) => updateNewMenuItem(index, 'price', Number(e.target.value || 0))} />
-                            <TextField label="Image URL" value={item.imageUrl || DEFAULT_MENU_IMAGE} size="small" fullWidth onChange={(e) => updateNewMenuItem(index, 'imageUrl', e.target.value)} />
+                            <TextField
+                              label="Image URL"
+                              value={item.imageUrl || DEFAULT_MENU_IMAGE}
+                              size="small"
+                              fullWidth
+                              onChange={(e) => updateNewMenuItem(index, 'imageUrl', e.target.value)}
+                            />
+                            <AppButton component="label" size="small" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
+                              Upload Image
+                              <input
+                                hidden
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  handleNewMenuImageUpload(index, file);
+                                  event.target.value = '';
+                                }}
+                              />
+                            </AppButton>
                           </Stack>
                         </CardContent>
                       </Card>
@@ -668,7 +760,28 @@ export default function AdminPage({ user, initialStays }) {
                             <TextField label="Longitude" type="number" value={stay.longitude} onChange={(e) => updateDraft(stay.id, 'longitude', e.target.value)} disabled={isSaving} fullWidth inputProps={{ step: 'any' }} />
                           </Stack>
                           <TextField label="Description" multiline minRows={3} value={stay.description} onChange={(e) => updateDraft(stay.id, 'description', e.target.value)} disabled={isSaving} fullWidth />
-                          <TextField label="Stay Image URL" value={stay.imageUrl || DEFAULT_STAY_IMAGE} onChange={(e) => updateDraft(stay.id, 'imageUrl', e.target.value)} disabled={isSaving} fullWidth />
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
+                            <TextField
+                              label="Stay Image URL"
+                              value={stay.imageUrl || DEFAULT_STAY_IMAGE}
+                              onChange={(e) => updateDraft(stay.id, 'imageUrl', e.target.value)}
+                              disabled={isSaving}
+                              fullWidth
+                            />
+                            <AppButton component="label" variant="outlined" disabled={isSaving} sx={{ whiteSpace: 'nowrap' }}>
+                              Upload Stay Image
+                              <input
+                                hidden
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0];
+                                  handleStayImageUpload(stay.id, file);
+                                  event.target.value = '';
+                                }}
+                              />
+                            </AppButton>
+                          </Stack>
                           <Stack direction="row" spacing={1}>
                             <AppButton variant="contained" onClick={() => updateStay(stay)} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Details'}</AppButton>
                             <AppButton variant="outlined" onClick={() => setEditingById((prev) => ({ ...prev, [stay.id]: false }))} disabled={isSaving}>Cancel</AppButton>
@@ -711,7 +824,27 @@ export default function AdminPage({ user, initialStays }) {
                                   <TextField label="Item Name" value={item.name} size="small" fullWidth onChange={(e) => updateStayMenuItem(stay.id, index, 'name', e.target.value)} disabled={isSaving} />
                                   <TextField label="Description" value={item.description || ''} size="small" fullWidth onChange={(e) => updateStayMenuItem(stay.id, index, 'description', e.target.value)} disabled={isSaving} />
                                   <TextField label="Price (NPR)" type="number" value={item.price} size="small" fullWidth onChange={(e) => updateStayMenuItem(stay.id, index, 'price', Number(e.target.value || 0))} disabled={isSaving} />
-                                  <TextField label="Image URL" value={item.imageUrl || DEFAULT_MENU_IMAGE} size="small" fullWidth onChange={(e) => updateStayMenuItem(stay.id, index, 'imageUrl', e.target.value)} disabled={isSaving} />
+                                  <TextField
+                                    label="Image URL"
+                                    value={item.imageUrl || DEFAULT_MENU_IMAGE}
+                                    size="small"
+                                    fullWidth
+                                    onChange={(e) => updateStayMenuItem(stay.id, index, 'imageUrl', e.target.value)}
+                                    disabled={isSaving}
+                                  />
+                                  <AppButton component="label" size="small" variant="outlined" disabled={isSaving} sx={{ alignSelf: 'flex-start' }}>
+                                    Upload Image
+                                    <input
+                                      hidden
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(event) => {
+                                        const file = event.target.files?.[0];
+                                        handleStayMenuImageUpload(stay.id, index, file);
+                                        event.target.value = '';
+                                      }}
+                                    />
+                                  </AppButton>
                                   <AppButton size="small" color="error" variant="outlined" startIcon={<DeleteOutlineIcon />} onClick={() => removeStayMenuItem(stay.id, index)} disabled={isSaving}>Remove</AppButton>
                                 </Stack>
                               </CardContent>
