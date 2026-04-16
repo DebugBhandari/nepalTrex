@@ -79,6 +79,12 @@ async function listFiles(dirPath) {
 
 async function uploadDirectory(minio, bucket, publicBaseUrl, folderName) {
   const localDir = path.join(repoRoot, 'app/public', folderName);
+  try {
+    await fs.access(localDir);
+  } catch {
+    return { fileCount: 0, mapping: new Map() };
+  }
+
   const fileNames = await listFiles(localDir);
   const mapping = new Map();
 

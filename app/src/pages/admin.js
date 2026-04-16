@@ -120,6 +120,8 @@ export default function AdminPage({ user, initialStays }) {
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [staySearch, setStaySearch] = useState('');
+  const [showStayFilters, setShowStayFilters] = useState(false);
+  const [showOrderFilters, setShowOrderFilters] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState(null);
 
@@ -681,14 +683,25 @@ export default function AdminPage({ user, initialStays }) {
 
           {isSuperUser && (
             <Box sx={{ mb: 2 }}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Search stays by owner or stay name"
-                placeholder="Type stay name or owner email"
-                value={staySearch}
-                onChange={(event) => setStaySearch(event.target.value)}
-              />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2}>
+                <AppButton variant="outlined" onClick={() => setShowStayFilters((prev) => !prev)}>
+                  {showStayFilters ? 'Hide Filters' : 'Filters'}
+                </AppButton>
+                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                  Showing {visibleStays.length} stay{visibleStays.length === 1 ? '' : 's'}
+                </Typography>
+              </Stack>
+              {showStayFilters && (
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Search stays by owner or stay name"
+                  placeholder="Type stay name or owner email"
+                  value={staySearch}
+                  onChange={(event) => setStaySearch(event.target.value)}
+                  sx={{ mt: 1.2 }}
+                />
+              )}
             </Box>
           )}
 
@@ -869,23 +882,28 @@ export default function AdminPage({ user, initialStays }) {
                         Orders{ordersLoaded ? ` (${visibleStayOrders.length})` : ''}
                       </Typography>
                       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                        <FormControl size="small" sx={{ minWidth: 170 }}>
-                          <InputLabel id={`admin-order-filter-${stay.id}`}>Order Filter</InputLabel>
-                          <Select
-                            labelId={`admin-order-filter-${stay.id}`}
-                            label="Order Filter"
-                            value={stayOrderFilter}
-                            onChange={(event) =>
-                              setOrderFilterByStayId((prev) => ({
-                                ...prev,
-                                [stay.id]: event.target.value,
-                              }))
-                            }
-                          >
-                            <MenuItem value="all">All Orders</MenuItem>
-                            <MenuItem value="active">Active Orders</MenuItem>
-                          </Select>
-                        </FormControl>
+                        <AppButton size="small" variant="outlined" onClick={() => setShowOrderFilters((prev) => !prev)}>
+                          {showOrderFilters ? 'Hide Filters' : 'Filters'}
+                        </AppButton>
+                        {showOrderFilters && (
+                          <FormControl size="small" sx={{ minWidth: 170 }}>
+                            <InputLabel id={`admin-order-filter-${stay.id}`}>Order Filter</InputLabel>
+                            <Select
+                              labelId={`admin-order-filter-${stay.id}`}
+                              label="Order Filter"
+                              value={stayOrderFilter}
+                              onChange={(event) =>
+                                setOrderFilterByStayId((prev) => ({
+                                  ...prev,
+                                  [stay.id]: event.target.value,
+                                }))
+                              }
+                            >
+                              <MenuItem value="all">All Orders</MenuItem>
+                              <MenuItem value="active">Active Orders</MenuItem>
+                            </Select>
+                          </FormControl>
+                        )}
                         <AppButton
                           size="small"
                           variant="outlined"

@@ -19,6 +19,7 @@ import {
   Box,
   Card,
   CardContent,
+  CardMedia,
   Chip,
   Container,
   Divider,
@@ -44,12 +45,14 @@ import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import AppIconButton from '../components/AppIconButton';
 import NepalTrexLogo from '../components/NepalTrexLogo';
+import { getTrekImage, slugifyTrekName } from '../lib/treks';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
 const DASHBOARD_TAB_STORAGE_KEY = 'nepaltrex-dashboard-active-tab';
 const USERS_PER_PAGE = 10;
 const STAYS_PER_PAGE = 8;
+const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 
 function normalizeHandle(value) {
@@ -170,6 +173,9 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [routeFilter, setRouteFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
+  const [showTrekFilters, setShowTrekFilters] = useState(false);
+  const [showStayFilters, setShowStayFilters] = useState(false);
+  const [showUserFilters, setShowUserFilters] = useState(false);
 
   const [activeTab, setActiveTab] = useState('treks');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
@@ -816,104 +822,126 @@ return (
                 </Alert>
               )}
 
-              <Paper sx={{ p: 1.5, mb: 2 }}>
-                <Stack spacing={1.2}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
-                    <FormControl size="small" sx={{ minWidth: 170 }}>
-                      <InputLabel id="region-filter-label">Region</InputLabel>
-                      <Select
-                        labelId="region-filter-label"
-                        label="Region"
-                        value={regionFilter}
-                        onChange={(event) => setRegionFilter(event.target.value)}
-                      >
-                        <MenuItem value="all">All regions</MenuItem>
-                        {availableRegions.map((region) => (
-                          <MenuItem key={region} value={region}>
-                            {region}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                      <InputLabel id="level-filter-label">Difficulty</InputLabel>
-                      <Select
-                        labelId="level-filter-label"
-                        label="Difficulty"
-                        value={levelFilter}
-                        onChange={(event) => setLevelFilter(event.target.value)}
-                      >
-                        <MenuItem value="all">All levels</MenuItem>
-                        {LEVEL_OPTIONS.map((option) => (
-                          <MenuItem key={option} value={option}>
-                            {option}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 180 }}>
-                      <InputLabel id="route-filter-label">Route status</InputLabel>
-                      <Select
-                        labelId="route-filter-label"
-                        label="Route status"
-                        value={routeFilter}
-                        onChange={(event) => setRouteFilter(event.target.value)}
-                      >
-                        <MenuItem value="all">All routes</MenuItem>
-                        <MenuItem value="with-route">With route</MenuItem>
-                        <MenuItem value="missing-route">Missing route</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Stack>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
+                <AppButton variant="outlined" onClick={() => setShowTrekFilters((prev) => !prev)}>
+                  {showTrekFilters ? 'Hide Filters' : 'Filters'}
+                </AppButton>
+                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                  Showing {visibleItems.length} trek{visibleItems.length === 1 ? '' : 's'}
+                </Typography>
+              </Stack>
 
-                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
-                    <FormControl size="small" sx={{ minWidth: 180 }}>
-                      <InputLabel id="sort-by-label">Sort by</InputLabel>
-                      <Select
-                        labelId="sort-by-label"
-                        label="Sort by"
-                        value={sortBy}
-                        onChange={(event) => setSortBy(event.target.value)}
-                      >
-                        <MenuItem value="name">Name</MenuItem>
-                        <MenuItem value="region">Region</MenuItem>
-                        <MenuItem value="level">Difficulty</MenuItem>
-                        <MenuItem value="duration">Duration</MenuItem>
-                        <MenuItem value="route">Route points</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <FormControl size="small" sx={{ minWidth: 150 }}>
-                      <InputLabel id="sort-direction-label">Direction</InputLabel>
-                      <Select
-                        labelId="sort-direction-label"
-                        label="Direction"
-                        value={sortDirection}
-                        onChange={(event) => setSortDirection(event.target.value)}
-                      >
-                        <MenuItem value="asc">Ascending</MenuItem>
-                        <MenuItem value="desc">Descending</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <AppButton
-                      variant="outlined"
-                      onClick={() => {
-                        setRegionFilter('all');
-                        setLevelFilter('all');
-                        setRouteFilter('all');
-                        setSortBy('name');
-                        setSortDirection('asc');
-                      }}
-                    >
-                      Reset filters
-                    </AppButton>
-                  </Stack>
-                </Stack>
-              </Paper>
+              {showTrekFilters && (
+                <Paper sx={{ p: 1.5, mb: 2 }}>
+                  <Stack spacing={1.2}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
+                      <FormControl size="small" sx={{ minWidth: 170 }}>
+                        <InputLabel id="region-filter-label">Region</InputLabel>
+                        <Select
+                          labelId="region-filter-label"
+                          label="Region"
+                          value={regionFilter}
+                          onChange={(event) => setRegionFilter(event.target.value)}
+                        >
+                          <MenuItem value="all">All regions</MenuItem>
+                          {availableRegions.map((region) => (
+                            <MenuItem key={region} value={region}>
+                              {region}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small" sx={{ minWidth: 160 }}>
+                        <InputLabel id="level-filter-label">Difficulty</InputLabel>
+                        <Select
+                          labelId="level-filter-label"
+                          label="Difficulty"
+                          value={levelFilter}
+                          onChange={(event) => setLevelFilter(event.target.value)}
+                        >
+                          <MenuItem value="all">All levels</MenuItem>
+                          {LEVEL_OPTIONS.map((option) => (
+                            <MenuItem key={option} value={option}>
+                              {option}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <InputLabel id="route-filter-label">Route status</InputLabel>
+                        <Select
+                          labelId="route-filter-label"
+                          label="Route status"
+                          value={routeFilter}
+                          onChange={(event) => setRouteFilter(event.target.value)}
+                        >
+                          <MenuItem value="all">All routes</MenuItem>
+                          <MenuItem value="with-route">With route</MenuItem>
+                          <MenuItem value="missing-route">Missing route</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Stack>
 
-              <Stack spacing={2}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
+                      <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <InputLabel id="sort-by-label">Sort by</InputLabel>
+                        <Select
+                          labelId="sort-by-label"
+                          label="Sort by"
+                          value={sortBy}
+                          onChange={(event) => setSortBy(event.target.value)}
+                        >
+                          <MenuItem value="name">Name</MenuItem>
+                          <MenuItem value="region">Region</MenuItem>
+                          <MenuItem value="level">Difficulty</MenuItem>
+                          <MenuItem value="duration">Duration</MenuItem>
+                          <MenuItem value="route">Route points</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <FormControl size="small" sx={{ minWidth: 150 }}>
+                        <InputLabel id="sort-direction-label">Direction</InputLabel>
+                        <Select
+                          labelId="sort-direction-label"
+                          label="Direction"
+                          value={sortDirection}
+                          onChange={(event) => setSortDirection(event.target.value)}
+                        >
+                          <MenuItem value="asc">Ascending</MenuItem>
+                          <MenuItem value="desc">Descending</MenuItem>
+                        </Select>
+                      </FormControl>
+                      <AppButton
+                        variant="outlined"
+                        onClick={() => {
+                          setRegionFilter('all');
+                          setLevelFilter('all');
+                          setRouteFilter('all');
+                          setSortBy('name');
+                          setSortDirection('asc');
+                        }}
+                      >
+                        Reset filters
+                      </AppButton>
+                    </Stack>
+                  </Stack>
+                </Paper>
+              )}
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    xl: 'repeat(3, minmax(0, 1fr))',
+                  },
+                }}
+              >
                 {visibleItems.map((trek) => {
                   const isEditing = Boolean(editingById[trek.id]);
                   const isSaving = Boolean(savingById[trek.id]);
+                  const trekSlug = slugifyTrekName(trek.name);
 
                   return (
                     <Card
@@ -929,6 +957,15 @@ return (
                           theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(11, 31, 42, 0.08)',
                       })}
                     >
+                      <Link href={`/treks/${trekSlug}`}>
+                        <CardMedia
+                          component="img"
+                          height="180"
+                          image={getTrekImage(trek.name)}
+                          alt={trek.name}
+                          sx={{ objectFit: 'cover', objectPosition: 'center', cursor: 'pointer' }}
+                        />
+                      </Link>
                       <CardContent>
                         {!isEditing ? (
                           /* ── Collapsed summary ── */
@@ -1200,7 +1237,7 @@ return (
                 {visibleItems.length === 0 && (
                   <Alert severity="info">No treks match the current filters.</Alert>
                 )}
-              </Stack>
+              </Box>
             </Box>
           )}
 
@@ -1210,35 +1247,46 @@ return (
                 As superUser, you can update stay fields and menu item image links/uploads.
               </Alert>
 
-              <Box
-                component="form"
-                sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  setStayPage(1);
-                }}
-              >
-                <TextField
-                  value={staySearch}
-                  onChange={(event) => {
-                    setStaySearch(event.target.value);
-                    setStayPage(1);
-                  }}
-                  placeholder="Search by stay name or owner"
-                  fullWidth
-                  sx={{ flex: 1, minWidth: 240 }}
-                />
-                <AppButton
-                  variant="outlined"
-                  type="button"
-                  onClick={() => {
-                    setStaySearch('');
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
+                <AppButton variant="outlined" onClick={() => setShowStayFilters((prev) => !prev)}>
+                  {showStayFilters ? 'Hide Filters' : 'Filters'}
+                </AppButton>
+                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                  Showing {filteredStays.length} stay{filteredStays.length === 1 ? '' : 's'}
+                </Typography>
+              </Stack>
+
+              {showStayFilters && (
+                <Box
+                  component="form"
+                  sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}
+                  onSubmit={(event) => {
+                    event.preventDefault();
                     setStayPage(1);
                   }}
                 >
-                  Reset
-                </AppButton>
-              </Box>
+                  <TextField
+                    value={staySearch}
+                    onChange={(event) => {
+                      setStaySearch(event.target.value);
+                      setStayPage(1);
+                    }}
+                    placeholder="Search by stay name or owner"
+                    fullWidth
+                    sx={{ flex: 1, minWidth: 240 }}
+                  />
+                  <AppButton
+                    variant="outlined"
+                    type="button"
+                    onClick={() => {
+                      setStaySearch('');
+                      setStayPage(1);
+                    }}
+                  >
+                    Reset
+                  </AppButton>
+                </Box>
+              )}
 
               {stayMessage && (
                 <Alert severity="success" sx={{ mb: 2 }}>
@@ -1246,7 +1294,17 @@ return (
                 </Alert>
               )}
 
-              <Stack spacing={2}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2,
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    xl: 'repeat(3, minmax(0, 1fr))',
+                  },
+                }}
+              >
                 {paginatedStays.map((stay) => {
                   const isEditing = Boolean(editingStayById[stay.id]);
                   const isSaving = Boolean(savingStayById[stay.id]);
@@ -1269,6 +1327,15 @@ return (
                           theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(11, 31, 42, 0.08)',
                       })}
                     >
+                      <Link href={`/stays/${stay.slug}`}>
+                        <CardMedia
+                          component="img"
+                          height="180"
+                          image={stay.imageUrl || DEFAULT_STAY_IMAGE}
+                          alt={stay.name}
+                          sx={{ objectFit: 'cover', objectPosition: 'center', cursor: 'pointer' }}
+                        />
+                      </Link>
                       <CardContent>
                         {!isEditing ? (
                           <Stack
@@ -1487,7 +1554,7 @@ return (
                 {filteredStays.length === 0 && (
                   <Alert severity="info">No stays found in the database.</Alert>
                 )}
-              </Stack>
+              </Box>
 
               {filteredStays.length > STAYS_PER_PAGE && (
                 <Stack direction="row" justifyContent="center" sx={{ mt: 2.5 }}>
@@ -1512,54 +1579,65 @@ return (
                 Search users and update roles, including revoking admin or superUser access.
               </Typography>
 
-              <Box
-                component="form"
-                sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  fetchUsers(userSearch);
-                }}
-              >
-                <TextField
-                  value={userSearch}
-                  onChange={(event) => setUserSearch(event.target.value)}
-                  placeholder="Search by username, email, or display name"
-                  fullWidth
-                  sx={{ flex: 1, minWidth: 240 }}
-                />
-                <FormControl size="small" sx={{ minWidth: 140 }}>
-                  <InputLabel id="user-role-filter-label">Role Filter</InputLabel>
-                  <Select
-                    labelId="user-role-filter-label"
-                    label="Role Filter"
-                    value={userRoleFilter}
-                    onChange={(event) => {
-                      setUserRoleFilter(event.target.value);
-                      setUserPage(1);
-                    }}
-                  >
-                    <MenuItem value="all">All Users</MenuItem>
-                    <MenuItem value="admin">Admins</MenuItem>
-                    <MenuItem value="superUser">SuperUsers</MenuItem>
-                  </Select>
-                </FormControl>
-                <AppButton variant="contained" type="submit" disabled={usersLoading}>
-                  {usersLoading ? 'Searching...' : 'Search'}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
+                <AppButton variant="outlined" onClick={() => setShowUserFilters((prev) => !prev)}>
+                  {showUserFilters ? 'Hide Filters' : 'Filters'}
                 </AppButton>
-                <AppButton
-                  variant="outlined"
-                  type="button"
-                  disabled={usersLoading}
-                  onClick={() => {
-                    setUserSearch('');
-                    setUserRoleFilter('all');
-                    setUserPage(1);
-                    fetchUsers('');
+                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                  Showing {filteredUsers.length} user{filteredUsers.length === 1 ? '' : 's'}
+                </Typography>
+              </Stack>
+
+              {showUserFilters && (
+                <Box
+                  component="form"
+                  sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    fetchUsers(userSearch);
                   }}
                 >
-                  Reset
-                </AppButton>
-              </Box>
+                  <TextField
+                    value={userSearch}
+                    onChange={(event) => setUserSearch(event.target.value)}
+                    placeholder="Search by username, email, or display name"
+                    fullWidth
+                    sx={{ flex: 1, minWidth: 240 }}
+                  />
+                  <FormControl size="small" sx={{ minWidth: 140 }}>
+                    <InputLabel id="user-role-filter-label">Role Filter</InputLabel>
+                    <Select
+                      labelId="user-role-filter-label"
+                      label="Role Filter"
+                      value={userRoleFilter}
+                      onChange={(event) => {
+                        setUserRoleFilter(event.target.value);
+                        setUserPage(1);
+                      }}
+                    >
+                      <MenuItem value="all">All Users</MenuItem>
+                      <MenuItem value="admin">Admins</MenuItem>
+                      <MenuItem value="superUser">SuperUsers</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <AppButton variant="contained" type="submit" disabled={usersLoading}>
+                    {usersLoading ? 'Searching...' : 'Search'}
+                  </AppButton>
+                  <AppButton
+                    variant="outlined"
+                    type="button"
+                    disabled={usersLoading}
+                    onClick={() => {
+                      setUserSearch('');
+                      setUserRoleFilter('all');
+                      setUserPage(1);
+                      fetchUsers('');
+                    }}
+                  >
+                    Reset
+                  </AppButton>
+                </Box>
+              )}
 
               {usersMessage && (
                 <Alert severity="success" sx={{ mb: 2 }}>

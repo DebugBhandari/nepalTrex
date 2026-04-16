@@ -16,7 +16,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import HomeIcon from '@mui/icons-material/Home';
 import PlaceIcon from '@mui/icons-material/Place';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
@@ -25,8 +24,8 @@ import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/
 
 const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
 
-const DEFAULT_STAY_IMAGE = '/stays/lodge-exterior.jpg';
-const DEFAULT_MENU_IMAGE = '/stays/food-thukpa.jpg';
+const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
+const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 const NEARBY_THRESHOLD_KM = 35;
 
 function StayDetailView({ stay }) {
@@ -183,10 +182,6 @@ function StayDetailView({ stay }) {
         })}
       >
         <Container maxWidth="lg">
-          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mb: 2 }}>
-            Back to Home
-          </AppButton>
-
           <Card sx={{ mb: 2 }}>
             <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />
             <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
@@ -403,10 +398,6 @@ function TrekDetailView({ trek }) {
         })}
       >
         <Container maxWidth="lg">
-          <AppButton component={Link} href="/" startIcon={<HomeIcon />} variant="outlined" sx={{ mb: 2 }}>
-            Back to Home
-          </AppButton>
-
           <Card sx={{ mb: 3 }}>
             <CardMedia
               component="img"

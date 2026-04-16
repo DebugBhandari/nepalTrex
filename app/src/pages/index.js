@@ -106,6 +106,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedDuration, setSelectedDuration] = useState('all');
   const [selectedAltitude, setSelectedAltitude] = useState('all');
+  const [showTrekFilters, setShowTrekFilters] = useState(false);
   const [orderNotification, setOrderNotification] = useState(null);
   const previousPendingCountRef = useRef(0);
   const knownUserOrderStatusesRef = useRef(new Map());
@@ -654,6 +655,9 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               <AppButton href="#treks" variant="contained" size="large">
                 Explore Treks
               </AppButton>
+              <AppButton component={Link} href="/stays" variant="outlined" size="large">
+                Browse Stays
+              </AppButton>
             </Stack>
           </Paper>
 
@@ -671,113 +675,121 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               Click any trek image to open full route details, map, and nearby stay options.
             </Typography>
 
-            <Paper
-              sx={(theme) => ({
-                p: 2,
-                mb: 2.5,
-                background:
-                  theme.palette.mode === 'dark'
-                    ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                    : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
-              })}
-            >
-              <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
-                Filter Treks
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
+              <AppButton variant="outlined" onClick={() => setShowTrekFilters((prev) => !prev)}>
+                {showTrekFilters ? 'Hide Filters' : 'Filters'}
+              </AppButton>
+              <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                Showing {filteredTreks.length} trek{filteredTreks.length === 1 ? '' : 's'}
               </Typography>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: 1.25,
-                  gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: 'repeat(2, minmax(0, 1fr))',
-                    lg: 'repeat(4, minmax(0, 1fr))',
-                  },
-                }}
+            </Stack>
+
+            {showTrekFilters && (
+              <Paper
+                sx={(theme) => ({
+                  p: 2,
+                  mb: 2.5,
+                  background:
+                    theme.palette.mode === 'dark'
+                      ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                      : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
+                })}
               >
-                <FormControl size="small" fullWidth>
-                  <InputLabel id="region-filter-label">Region</InputLabel>
-                  <Select
-                    labelId="region-filter-label"
-                    label="Region"
-                    value={selectedRegion}
-                    onChange={(event) => setSelectedRegion(event.target.value)}
-                  >
-                    {regionOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option === 'all' ? 'Any Region' : option}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl size="small" fullWidth>
-                  <InputLabel id="difficulty-filter-label">Difficulty</InputLabel>
-                  <Select
-                    labelId="difficulty-filter-label"
-                    label="Difficulty"
-                    value={selectedDifficulty}
-                    onChange={(event) => setSelectedDifficulty(event.target.value)}
-                  >
-                    {difficultyOptions.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option === 'all' ? 'Any Difficulty' : option.charAt(0).toUpperCase() + option.slice(1)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl size="small" fullWidth>
-                  <InputLabel id="duration-filter-label">Duration</InputLabel>
-                  <Select
-                    labelId="duration-filter-label"
-                    label="Duration"
-                    value={selectedDuration}
-                    onChange={(event) => setSelectedDuration(event.target.value)}
-                  >
-                    {DURATION_FILTERS.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl size="small" fullWidth>
-                  <InputLabel id="altitude-filter-label">Altitude</InputLabel>
-                  <Select
-                    labelId="altitude-filter-label"
-                    label="Altitude"
-                    value={selectedAltitude}
-                    onChange={(event) => setSelectedAltitude(event.target.value)}
-                  >
-                    {ALTITUDE_FILTERS.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mt: 1.5 }}>
-                <AppButton
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    setSelectedRegion('all');
-                    setSelectedDifficulty('all');
-                    setSelectedDuration('all');
-                    setSelectedAltitude('all');
+                <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 700 }}>
+                  Filter Treks
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gap: 1.25,
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, minmax(0, 1fr))',
+                      lg: 'repeat(4, minmax(0, 1fr))',
+                    },
                   }}
                 >
-                  Clear Filters
-                </AppButton>
-                <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
-                  Showing {filteredTreks.length} trek{filteredTreks.length === 1 ? '' : 's'}
-                </Typography>
-              </Stack>
-            </Paper>
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="region-filter-label">Region</InputLabel>
+                    <Select
+                      labelId="region-filter-label"
+                      label="Region"
+                      value={selectedRegion}
+                      onChange={(event) => setSelectedRegion(event.target.value)}
+                    >
+                      {regionOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option === 'all' ? 'Any Region' : option}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="difficulty-filter-label">Difficulty</InputLabel>
+                    <Select
+                      labelId="difficulty-filter-label"
+                      label="Difficulty"
+                      value={selectedDifficulty}
+                      onChange={(event) => setSelectedDifficulty(event.target.value)}
+                    >
+                      {difficultyOptions.map((option) => (
+                        <MenuItem key={option} value={option}>
+                          {option === 'all' ? 'Any Difficulty' : option.charAt(0).toUpperCase() + option.slice(1)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="duration-filter-label">Duration</InputLabel>
+                    <Select
+                      labelId="duration-filter-label"
+                      label="Duration"
+                      value={selectedDuration}
+                      onChange={(event) => setSelectedDuration(event.target.value)}
+                    >
+                      {DURATION_FILTERS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="altitude-filter-label">Altitude</InputLabel>
+                    <Select
+                      labelId="altitude-filter-label"
+                      label="Altitude"
+                      value={selectedAltitude}
+                      onChange={(event) => setSelectedAltitude(event.target.value)}
+                    >
+                      {ALTITUDE_FILTERS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mt: 1.5 }}>
+                  <AppButton
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setSelectedRegion('all');
+                      setSelectedDifficulty('all');
+                      setSelectedDuration('all');
+                      setSelectedAltitude('all');
+                    }}
+                  >
+                    Clear Filters
+                  </AppButton>
+                </Stack>
+              </Paper>
+            )}
 
             {treksByRegion.map(({ region, treks }) => (
               <Box key={region} sx={{ mb: 3 }}>

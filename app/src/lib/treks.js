@@ -42,7 +42,7 @@ function minioImageUrlFor(pathname) {
 
   const baseUrl = (process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || '').toString().trim().replace(/\/+$/, '');
   if (!baseUrl) {
-    return cleanPath;
+    return 'https://placehold.co/1200x760?text=NepalTrex+Trek';
   }
 
   const bucket = (process.env.NEXT_PUBLIC_MINIO_BUCKET || 'nepaltrex').toString().trim();

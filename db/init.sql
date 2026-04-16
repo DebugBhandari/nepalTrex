@@ -186,23 +186,27 @@ CREATE INDEX IF NOT EXISTS user_trek_wishlists_user_id_idx ON user_trek_wishlist
 -- ============================================================
 TRUNCATE TABLE orders, menu_items, stays RESTART IDENTITY CASCADE;
 
+-- Stock image URLs (Wikimedia Commons)
+-- Keeping URLs in seed data removes dependency on local /public image folders.
+
+
 -- Stay 1: Ghandruk Homestay
 WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Ghandruk Homestay', 'ghandruk-homestay', 'homestay', 'Ghandruk, Kaski',
     'Warm local homestay nestled in the Gurung village of Ghandruk with stunning Annapurna panoramas, home-cooked Nepali meals, and authentic village cultural experiences.',
-    '/stays/lodge-exterior.jpg', 2500, '+977-9800000001', 28.3735, 83.8082
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 2500, '+977-9800000001', 28.3735, 83.8082
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
 INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
 SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
 FROM new_stay s, (VALUES
-  ('room'::TEXT, 'Mountain View Room', 'Private room with attached bathroom and sunrise Annapurna views.', 2500::NUMERIC, '/stays/hotel-room.jpg', 1),
-  ('room'::TEXT, 'Dormitory Bed', 'Shared dormitory with 6 beds, great for solo trekkers on a budget.', 800::NUMERIC, '/stays/hotel-room.jpg', 2),
-  ('food'::TEXT, 'Traditional Dal Bhat Set', 'Unlimited rice, lentils, seasonal vegetables, pickle, and papad.', 600::NUMERIC, '/stays/food-dal-bhat.jpg', 3),
-  ('food'::TEXT, 'Vegetable Thukpa', 'Hearty Tibetan-style noodle soup packed with seasonal vegetables.', 450::NUMERIC, '/stays/food-thukpa.jpg', 4),
-  ('food'::TEXT, 'Gurung Bread with Honey', 'Freshly baked local flatbread served with wild mountain honey.', 350::NUMERIC, '/stays/food-dal-bhat.jpg', 5)
+  ('room'::TEXT, 'Mountain View Room', 'Private room with attached bathroom and sunrise Annapurna views.', 2500::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('room'::TEXT, 'Dormitory Bed', 'Shared dormitory with 6 beds, great for solo trekkers on a budget.', 800::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 2),
+  ('food'::TEXT, 'Traditional Dal Bhat Set', 'Unlimited rice, lentils, seasonal vegetables, pickle, and papad.', 600::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3),
+  ('food'::TEXT, 'Vegetable Thukpa', 'Hearty Tibetan-style noodle soup packed with seasonal vegetables.', 450::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 4),
+  ('food'::TEXT, 'Gurung Bread with Honey', 'Freshly baked local flatbread served with wild mountain honey.', 350::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 5)
 ) AS m(category, name, description, price, image_url, sort_order);
 
 -- Stay 2: Namche Teahouse Hotel
@@ -210,19 +214,19 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Namche Teahouse Hotel', 'namche-teahouse-hotel', 'hotel', 'Namche Bazaar, Solukhumbu',
     'Comfortable teahouse-style hotel in the heart of Namche Bazaar — the gateway to Everest. Enjoy panoramic Himalayan views, hot showers, and reliable WiFi after a day on the trail.',
-    '/stays/lodge-exterior.jpg', 3500, '+977-9800000002', 27.8050, 86.7140
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 3500, '+977-9800000002', 27.8050, 86.7140
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
 INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
 SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
 FROM new_stay s, (VALUES
-  ('room'::TEXT, 'Standard Twin Room', 'Twin-bed room with mountain view, hot shower, and attached bath.', 3500::NUMERIC, '/stays/hotel-room.jpg', 1),
-  ('room'::TEXT, 'Deluxe Everest View Room', 'Premium room with floor-to-ceiling windows framing the Everest range.', 6000::NUMERIC, '/stays/hotel-room.jpg', 2),
-  ('food'::TEXT, 'Sherpa Stew', 'Slow-cooked potato and vegetable stew with local spices — a trekker favourite.', 700::NUMERIC, '/stays/food-thukpa.jpg', 3),
-  ('food'::TEXT, 'Yak Cheese Omelette & Toast', 'Two-egg omelette with locally produced yak cheese and sourdough toast.', 550::NUMERIC, '/stays/food-dal-bhat.jpg', 4),
-  ('food'::TEXT, 'Momo Platter (12 pcs)', 'Steamed pork or vegetable momos served with house tomato achar.', 650::NUMERIC, '/stays/food-momo.jpg', 5),
-  ('food'::TEXT, 'Butter Tea & Tsampa Porridge', 'Traditional Tibetan butter tea paired with roasted barley porridge.', 400::NUMERIC, '/stays/food-dal-bhat.jpg', 6)
+  ('room'::TEXT, 'Standard Twin Room', 'Twin-bed room with mountain view, hot shower, and attached bath.', 3500::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('room'::TEXT, 'Deluxe Everest View Room', 'Premium room with floor-to-ceiling windows framing the Everest range.', 6000::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 2),
+  ('food'::TEXT, 'Sherpa Stew', 'Slow-cooked potato and vegetable stew with local spices — a trekker favourite.', 700::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 3),
+  ('food'::TEXT, 'Yak Cheese Omelette & Toast', 'Two-egg omelette with locally produced yak cheese and sourdough toast.', 550::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 4),
+  ('food'::TEXT, 'Momo Platter (12 pcs)', 'Steamed pork or vegetable momos served with house tomato achar.', 650::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 5),
+  ('food'::TEXT, 'Butter Tea & Tsampa Porridge', 'Traditional Tibetan butter tea paired with roasted barley porridge.', 400::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 6)
 ) AS m(category, name, description, price, image_url, sort_order);
 
 -- Stay 3: Pokhara Lakeside Boutique Inn
@@ -230,18 +234,18 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Pokhara Lakeside Inn', 'pokhara-lakeside-inn', 'hotel', 'Lakeside, Pokhara',
     'Charming boutique inn steps from Phewa Lake offering peaceful garden rooms, a rooftop breakfast terrace with Machhapuchhre views, and curated local dining.',
-    '/stays/lodge-exterior.jpg', 4500, '+977-9800000003', 28.2096, 83.9556
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 4500, '+977-9800000003', 28.2096, 83.9556
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
 INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
 SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
 FROM new_stay s, (VALUES
-  ('room'::TEXT, 'Garden View Room', 'Quiet room overlooking our lush garden, queen bed, AC, and en-suite.', 4500::NUMERIC, '/stays/hotel-room.jpg', 1),
-  ('room'::TEXT, 'Lake View Suite', 'Spacious suite with private balcony directly facing Phewa Lake.', 8000::NUMERIC, '/stays/hotel-room.jpg', 2),
-  ('food'::TEXT, 'Continental Breakfast Platter', 'Fresh fruit, yogurt, eggs your way, toast, and filter coffee.', 900::NUMERIC, '/stays/food-dal-bhat.jpg', 3),
-  ('food'::TEXT, 'Newari Khaja Set', 'Beaten rice, black-eyed peas, spiced buffalo meat, egg, and achar.', 850::NUMERIC, '/stays/food-thukpa.jpg', 4),
-  ('food'::TEXT, 'Grilled Trout with Vegetables', 'Locally farmed Phewa Lake trout, grilled with seasonal vegetables.', 1200::NUMERIC, '/stays/food-momo.jpg', 5)
+  ('room'::TEXT, 'Garden View Room', 'Quiet room overlooking our lush garden, queen bed, AC, and en-suite.', 4500::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('room'::TEXT, 'Lake View Suite', 'Spacious suite with private balcony directly facing Phewa Lake.', 8000::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 2),
+  ('food'::TEXT, 'Continental Breakfast Platter', 'Fresh fruit, yogurt, eggs your way, toast, and filter coffee.', 900::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3),
+  ('food'::TEXT, 'Newari Khaja Set', 'Beaten rice, black-eyed peas, spiced buffalo meat, egg, and achar.', 850::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 4),
+  ('food'::TEXT, 'Grilled Trout with Vegetables', 'Locally farmed Phewa Lake trout, grilled with seasonal vegetables.', 1200::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 5)
 ) AS m(category, name, description, price, image_url, sort_order);
 
 -- Stay 4: Chitwan Jungle Camp
@@ -249,18 +253,55 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Chitwan Jungle Camp', 'chitwan-jungle-camp', 'homestay', 'Sauraha, Chitwan',
     'Eco-friendly jungle camp on the edge of Chitwan National Park. Wake up to elephant calls, explore the park on foot or by canoe, and enjoy organic farm-to-table meals with your hosting Tharu family.',
-    '/stays/lodge-exterior.jpg', 3200, '+977-9800000004', 27.5749, 84.5057
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 3200, '+977-9800000004', 27.5749, 84.5057
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
 INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
 SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
 FROM new_stay s, (VALUES
-  ('room'::TEXT, 'Jungle Cottage', 'Private thatched cottage with two beds, mosquito net, fan, and en-suite bathroom.', 3200::NUMERIC, '/stays/hotel-room.jpg', 1),
-  ('room'::TEXT, 'Tharu Mud House Room', 'Authentic Tharu-style mud-walled room for a genuine village stay experience.', 2000::NUMERIC, '/stays/hotel-room.jpg', 2),
-  ('food'::TEXT, 'Tharu Feast Dinner', 'Five-dish Tharu community dinner: rice, fish curry, seasonal greens, lentils, and pickle.', 900::NUMERIC, '/stays/food-dal-bhat.jpg', 3),
-  ('food'::TEXT, 'Jungle Breakfast', 'Local millet porridge, fresh papaya, scrambled eggs, and masala tea.', 600::NUMERIC, '/stays/food-thukpa.jpg', 4),
-  ('food'::TEXT, 'Bamboo Shoot Curry Lunch', 'Traditional Tharu bamboo shoot and lentil curry served with steamed rice.', 700::NUMERIC, '/stays/food-momo.jpg', 5)
+  ('room'::TEXT, 'Jungle Cottage', 'Private thatched cottage with two beds, mosquito net, fan, and en-suite bathroom.', 3200::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('room'::TEXT, 'Tharu Mud House Room', 'Authentic Tharu-style mud-walled room for a genuine village stay experience.', 2000::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 2),
+  ('food'::TEXT, 'Tharu Feast Dinner', 'Five-dish Tharu community dinner: rice, fish curry, seasonal greens, lentils, and pickle.', 900::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3),
+  ('food'::TEXT, 'Jungle Breakfast', 'Local millet porridge, fresh papaya, scrambled eggs, and masala tea.', 600::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 4),
+  ('food'::TEXT, 'Bamboo Shoot Curry Lunch', 'Traditional Tharu bamboo shoot and lentil curry served with steamed rice.', 700::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 5)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 5: Bandipur Heritage Guesthouse
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
+  SELECT u.id, 'Bandipur Heritage Guesthouse', 'bandipur-heritage-guesthouse', 'hotel', 'Bandipur, Tanahun',
+    'Restored Newari house with carved wooden windows, hilltop valley views, and easy walking access to Bandipur bazaar.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 3800, '+977-9800000005', 27.9364, 84.4195
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Heritage Double Room', 'Wooden-floored double room with attached bathroom and traditional decor.', 3800::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('room'::TEXT, 'Family Attic Room', 'Large attic room for up to four guests with sweeping valley windows.', 5200::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 2),
+  ('food'::TEXT, 'Bandipur Breakfast Set', 'Fresh fruit, local bread, eggs, and Nepali milk tea.', 700::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3),
+  ('food'::TEXT, 'Local Newari Thali', 'Traditional Newari platter with rice flakes, curry, pickle, and seasonal sides.', 950::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 4)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 6: Nagarkot Sunrise Lodge
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
+  SELECT u.id, 'Nagarkot Sunrise Lodge', 'nagarkot-sunrise-lodge', 'homestay', 'Nagarkot, Bhaktapur',
+    'Quiet ridge-side stay known for Himalayan sunrise decks, pine-forest trails, and cozy evening fireplaces.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 2900, '+977-9800000006', 27.7120, 85.5208
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Sunrise Balcony Room', 'Private balcony room ideal for early-morning mountain panoramas.', 2900::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('room'::TEXT, 'Cozy Pine Cabin', 'Warm wooden cabin with heater, writing desk, and forest-facing windows.', 3400::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 2),
+  ('food'::TEXT, 'Millet Pancake Breakfast', 'House-made millet pancakes with honey and seasonal fruit.', 550::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3),
+  ('food'::TEXT, 'Steam Momo Basket', 'Steamed vegetable and chicken momos with spicy tomato achar.', 650::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 4),
+  ('food'::TEXT, 'Ginger Garlic Thukpa', 'Light noodle soup with herbs, vegetables, and mountain spices.', 600::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 5)
 ) AS m(category, name, description, price, image_url, sort_order);
 
 -- Sample accepted order for Ghandruk Homestay
