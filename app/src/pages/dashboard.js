@@ -535,7 +535,6 @@ return (
           >
             <NepalTrexLogo width={180} />
           </Box>
-          <Chip label={`Role: ${user?.role || 'user'}`} color="secondary" sx={{ mr: 1 }} />
           <IconButton
             color="inherit"
             onClick={(event) => setNotificationsAnchor(event.currentTarget)}
@@ -657,6 +656,9 @@ return (
               <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 Manage treks and users from one place.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4 }}>
+                Role: {user?.role || 'user'}
               </Typography>
             </Box>
           </Stack>

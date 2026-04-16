@@ -14,12 +14,21 @@ export default async function handler(req, res) {
     const isSuper = session.user.role === 'superUser';
     const result = isSuper
       ? await query(
-          `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
-           FROM orders o JOIN stays s ON s.id = o.stay_id ORDER BY o.created_at DESC`
+          `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id,
+                  owner.email AS owner_email, owner.display_name AS owner_display_name, owner.username AS owner_username
+           FROM orders o
+           JOIN stays s ON s.id = o.stay_id
+           JOIN users owner ON owner.id = s.owner_user_id
+           ORDER BY o.created_at DESC`
         )
       : await query(
-          `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
-           FROM orders o JOIN stays s ON s.id = o.stay_id WHERE s.owner_user_id = $1 ORDER BY o.created_at DESC`,
+          `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id,
+                  owner.email AS owner_email, owner.display_name AS owner_display_name, owner.username AS owner_username
+           FROM orders o
+           JOIN stays s ON s.id = o.stay_id
+           JOIN users owner ON owner.id = s.owner_user_id
+           WHERE s.owner_user_id = $1
+           ORDER BY o.created_at DESC`,
           [session.user.id]
         );
 
@@ -37,6 +46,8 @@ export default async function handler(req, res) {
           stayName: row.stay_name,
           customerName: row.customer_name,
           customerEmail: row.customer_email || '',
+          createdBy: row.customer_name || row.customer_email || 'Unknown',
+          assignedTo: row.owner_display_name || row.owner_username || row.owner_email || 'Unassigned',
           customerPhone: row.customer_phone || '',
           notes: row.notes || '',
           createdAt: row.created_at,

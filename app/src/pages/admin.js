@@ -710,6 +710,8 @@ export default function AdminPage({ user, initialStays }) {
                           <Chip size="small" label={order.customerName} />
                           {order.customerPhone && <Chip size="small" variant="outlined" label={order.customerPhone} />}
                           {order.customerEmail && <Chip size="small" variant="outlined" label={order.customerEmail} />}
+                          <Chip size="small" variant="outlined" label={`Created by: ${order.createdBy || 'Unknown'}`} />
+                          <Chip size="small" variant="outlined" label={`Assigned to: ${order.assignedTo || 'Unassigned'}`} />
                           <Chip size="small" variant="outlined" label={`NPR ${Number(order.totalPrice).toLocaleString()} (qty ${order.quantity})`} />
                         </Stack>
                         {order.notes && (
