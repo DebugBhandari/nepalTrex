@@ -29,11 +29,12 @@ const DEFAULT_MENU_IMAGE = '/stays/food-thukpa.jpg';
 const NEARBY_THRESHOLD_KM = 35;
 
 function StayDetailView({ stay }) {
-  const { status } = useSession();
+  const { status, data: session } = useSession();
   const [cartItems, setCartItems] = useState([]);
   const [bookingStatus, setBookingStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loginPrompt, setLoginPrompt] = useState(false);
+  const [ownerAlert, setOwnerAlert] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     customerName: '',
     customerEmail: '',
@@ -76,6 +77,10 @@ function StayDetailView({ stay }) {
       setLoginPrompt(true);
       return;
     }
+    if (session?.user?.id && stay.ownerUserId && session.user.id === stay.ownerUserId) {
+      setOwnerAlert(true);
+      return;
+    }
     setCartItems((prev) => {
       const idx = prev.findIndex((entry) => entry.menuItemName === item.name && entry.menuItemCategory === item.category);
       if (idx === -1) {
@@ -111,6 +116,10 @@ function StayDetailView({ stay }) {
   const handleBook = async () => {
     if (status !== 'authenticated') {
       setLoginPrompt(true);
+      return;
+    }
+    if (session?.user?.id && stay.ownerUserId && session.user.id === stay.ownerUserId) {
+      setOwnerAlert(true);
       return;
     }
     if (cartItems.length === 0) return;
@@ -266,6 +275,16 @@ function StayDetailView({ stay }) {
                 <Typography color="text.secondary" sx={{ mb: 2 }}>
                   Add one or more items from this stay, then confirm in one order.
                 </Typography>
+
+                {ownerAlert && (
+                  <Alert
+                    severity="error"
+                    sx={{ mb: 2 }}
+                    onClose={() => setOwnerAlert(false)}
+                  >
+                    You cannot create orders in your own stay.
+                  </Alert>
+                )}
 
                 {loginPrompt && status !== 'authenticated' && (
                   <Alert
@@ -537,7 +556,7 @@ export async function getServerSideProps(context) {
 
   const stayResult = await query(
     `
-      SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone
+      SELECT id, name, slug, stay_type, location, description, image_url, menu_items, contact_phone, owner_user_id
       FROM stays
       WHERE slug = $1
       LIMIT 1
@@ -564,6 +583,7 @@ export async function getServerSideProps(context) {
         imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
         menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],
         contactPhone: row.contact_phone || '',
+        ownerUserId: row.owner_user_id,
       },
     },
   };
