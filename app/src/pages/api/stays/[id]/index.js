@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../lib/auth-options';
 import { query } from '../../../../lib/db';
+import { resolveImageInput } from '../../../../lib/object-storage';
 
 const ALLOWED_STAY_TYPES = new Set(['hotel', 'homestay']);
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
@@ -18,7 +19,7 @@ function normalizeCoordinate(value, min, max) {
   return num;
 }
 
-function normalizeMenuItems(menuItems) {
+async function normalizeMenuItems(menuItems) {
   if (!Array.isArray(menuItems) || menuItems.length === 0) {
     return null;
   }
@@ -30,7 +31,10 @@ function normalizeMenuItems(menuItems) {
     const name = (item?.name || '').toString().trim();
     const description = (item?.description || '').toString().trim();
     const price = Number(item?.price);
-    const imageUrl = (item?.imageUrl || '').toString().trim() || 'https://placehold.co/600x380?text=Menu+Item';
+    const imageUrl = await resolveImageInput(item?.imageUrl, {
+      fallback: 'https://placehold.co/600x380?text=Menu+Item',
+      folder: 'menu-items',
+    });
 
     if (!ALLOWED_MENU_CATEGORIES.has(category) || !name || !Number.isFinite(price) || price < 0) {
       return null;
@@ -79,7 +83,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'stayType must be hotel or homestay' });
   }
 
-  const normalizedMenuItems = normalizeMenuItems(menuItems);
+  const normalizedMenuItems = await normalizeMenuItems(menuItems);
   if (!normalizedMenuItems) {
     return res.status(400).json({ error: 'At least one valid menu item is required' });
   }
@@ -90,6 +94,11 @@ export default async function handler(req, res) {
   if (Number.isNaN(normalizedLatitude) || Number.isNaN(normalizedLongitude)) {
     return res.status(400).json({ error: 'Latitude or longitude is invalid' });
   }
+
+  const resolvedStayImageUrl = await resolveImageInput(imageUrl, {
+    fallback: 'https://placehold.co/1000x620?text=NepalTrex+Stay',
+    folder: 'stays',
+  });
 
   const roomPrices = normalizedMenuItems.filter((item) => item.category === 'room').map((item) => item.price);
   const fallbackPrice = roomPrices.length > 0 ? Math.min(...roomPrices) : normalizedMenuItems[0].price;
@@ -142,7 +151,7 @@ export default async function handler(req, res) {
         stayType,
         location.trim(),
         description.trim(),
-        (imageUrl || '').toString().trim() || 'https://placehold.co/1000x620?text=NepalTrex+Stay',
+        resolvedStayImageUrl,
         JSON.stringify(normalizedMenuItems),
         fallbackPrice,
         contactPhone?.trim() || null,

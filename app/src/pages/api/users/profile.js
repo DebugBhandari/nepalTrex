@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { query } from '../../../lib/db';
+import { isImageDataUrl, resolveImageInput } from '../../../lib/object-storage';
 
 function normalizeHandle(value) {
   return (value || '')
@@ -53,13 +54,18 @@ export default async function handler(req, res) {
   if (req.method === 'PATCH') {
     const { displayName, imageDataUrl } = req.body || {};
 
-    if (imageDataUrl && (typeof imageDataUrl !== 'string' || !imageDataUrl.startsWith('data:image/'))) {
+    if (imageDataUrl && (typeof imageDataUrl !== 'string' || (!isImageDataUrl(imageDataUrl) && !/^https?:\/\//i.test(imageDataUrl)))) {
       return res.status(400).json({ error: 'Invalid image format' });
     }
 
     if (imageDataUrl && imageDataUrl.length > 2_500_000) {
       return res.status(400).json({ error: 'Image is too large' });
     }
+
+    const resolvedProfileImageUrl =
+      typeof imageDataUrl === 'string' && imageDataUrl.trim()
+        ? await resolveImageInput(imageDataUrl, { folder: 'profiles' })
+        : null;
 
     const result = await query(
       `
@@ -73,7 +79,7 @@ export default async function handler(req, res) {
       `,
       [
         typeof displayName === 'string' && displayName.trim() ? displayName.trim() : null,
-        typeof imageDataUrl === 'string' && imageDataUrl.trim() ? imageDataUrl.trim() : null,
+        resolvedProfileImageUrl,
         session.user.id,
       ]
     );
