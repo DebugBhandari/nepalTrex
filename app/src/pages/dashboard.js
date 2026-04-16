@@ -170,6 +170,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [updatingRoleById, setUpdatingRoleById] = useState({});
   const [draftRolesById, setDraftRolesById] = useState({});
   const [userPage, setUserPage] = useState(1);
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
 
   // Stay management state
   const [stayItems, setStayItems] = useState(() => stays.map((s) => ({ ...s })));
@@ -275,15 +276,22 @@ export default function DashboardPage({ user, treks, stays = [] }) {
     return sorted;
   }, [items, levelFilter, regionFilter, routeFilter, sortBy, sortDirection]);
 
+  const filteredUsers = useMemo(() => {
+    if (userRoleFilter === 'all') {
+      return users;
+    }
+    return users.filter((u) => u.role === userRoleFilter);
+  }, [users, userRoleFilter]);
+
   const totalUserPages = useMemo(
-    () => Math.max(1, Math.ceil(users.length / USERS_PER_PAGE)),
-    [users.length]
+    () => Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE)),
+    [filteredUsers.length]
   );
 
   const paginatedUsers = useMemo(() => {
     const startIndex = (userPage - 1) * USERS_PER_PAGE;
-    return users.slice(startIndex, startIndex + USERS_PER_PAGE);
-  }, [userPage, users]);
+    return filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+  }, [userPage, filteredUsers]);
 
   const openOrderFromMenu = (orderId) => {
     setNotificationsAnchor(null);
@@ -335,7 +343,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   );
 
   useEffect(() => {
-    if (userPage > totalUserPages) {
+    if (userPage > totalUserPages && totalUserPages > 0) {
       setUserPage(totalUserPages);
     }
   }, [totalUserPages, userPage]);
@@ -1317,7 +1325,7 @@ return (
 
               <Box
                 component="form"
-                sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}
+                sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}
                 onSubmit={(event) => {
                   event.preventDefault();
                   fetchUsers(userSearch);
@@ -1330,6 +1338,22 @@ return (
                   fullWidth
                   sx={{ flex: 1, minWidth: 240 }}
                 />
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <InputLabel id="user-role-filter-label">Role Filter</InputLabel>
+                  <Select
+                    labelId="user-role-filter-label"
+                    label="Role Filter"
+                    value={userRoleFilter}
+                    onChange={(event) => {
+                      setUserRoleFilter(event.target.value);
+                      setUserPage(1);
+                    }}
+                  >
+                    <MenuItem value="all">All Users</MenuItem>
+                    <MenuItem value="admin">Admins</MenuItem>
+                    <MenuItem value="superUser">SuperUsers</MenuItem>
+                  </Select>
+                </FormControl>
                 <AppButton variant="contained" type="submit" disabled={usersLoading}>
                   {usersLoading ? 'Searching...' : 'Search'}
                 </AppButton>
@@ -1339,6 +1363,7 @@ return (
                   disabled={usersLoading}
                   onClick={() => {
                     setUserSearch('');
+                    setUserRoleFilter('all');
                     setUserPage(1);
                     fetchUsers('');
                   }}
@@ -1481,7 +1506,7 @@ return (
                 })}
               </Stack>
 
-              {users.length > USERS_PER_PAGE && (
+              {filteredUsers.length > USERS_PER_PAGE && (
                 <Stack direction="row" justifyContent="center" sx={{ mt: 2.5 }}>
                   <Pagination
                     count={totalUserPages}
