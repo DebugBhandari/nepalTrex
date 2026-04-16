@@ -16,6 +16,7 @@ import {
   CardContent,
   Chip,
   Container,
+  Divider,
   FormControl,
   IconButton,
   InputLabel,
@@ -23,6 +24,8 @@ import {
   MenuItem,
   Select,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Toolbar,
   Typography,
@@ -68,6 +71,11 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
   const [orderFilter, setOrderFilter] = useState('all');
   const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === 'undefined') return 'purchases';
+    const saved = window.localStorage.getItem('nepaltrex-profile-active-tab');
+    return ['purchases', 'wishlist'].includes(saved) ? saved : 'purchases';
+  });
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
@@ -88,6 +96,8 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
     const queryOrderId = router.query?.orderId;
     if (!queryOrderId || !orders.length) return;
 
+    setActiveTab('purchases');
+
     const timer = setTimeout(() => {
       const targetElement = document.getElementById(`order-${String(queryOrderId)}`);
       if (targetElement) {
@@ -97,6 +107,11 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
 
     return () => clearTimeout(timer);
   }, [router.query?.orderId, orders]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('nepaltrex-profile-active-tab', activeTab);
+  }, [activeTab]);
 
   const uploadImage = async (event) => {
     const file = event.target.files?.[0];
@@ -308,104 +323,117 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
             </CardContent>
           </Card>
 
-          <Card sx={{ mb: 2 }}>
-            <CardContent>
-              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 1.5 }}>
-                <Typography variant="h5">Orders</Typography>
-                <FormControl size="small" sx={{ minWidth: 170 }}>
-                  <InputLabel id="profile-order-filter-label">Order Filter</InputLabel>
-                  <Select
-                    labelId="profile-order-filter-label"
-                    label="Order Filter"
-                    value={orderFilter}
-                    onChange={(event) => setOrderFilter(event.target.value)}
-                  >
-                    <MenuItem value="all">All Orders</MenuItem>
-                    <MenuItem value="active">Active Orders</MenuItem>
-                  </Select>
-                </FormControl>
-              </Stack>
-
-              <Stack spacing={1.5}>
-                {filteredOrders.map((order) => (
-                  <Card key={order.id} id={`order-${order.id}`} variant="outlined">
-                    <CardContent>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="subtitle1">{order.stayName || 'N/A'}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                          </Typography>
-                          <Stack spacing={0.5} sx={{ mt: 1 }}>
-                            {order.items.map((item, idx) => (
-                              <Typography key={idx} variant="body2" color="text.secondary">
-                                {item.menuItemName} x {item.quantity}
-                              </Typography>
-                            ))}
-                          </Stack>
-                        </Box>
-
-                        <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
-                          <Chip
-                            label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            color={orderChipColor(order.status)}
-                            variant="outlined"
-                            size="small"
-                          />
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                            Rs. {order.totalPrice.toLocaleString()}
-                          </Typography>
-                          {ownProfile && !['completed', 'cancelled'].includes(order.status) && (
-                            <AppButton
-                              size="small"
-                              variant="outlined"
-                              color="error"
-                              disabled={updatingOrderId === order.id}
-                              onClick={() => cancelOrder(order.id)}
-                            >
-                              {updatingOrderId === order.id ? 'Cancelling...' : 'Cancel Order'}
-                            </AppButton>
-                          )}
-                        </Stack>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
-
-                {filteredOrders.length === 0 && (
-                  <Typography color="text.secondary">No orders yet.</Typography>
-                )}
-              </Stack>
-            </CardContent>
-          </Card>
-
           <Card>
+            <CardContent sx={{ pb: 0 }}>
+              <Tabs
+                value={activeTab}
+                onChange={(_, value) => setActiveTab(value)}
+                variant="scrollable"
+                allowScrollButtonsMobile
+              >
+                <Tab value="purchases" label="Purchases" />
+                <Tab value="wishlist" label="Wishlist" />
+              </Tabs>
+            </CardContent>
+
+            <Divider />
+
             <CardContent>
-              <Typography variant="h5" sx={{ mb: 1.2 }}>Wishlist</Typography>
+              {activeTab === 'purchases' && (
+                <>
+                  <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1.5 }}>
+                    <FormControl size="small" sx={{ minWidth: 170 }}>
+                      <InputLabel id="profile-order-filter-label">Order Filter</InputLabel>
+                      <Select
+                        labelId="profile-order-filter-label"
+                        label="Order Filter"
+                        value={orderFilter}
+                        onChange={(event) => setOrderFilter(event.target.value)}
+                      >
+                        <MenuItem value="all">All Orders</MenuItem>
+                        <MenuItem value="active">Active Orders</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Stack>
 
-              <Stack spacing={1.1}>
-                {wishlistItems.map((item) => (
-                  <Card key={item.slug} variant="outlined">
-                    <CardContent sx={{ py: 1.2, '&:last-child': { pb: 1.2 } }}>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1}>
-                        <Box>
-                          <Typography variant="subtitle1">{item.name || item.slug}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {item.region ? `${item.region} · ` : ''}{item.level || 'Unknown difficulty'}{item.durationDays ? ` · ${item.durationDays} days` : ''}
-                          </Typography>
-                        </Box>
-                        <AppButton component={Link} href={`/treks/${item.slug}`} variant="outlined" size="small">
-                          Open Trek
-                        </AppButton>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
+                  <Stack spacing={1.5}>
+                    {filteredOrders.map((order) => (
+                      <Card key={order.id} id={`order-${order.id}`} variant="outlined">
+                        <CardContent>
+                          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="subtitle1">{order.stayName || 'N/A'}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                              </Typography>
+                              <Stack spacing={0.5} sx={{ mt: 1 }}>
+                                {order.items.map((item, idx) => (
+                                  <Typography key={idx} variant="body2" color="text.secondary">
+                                    {item.menuItemName} x {item.quantity}
+                                  </Typography>
+                                ))}
+                              </Stack>
+                            </Box>
 
-                {wishlistItems.length === 0 && (
-                  <Typography color="text.secondary">No wishlist items yet.</Typography>
-                )}
-              </Stack>
+                            <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
+                              <Chip
+                                label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                color={orderChipColor(order.status)}
+                                variant="outlined"
+                                size="small"
+                              />
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                Rs. {order.totalPrice.toLocaleString()}
+                              </Typography>
+                              {ownProfile && !['completed', 'cancelled'].includes(order.status) && (
+                                <AppButton
+                                  size="small"
+                                  variant="outlined"
+                                  color="error"
+                                  disabled={updatingOrderId === order.id}
+                                  onClick={() => cancelOrder(order.id)}
+                                >
+                                  {updatingOrderId === order.id ? 'Cancelling...' : 'Cancel Order'}
+                                </AppButton>
+                              )}
+                            </Stack>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    ))}
+
+                    {filteredOrders.length === 0 && (
+                      <Typography color="text.secondary">No purchases yet.</Typography>
+                    )}
+                  </Stack>
+                </>
+              )}
+
+              {activeTab === 'wishlist' && (
+                <Stack spacing={1.1}>
+                  {wishlistItems.map((item) => (
+                    <Card key={item.slug} variant="outlined">
+                      <CardContent sx={{ py: 1.2, '&:last-child': { pb: 1.2 } }}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1}>
+                          <Box>
+                            <Typography variant="subtitle1">{item.name || item.slug}</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {item.region ? `${item.region} · ` : ''}{item.level || 'Unknown difficulty'}{item.durationDays ? ` · ${item.durationDays} days` : ''}
+                            </Typography>
+                          </Box>
+                          <AppButton component={Link} href={`/treks/${item.slug}`} variant="outlined" size="small">
+                            Open Trek
+                          </AppButton>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {wishlistItems.length === 0 && (
+                    <Typography color="text.secondary">No wishlist items yet.</Typography>
+                  )}
+                </Stack>
+              )}
             </CardContent>
           </Card>
         </Container>
