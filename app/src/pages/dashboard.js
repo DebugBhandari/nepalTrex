@@ -49,6 +49,8 @@ const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
 const DASHBOARD_TAB_STORAGE_KEY = 'nepaltrex-dashboard-active-tab';
 const USERS_PER_PAGE = 10;
+const STAYS_PER_PAGE = 8;
+const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 
 function normalizeHandle(value) {
   return (value || '')
@@ -146,6 +148,15 @@ function getRoutePointCount(routeGeojson) {
   return 0;
 }
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function DashboardPage({ user, treks, stays = [] }) {
   const router = useRouter();
   const [items, setItems] = useState(() =>
@@ -177,6 +188,8 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [editingStayById, setEditingStayById] = useState({});
   const [savingStayById, setSavingStayById] = useState({});
   const [stayMessage, setStayMessage] = useState('');
+  const [staySearch, setStaySearch] = useState('');
+  const [stayPage, setStayPage] = useState(1);
 
   const [orders, setOrders] = useState([]);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
@@ -293,6 +306,36 @@ export default function DashboardPage({ user, treks, stays = [] }) {
     return filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
   }, [userPage, filteredUsers]);
 
+  const filteredStays = useMemo(() => {
+    const needle = staySearch.trim().toLowerCase();
+    if (!needle) {
+      return stayItems;
+    }
+
+    return stayItems.filter((stay) => {
+      const name = String(stay.name || '').toLowerCase();
+      const ownerEmail = String(stay.ownerEmail || '').toLowerCase();
+      const ownerUsername = String(stay.ownerUsername || '').toLowerCase();
+      const ownerDisplayName = String(stay.ownerDisplayName || '').toLowerCase();
+      return (
+        name.includes(needle) ||
+        ownerEmail.includes(needle) ||
+        ownerUsername.includes(needle) ||
+        ownerDisplayName.includes(needle)
+      );
+    });
+  }, [stayItems, staySearch]);
+
+  const totalStayPages = useMemo(
+    () => Math.max(1, Math.ceil(filteredStays.length / STAYS_PER_PAGE)),
+    [filteredStays.length]
+  );
+
+  const paginatedStays = useMemo(() => {
+    const startIndex = (stayPage - 1) * STAYS_PER_PAGE;
+    return filteredStays.slice(startIndex, startIndex + STAYS_PER_PAGE);
+  }, [filteredStays, stayPage]);
+
   const openOrderFromMenu = (orderId) => {
     setNotificationsAnchor(null);
     router.push(`/admin?orderId=${encodeURIComponent(orderId)}`);
@@ -347,6 +390,12 @@ export default function DashboardPage({ user, treks, stays = [] }) {
       setUserPage(totalUserPages);
     }
   }, [totalUserPages, userPage]);
+
+  useEffect(() => {
+    if (stayPage > totalStayPages && totalStayPages > 0) {
+      setStayPage(totalStayPages);
+    }
+  }, [stayPage, totalStayPages]);
 
   useEffect(() => {
     if (canManage && activeTab === 'users' && users.length === 0 && !usersLoading) {
@@ -487,6 +536,40 @@ export default function DashboardPage({ user, treks, stays = [] }) {
 
   const handleStayFieldChange = (id, field, value) => {
     setStayItems((prev) => prev.map((stay) => (stay.id === id ? { ...stay, [field]: value } : stay)));
+  };
+
+  const handleStayMenuItemFieldChange = (stayId, index, field, value) => {
+    setStayItems((prev) =>
+      prev.map((stay) => {
+        if (stay.id !== stayId) return stay;
+        const menuItems = Array.isArray(stay.menuItems) ? [...stay.menuItems] : [];
+        const current = menuItems[index] || {};
+        menuItems[index] = { ...current, [field]: value };
+        return { ...stay, menuItems };
+      })
+    );
+  };
+
+  const handleStayImageUpload = async (stayId, file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (!dataUrl) return;
+      handleStayFieldChange(stayId, 'imageUrl', dataUrl);
+    } catch (error) {
+      setStayMessage(error.message || 'Failed to upload stay image');
+    }
+  };
+
+  const handleStayMenuImageUpload = async (stayId, index, file) => {
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      if (!dataUrl) return;
+      handleStayMenuItemFieldChange(stayId, index, 'imageUrl', dataUrl);
+    } catch (error) {
+      setStayMessage(error.message || 'Failed to upload menu image');
+    }
   };
 
   const handleSaveStay = async (stayId) => {
@@ -1124,8 +1207,38 @@ return (
           {activeTab === 'stays' && canManage && (
             <Box sx={{ mt: 2 }}>
               <Alert severity="info" sx={{ mb: 2 }}>
-                As superUser, you can update all stay fields. Menu items are preserved when saving.
+                As superUser, you can update stay fields and menu item image links/uploads.
               </Alert>
+
+              <Box
+                component="form"
+                sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2, alignItems: 'flex-end' }}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setStayPage(1);
+                }}
+              >
+                <TextField
+                  value={staySearch}
+                  onChange={(event) => {
+                    setStaySearch(event.target.value);
+                    setStayPage(1);
+                  }}
+                  placeholder="Search by stay name or owner"
+                  fullWidth
+                  sx={{ flex: 1, minWidth: 240 }}
+                />
+                <AppButton
+                  variant="outlined"
+                  type="button"
+                  onClick={() => {
+                    setStaySearch('');
+                    setStayPage(1);
+                  }}
+                >
+                  Reset
+                </AppButton>
+              </Box>
 
               {stayMessage && (
                 <Alert severity="success" sx={{ mb: 2 }}>
@@ -1134,7 +1247,7 @@ return (
               )}
 
               <Stack spacing={2}>
-                {stayItems.map((stay) => {
+                {paginatedStays.map((stay) => {
                   const isEditing = Boolean(editingStayById[stay.id]);
                   const isSaving = Boolean(savingStayById[stay.id]);
                   const ownerHandle = normalizeHandle(
@@ -1193,6 +1306,16 @@ return (
                             >
                               Edit
                             </AppButton>
+                            <AppButton
+                              component={Link}
+                              href={`/stays/${stay.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="outlined"
+                              sx={{ height: 40, minHeight: 40 }}
+                            >
+                              Open Stay Page
+                            </AppButton>
                           </Stack>
                         ) : (
                           <Stack spacing={1.5}>
@@ -1249,13 +1372,67 @@ return (
                               disabled={isSaving}
                               fullWidth
                             />
-                            <TextField
-                              label="Image URL"
-                              value={stay.imageUrl}
-                              onChange={(e) => handleStayFieldChange(stay.id, 'imageUrl', e.target.value)}
-                              disabled={isSaving}
-                              fullWidth
-                            />
+                            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ md: 'center' }}>
+                              <TextField
+                                label="Image URL"
+                                value={stay.imageUrl}
+                                onChange={(e) => handleStayFieldChange(stay.id, 'imageUrl', e.target.value)}
+                                disabled={isSaving}
+                                fullWidth
+                              />
+                              <AppButton component="label" variant="outlined" disabled={isSaving} sx={{ whiteSpace: 'nowrap' }}>
+                                Upload Stay Image
+                                <input
+                                  hidden
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) => {
+                                    const file = event.target.files?.[0];
+                                    handleStayImageUpload(stay.id, file);
+                                    event.target.value = '';
+                                  }}
+                                />
+                              </AppButton>
+                            </Stack>
+                            {Array.isArray(stay.menuItems) && stay.menuItems.length > 0 && (
+                              <Box>
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                  Menu Item Images
+                                </Typography>
+                                <Stack spacing={1.1}>
+                                  {stay.menuItems.map((item, index) => (
+                                    <Paper key={`${stay.id}-menu-image-${index}`} variant="outlined" sx={{ p: 1.1 }}>
+                                      <Stack spacing={0.8}>
+                                        <Typography variant="caption" color="text.secondary">
+                                          {item.name || `Item ${index + 1}`} ({item.category || 'menu'})
+                                        </Typography>
+                                        <TextField
+                                          label="Menu Image URL"
+                                          size="small"
+                                          value={item.imageUrl || DEFAULT_MENU_IMAGE}
+                                          onChange={(e) => handleStayMenuItemFieldChange(stay.id, index, 'imageUrl', e.target.value)}
+                                          disabled={isSaving}
+                                          fullWidth
+                                        />
+                                        <AppButton component="label" size="small" variant="outlined" disabled={isSaving} sx={{ alignSelf: 'flex-start' }}>
+                                          Upload Menu Image
+                                          <input
+                                            hidden
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(event) => {
+                                              const file = event.target.files?.[0];
+                                              handleStayMenuImageUpload(stay.id, index, file);
+                                              event.target.value = '';
+                                            }}
+                                          />
+                                        </AppButton>
+                                      </Stack>
+                                    </Paper>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
                             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
                               <TextField
                                 label="Latitude"
@@ -1307,10 +1484,22 @@ return (
                     </Card>
                   );
                 })}
-                {stayItems.length === 0 && (
+                {filteredStays.length === 0 && (
                   <Alert severity="info">No stays found in the database.</Alert>
                 )}
               </Stack>
+
+              {filteredStays.length > STAYS_PER_PAGE && (
+                <Stack direction="row" justifyContent="center" sx={{ mt: 2.5 }}>
+                  <Pagination
+                    count={totalStayPages}
+                    page={stayPage}
+                    onChange={(_, value) => setStayPage(value)}
+                    color="primary"
+                    shape="rounded"
+                  />
+                </Stack>
+              )}
             </Box>
           )}
 
