@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
@@ -526,6 +527,10 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
+                <MenuItem component={Link} href="/" onClick={() => setUserMenuAnchor(null)}>
+                  <HomeIcon fontSize="small" style={{ marginRight: 8 }} />
+                  Home
+                </MenuItem>
                 <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
                   <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
                   Profile

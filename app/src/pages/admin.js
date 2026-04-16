@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
@@ -463,6 +464,10 @@ export default function AdminPage({ user, initialStays }) {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           >
+            <MenuItem component={Link} href="/" onClick={() => setUserMenuAnchor(null)}>
+              <HomeIcon fontSize="small" style={{ marginRight: 8 }} />
+              Home
+            </MenuItem>
             <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
               <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
               Profile
@@ -850,7 +855,7 @@ export default function AdminPage({ user, initialStays }) {
                 <Typography color="text.secondary">
                   {isSuperUser && staySearch.trim()
                     ? 'No stays match your search.'
-                    : 'No stays yet. Click &ldquo;Add New Stay&rdquo; to register your first property.'}
+                    : 'No stays yet. Click “Add New Stay” to register your first property.'}
                 </Typography>
               </Paper>
             )}
