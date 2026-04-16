@@ -34,6 +34,27 @@ export const TREK_IMAGE_BY_NAME = {
   'rara lake': '/treks/rara-lake.jpg',
 };
 
+function minioImageUrlFor(pathname) {
+  const cleanPath = (pathname || '').toString().trim();
+  if (!cleanPath.startsWith('/')) {
+    return cleanPath;
+  }
+
+  const baseUrl = (process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL || '').toString().trim().replace(/\/+$/, '');
+  if (!baseUrl) {
+    return cleanPath;
+  }
+
+  const bucket = (process.env.NEXT_PUBLIC_MINIO_BUCKET || 'nepaltrex').toString().trim();
+  const safePath = cleanPath
+    .split('/')
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+
+  return `${baseUrl}/${bucket}/${safePath}`;
+}
+
 export function slugifyTrekName(name = '') {
   return name
     .toLowerCase()
@@ -43,7 +64,8 @@ export function slugifyTrekName(name = '') {
 }
 
 export function getTrekImage(name = '') {
-  return TREK_IMAGE_BY_NAME[name.toLowerCase()] || '/treks/everest-base-camp.jpg';
+  const imagePath = TREK_IMAGE_BY_NAME[name.toLowerCase()] || '/treks/everest-base-camp.jpg';
+  return minioImageUrlFor(imagePath);
 }
 
 export function parseRouteWaypoints(routeGeojson) {
