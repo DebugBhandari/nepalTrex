@@ -1097,6 +1097,10 @@ return (
                 {stayItems.map((stay) => {
                   const isEditing = Boolean(editingStayById[stay.id]);
                   const isSaving = Boolean(savingStayById[stay.id]);
+                  const ownerHandle = normalizeHandle(
+                    stay.ownerDisplayName || stay.ownerUsername || stay.ownerEmail?.split('@')[0] || 'user'
+                  );
+                  const ownerLabel = stay.ownerDisplayName || stay.ownerUsername || stay.ownerEmail || 'N/A';
 
                   return (
                     <Card
@@ -1135,7 +1139,10 @@ return (
                                 <Chip
                                   size="small"
                                   color="secondary"
-                                  label={`Owner: ${stay.ownerEmail}`}
+                                  component={Link}
+                                  href={`/user/${ownerHandle}`}
+                                  clickable
+                                  label={`Owner: ${ownerLabel}`}
                                 />
                               </Stack>
                             </Box>
@@ -1232,7 +1239,10 @@ return (
                             <Chip
                               size="small"
                               color="secondary"
-                              label={`Owner: ${stay.ownerEmail}`}
+                              component={Link}
+                              href={`/user/${ownerHandle}`}
+                              clickable
+                              label={`Owner: ${ownerLabel}`}
                               sx={{ alignSelf: 'flex-start' }}
                             />
                             <Stack direction="row" spacing={1}>
@@ -1315,6 +1325,8 @@ return (
                   const isSaving = Boolean(updatingRoleById[entry.id]);
                   const currentDraft = draftRolesById[entry.id] || entry.role || 'user';
                   const isSelf = entry.id === user.id;
+                  const isAdminLike = ['admin', 'superUser'].includes(entry.role || '');
+                  const ownedStays = stayItems.filter((stay) => String(stay.ownerUserId) === String(entry.id));
 
                   return (
                     <Card
@@ -1349,6 +1361,31 @@ return (
                                 {entry.email || 'N/A'}
                               </Typography>
                               <Chip label={`Current role: ${entry.role || 'user'}`} size="small" sx={{ mt: 1 }} />
+                              {isAdminLike && (
+                                <Box sx={{ mt: 1.2 }}>
+                                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.6 }}>
+                                    Owned stays ({ownedStays.length})
+                                  </Typography>
+                                  <Stack direction="row" spacing={0.7} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                                    {ownedStays.map((stay) => (
+                                      <Chip
+                                        key={stay.id}
+                                        component={Link}
+                                        href={`/stays/${stay.slug}`}
+                                        clickable
+                                        size="small"
+                                        variant="outlined"
+                                        label={stay.name}
+                                      />
+                                    ))}
+                                    {ownedStays.length === 0 && (
+                                      <Typography variant="caption" color="text.secondary">
+                                        No stays assigned.
+                                      </Typography>
+                                    )}
+                                  </Stack>
+                                </Box>
+                              )}
                             </Box>
                           </Stack>
 
@@ -1457,7 +1494,7 @@ export async function getServerSideProps(context) {
       `
         SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.price_per_night,
           s.contact_phone, s.image_url, s.menu_items, s.latitude, s.longitude, s.owner_user_id,
-          u.email AS owner_email
+          u.email AS owner_email, u.username AS owner_username, u.display_name AS owner_display_name
         FROM stays s
         LEFT JOIN users u ON u.id = s.owner_user_id
         ORDER BY s.created_at DESC
@@ -1477,6 +1514,8 @@ export async function getServerSideProps(context) {
       latitude: row.latitude ?? '',
       longitude: row.longitude ?? '',
       ownerEmail: row.owner_email || 'N/A',
+      ownerUsername: row.owner_username || '',
+      ownerDisplayName: row.owner_display_name || '',
       ownerUserId: row.owner_user_id,
     }));
   }

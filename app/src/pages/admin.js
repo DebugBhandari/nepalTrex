@@ -103,7 +103,7 @@ export default function AdminPage({ user, initialStays }) {
   const [menuOpenById, setMenuOpenById] = useState({});
 
   const [orders, setOrders] = useState([]);
-  const [orderFilter, setOrderFilter] = useState('all');
+  const [orderFilterByStayId, setOrderFilterByStayId] = useState({});
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
@@ -115,10 +115,6 @@ export default function AdminPage({ user, initialStays }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
   const pendingOrders = orders.filter((order) => order.status === 'pending');
-  const filteredOrders =
-    orderFilter === 'active'
-      ? orders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status))
-      : orders;
 
   const fetchOrders = async () => {
     try {
@@ -522,6 +518,12 @@ export default function AdminPage({ user, initialStays }) {
               const isSaving = savingId === stay.id;
               const availableCount = (stay.menuItems || []).filter((m) => m.available !== false).length;
               const totalCount = (stay.menuItems || []).length;
+              const stayOrderFilter = orderFilterByStayId[stay.id] || 'all';
+              const stayOrders = orders.filter((order) => String(order.stayId) === String(stay.id));
+              const visibleStayOrders =
+                stayOrderFilter === 'active'
+                  ? stayOrders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status))
+                  : stayOrders;
 
               return (
                 <Card key={stay.id} sx={(theme) => ({ background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)' : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(242,251,249,0.98) 100%)', color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary, border: '1px solid', borderColor: 'divider', boxShadow: '0 8px 24px rgba(15,23,42,0.1)' })}>
@@ -636,6 +638,113 @@ export default function AdminPage({ user, initialStays }) {
                       </CardContent>
                     </>
                   )}
+
+                  <Divider />
+                  <CardContent>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 1.5 }}>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        Orders{ordersLoaded ? ` (${visibleStayOrders.length})` : ''}
+                      </Typography>
+                      <FormControl size="small" sx={{ minWidth: 170 }}>
+                        <InputLabel id={`admin-order-filter-${stay.id}`}>Order Filter</InputLabel>
+                        <Select
+                          labelId={`admin-order-filter-${stay.id}`}
+                          label="Order Filter"
+                          value={stayOrderFilter}
+                          onChange={(event) =>
+                            setOrderFilterByStayId((prev) => ({
+                              ...prev,
+                              [stay.id]: event.target.value,
+                            }))
+                          }
+                        >
+                          <MenuItem value="all">All Orders</MenuItem>
+                          <MenuItem value="active">Active Orders</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Stack>
+
+                    {!ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
+
+                    {ordersLoaded && visibleStayOrders.length === 0 && (
+                      <Paper sx={{ p: 2, textAlign: 'center' }}>
+                        <Typography color="text.secondary">No orders for this stay.</Typography>
+                      </Paper>
+                    )}
+
+                    <Stack spacing={2}>
+                      {visibleStayOrders.map((order) => {
+                        const isUpdating = updatingOrderId === order.id;
+                        const statusColor =
+                          order.status === 'completed'
+                            ? 'success'
+                            : order.status === 'accepted'
+                              ? 'primary'
+                              : order.status === 'declined'
+                                ? 'error'
+                                : order.status === 'cancelled'
+                                  ? 'warning'
+                                  : 'default';
+                        return (
+                          <Card key={order.id} id={`order-${order.id}`}>
+                            <CardContent>
+                              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
+                                <Box sx={{ flex: 1 }}>
+                                  <Typography fontWeight={700}>{order.stayName}</Typography>
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
+                                    {order.items?.length || 0} item{(order.items?.length || 0) === 1 ? '' : 's'} in this order
+                                  </Typography>
+                                  {Array.isArray(order.items) && order.items.length > 0 && (
+                                    <Stack spacing={0.6} sx={{ mb: 1.1 }}>
+                                      {order.items.map((entry) => (
+                                        <Typography key={entry.id} variant="body2" color="text.secondary">
+                                          {entry.menuItemName} ({entry.menuItemCategory}) &times; {entry.quantity} - NPR {Number(entry.totalPrice).toLocaleString()}
+                                        </Typography>
+                                      ))}
+                                    </Stack>
+                                  )}
+                                  <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                                    <Chip size="small" label={order.customerName} />
+                                    {order.customerPhone && <Chip size="small" variant="outlined" label={order.customerPhone} />}
+                                    {order.customerEmail && <Chip size="small" variant="outlined" label={order.customerEmail} />}
+                                    <Chip size="small" variant="outlined" label={`Created by: ${order.createdBy || 'Unknown'}`} />
+                                    <Chip size="small" variant="outlined" label={`Assigned to: ${order.assignedTo || 'Unassigned'}`} />
+                                    <Chip size="small" variant="outlined" label={`NPR ${Number(order.totalPrice).toLocaleString()} (qty ${order.quantity})`} />
+                                  </Stack>
+                                  {order.notes && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                                      Note: {order.notes}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.5}>
+                                  <Chip size="small" color={statusColor} label={order.status} sx={{ textTransform: 'capitalize' }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {new Date(order.createdAt).toLocaleDateString()}
+                                  </Typography>
+                                </Stack>
+                              </Stack>
+                              {!['completed', 'declined', 'cancelled'].includes(order.status) && (
+                                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                  {order.status === 'pending' && (
+                                    <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateOrderStatus(order.id, 'accepted')} disabled={isUpdating}>
+                                      Accept Order
+                                    </AppButton>
+                                  )}
+                                  <AppButton size="small" color="error" variant="outlined" startIcon={<HighlightOffIcon />} onClick={() => updateOrderStatus(order.id, 'declined')} disabled={isUpdating}>
+                                    Decline Order
+                                  </AppButton>
+                                  <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateOrderStatus(order.id, 'completed')} disabled={isUpdating}>
+                                    Mark Order Complete
+                                  </AppButton>
+                                </Stack>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </Stack>
+                  </CardContent>
                 </Card>
               );
             })}
@@ -648,105 +757,6 @@ export default function AdminPage({ user, initialStays }) {
           </Stack>
 
           <Divider sx={{ my: 4 }} />
-
-          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 1.5 }}>
-            <Typography variant="h6">
-              Orders{ordersLoaded ? ` (${filteredOrders.length})` : ''}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 170 }}>
-              <InputLabel id="admin-order-filter-label">Order Filter</InputLabel>
-              <Select
-                labelId="admin-order-filter-label"
-                label="Order Filter"
-                value={orderFilter}
-                onChange={(event) => setOrderFilter(event.target.value)}
-              >
-                <MenuItem value="all">All Orders</MenuItem>
-                <MenuItem value="active">Active Orders</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-
-          {!ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
-
-          {ordersLoaded && filteredOrders.length === 0 && (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography color="text.secondary">No orders yet.</Typography>
-            </Paper>
-          )}
-
-          <Stack spacing={2}>
-            {filteredOrders.map((order) => {
-              const isUpdating = updatingOrderId === order.id;
-              const statusColor =
-                order.status === 'completed'
-                  ? 'success'
-                  : order.status === 'accepted'
-                    ? 'primary'
-                    : order.status === 'declined'
-                      ? 'error'
-                      : order.status === 'cancelled'
-                        ? 'warning'
-                        : 'default';
-              return (
-                <Card key={order.id} id={`order-${order.id}`}>
-                  <CardContent>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography fontWeight={700}>{order.stayName}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
-                          {order.items?.length || 0} item{(order.items?.length || 0) === 1 ? '' : 's'} in this order
-                        </Typography>
-                        {Array.isArray(order.items) && order.items.length > 0 && (
-                          <Stack spacing={0.6} sx={{ mb: 1.1 }}>
-                            {order.items.map((entry) => (
-                              <Typography key={entry.id} variant="body2" color="text.secondary">
-                                {entry.menuItemName} ({entry.menuItemCategory}) &times; {entry.quantity} - NPR {Number(entry.totalPrice).toLocaleString()}
-                              </Typography>
-                            ))}
-                          </Stack>
-                        )}
-                        <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                          <Chip size="small" label={order.customerName} />
-                          {order.customerPhone && <Chip size="small" variant="outlined" label={order.customerPhone} />}
-                          {order.customerEmail && <Chip size="small" variant="outlined" label={order.customerEmail} />}
-                          <Chip size="small" variant="outlined" label={`Created by: ${order.createdBy || 'Unknown'}`} />
-                          <Chip size="small" variant="outlined" label={`Assigned to: ${order.assignedTo || 'Unassigned'}`} />
-                          <Chip size="small" variant="outlined" label={`NPR ${Number(order.totalPrice).toLocaleString()} (qty ${order.quantity})`} />
-                        </Stack>
-                        {order.notes && (
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                            Note: {order.notes}
-                          </Typography>
-                        )}
-                      </Box>
-                      <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.5}>
-                        <Chip size="small" color={statusColor} label={order.status} sx={{ textTransform: 'capitalize' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(order.createdAt).toLocaleDateString()}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                    {!['completed', 'declined', 'cancelled'].includes(order.status) && (
-                      <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                        {order.status === 'pending' && (
-                          <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateOrderStatus(order.id, 'accepted')} disabled={isUpdating}>
-                            Accept Order
-                          </AppButton>
-                        )}
-                        <AppButton size="small" color="error" variant="outlined" startIcon={<HighlightOffIcon />} onClick={() => updateOrderStatus(order.id, 'declined')} disabled={isUpdating}>
-                          Decline Order
-                        </AppButton>
-                        <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateOrderStatus(order.id, 'completed')} disabled={isUpdating}>
-                          Mark Order Complete
-                        </AppButton>
-                      </Stack>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </Stack>
         </Paper>
       </Container>
     </>
