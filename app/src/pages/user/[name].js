@@ -36,6 +36,7 @@ import AppButton from '../../components/AppButton';
 import { authOptions } from '../../lib/auth-options';
 import NepalTrexLogo from '../../components/NepalTrexLogo';
 import { query } from '../../lib/db';
+import SiteHeader from '../../components/SiteHeader';
 
 function normalizeHandle(value) {
   return (value || '')
@@ -194,94 +195,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
         <title>{profile.name || profile.username || 'User'} | NepalTrex</title>
       </Head>
 
-      <AppBar position="sticky" elevation={0} sx={{ backdropFilter: 'blur(8px)' }}>
-        <Toolbar>
-          <Box
-            component={Link}
-            href="/"
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.3,
-              minWidth: 0,
-              textDecoration: 'none',
-              mr: 'auto',
-            }}
-          >
-            <NepalTrexLogo width={180} />
-          </Box>
-
-          {status === 'authenticated' ? (
-            <>
-              <IconButton
-                color="inherit"
-                onClick={(event) => setUserMenuAnchor(event.currentTarget)}
-                sx={(theme) => ({
-                  border: '1px solid',
-                  borderColor: theme.palette.divider,
-                  borderRadius: 999,
-                  p: 0.25,
-                  width: 42,
-                  height: 42,
-                })}
-                aria-label="Open user menu"
-              >
-                <Avatar
-                  src={session?.user?.image || ''}
-                  alt={session?.user?.name || session?.user?.email || 'User'}
-                  sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
-                >
-                  {initialsFromName(session?.user?.name || session?.user?.email)}
-                </Avatar>
-              </IconButton>
-              <Menu
-                anchorEl={userMenuAnchor}
-                open={isUserMenuOpen}
-                onClose={() => setUserMenuAnchor(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              >
-                <MenuItem component={Link} href="/" onClick={() => setUserMenuAnchor(null)}>
-                  <HomeIcon fontSize="small" style={{ marginRight: 8 }} />
-                  Home
-                </MenuItem>
-                <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
-                  <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
-                  Profile
-                </MenuItem>
-
-                {isSuperUser && (
-                  <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
-                    <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
-                    Super Dashboard
-                  </MenuItem>
-                )}
-
-                {isAdminOrSuperUser && (
-                  <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
-                    <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
-                    Admin Dashboard
-                  </MenuItem>
-                )}
-
-                <MenuItem
-                  onClick={() => {
-                    setUserMenuAnchor(null);
-                    signOut({ callbackUrl: '/' });
-                  }}
-                >
-                  <LogoutIcon fontSize="small" style={{ marginRight: 8 }} />
-                  Sign out
-                </MenuItem>
-              </Menu>
-            </>
-          ) : (
-            <AppButton component={Link} href="/auth/signin" startIcon={<LoginIcon />} variant="outlined" size="small">
-              Sign in
-            </AppButton>
-          )}
-        </Toolbar>
-      </AppBar>
+      <SiteHeader />
 
       <Box sx={(theme) => ({ minHeight: '100vh', py: 4, background: theme.palette.background.default })}>
         <Container maxWidth="md">

@@ -45,6 +45,7 @@ import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import AppIconButton from '../components/AppIconButton';
 import NepalTrexLogo from '../components/NepalTrexLogo';
+import SiteHeader from '../components/SiteHeader';
 import { getTrekImage, slugifyTrekName } from '../lib/treks';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
@@ -640,134 +641,7 @@ return (
         <title>Dashboard | NepalTrex</title>
       </Head>
 
-      <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{ backdropFilter: 'blur(8px)' }}
-      >
-        <Toolbar>
-          <Box
-            component={Link}
-            href="/"
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.3,
-              minWidth: 0,
-              textDecoration: 'none',
-              mr: 'auto',
-            }}
-          >
-            <NepalTrexLogo width={180} />
-          </Box>
-          <IconButton
-            color="inherit"
-            onClick={(event) => setNotificationsAnchor(event.currentTarget)}
-            sx={(theme) => ({
-              border: '1px solid',
-              borderColor: theme.palette.divider,
-              borderRadius: 999,
-              p: 0.25,
-              width: 42,
-              height: 42,
-              mr: 1,
-            })}
-            aria-label="Open order notifications"
-          >
-            <Badge badgeContent={pendingOrders.length} color="error" max={99}>
-              <NotificationsNoneIcon sx={{ fontSize: 24 }} />
-            </Badge>
-          </IconButton>
-          <Menu
-            anchorEl={notificationsAnchor}
-            open={isNotificationsOpen}
-            onClose={() => setNotificationsAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            PaperProps={{ sx: { width: 340, maxWidth: 'calc(100vw - 24px)' } }}
-          >
-            <MenuItem disabled sx={{ opacity: 1, fontWeight: 700 }}>
-              Pending Orders ({pendingOrders.length})
-            </MenuItem>
-            <Divider />
-            {pendingOrders.length === 0 ? (
-              <MenuItem disabled>No pending orders.</MenuItem>
-            ) : (
-              pendingOrders.map((order) => (
-                <MenuItem key={order.id} onClick={() => openOrderFromMenu(order.id)} sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}>
-                  <Box>
-                    <Typography variant="body2" fontWeight={700}>{order.stayName}</Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {order.customerName} · {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice).toLocaleString()}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {new Date(order.createdAt).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              ))
-            )}
-          </Menu>
-          <IconButton
-            color="inherit"
-            onClick={(event) => setUserMenuAnchor(event.currentTarget)}
-            sx={(theme) => ({
-              border: '1px solid',
-              borderColor: theme.palette.divider,
-              borderRadius: 999,
-              p: 0.25,
-              width: 42,
-              height: 42,
-            })}
-            aria-label="Open user menu"
-          >
-            <Avatar
-              src={user?.image || ''}
-              alt={user?.name || user?.email || 'User'}
-              sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
-            >
-              {initialsFromName(user?.name || user?.email)}
-            </Avatar>
-          </IconButton>
-          <Menu
-            anchorEl={userMenuAnchor}
-            open={isUserMenuOpen}
-            onClose={() => setUserMenuAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <MenuItem component={Link} href="/" onClick={() => setUserMenuAnchor(null)}>
-              <HomeIcon fontSize="small" style={{ marginRight: 8 }} />
-              Home
-            </MenuItem>
-            <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
-              <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
-              Profile
-            </MenuItem>
-            {isSuperUser && (
-              <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
-                <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
-                Super Dashboard
-              </MenuItem>
-            )}
-            {isAdminOrSuperUser && (
-              <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
-                <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
-                Admin Dashboard
-              </MenuItem>
-            )}
-            <MenuItem
-              onClick={() => {
-                setUserMenuAnchor(null);
-                signOut({ callbackUrl: '/' });
-              }}
-            >
-              <LogoutIcon fontSize="small" style={{ marginRight: 8 }} />
-              Sign out
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
+      <SiteHeader />
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Paper
@@ -947,6 +821,7 @@ return (
                     <Card
                       key={trek.id}
                       sx={(theme) => ({
+                        gridColumn: isEditing ? '1 / -1' : 'auto',
                         background:
                           theme.palette.mode === 'dark'
                             ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
@@ -1317,6 +1192,7 @@ return (
                     <Card
                       key={stay.id}
                       sx={(theme) => ({
+                        gridColumn: isEditing ? '1 / -1' : 'auto',
                         background:
                           theme.palette.mode === 'dark'
                             ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
@@ -1372,16 +1248,6 @@ return (
                               sx={{ height: 40, minHeight: 40 }}
                             >
                               Edit
-                            </AppButton>
-                            <AppButton
-                              component={Link}
-                              href={`/stays/${stay.slug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              variant="outlined"
-                              sx={{ height: 40, minHeight: 40 }}
-                            >
-                              Open Stay Page
                             </AppButton>
                           </Stack>
                         ) : (

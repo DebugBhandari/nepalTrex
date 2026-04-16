@@ -299,6 +299,9 @@ export default function SiteHeader() {
                 <HomeIcon fontSize="small" style={{ marginRight: 8 }} />
                 Home
               </MenuItem>
+              <MenuItem component={Link} href="/stays" onClick={() => setUserMenuAnchor(null)}>
+                Stays
+              </MenuItem>
               <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
                 <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
                 Profile
