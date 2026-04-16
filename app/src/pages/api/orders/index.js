@@ -93,7 +93,29 @@ export default async function handler(req, res) {
     notes,
   } = req.body || {};
 
-  if (!stayId || !customerName) {
+  const session = await getServerSession(req, res, authOptions);
+  let resolvedCustomerName = customerName;
+  let resolvedCustomerEmail = customerEmail;
+
+  if (session?.user?.id) {
+    const userResult = await query(
+      `
+        SELECT display_name, username, email
+        FROM users
+        WHERE id = $1
+        LIMIT 1
+      `,
+      [session.user.id]
+    );
+
+    if (userResult.rows.length > 0) {
+      const row = userResult.rows[0];
+      resolvedCustomerName = row.display_name || row.username || session.user.name || customerName;
+      resolvedCustomerEmail = row.email || session.user.email || customerEmail;
+    }
+  }
+
+  if (!stayId || !resolvedCustomerName) {
     return res.status(400).json({ error: 'Missing required booking fields' });
   }
 
@@ -183,8 +205,8 @@ export default async function handler(req, res) {
             item.unitPrice,
             item.quantity,
             item.unitPrice * item.quantity,
-            customerName.toString().trim(),
-            customerEmail?.toString().trim() || null,
+            resolvedCustomerName.toString().trim(),
+            resolvedCustomerEmail?.toString().trim() || null,
             customerPhone?.toString().trim() || null,
             notes?.toString().trim() || null,
           ]

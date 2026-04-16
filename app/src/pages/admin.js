@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
@@ -92,6 +93,7 @@ function normalizeMenuItems(items) {
 }
 
 export default function AdminPage({ user, initialStays }) {
+  const router = useRouter();
   const [stays, setStays] = useState(initialStays);
   const [message, setMessage] = useState('');
   const [savingId, setSavingId] = useState('');
@@ -101,6 +103,7 @@ export default function AdminPage({ user, initialStays }) {
   const [menuOpenById, setMenuOpenById] = useState({});
 
   const [orders, setOrders] = useState([]);
+  const [orderFilter, setOrderFilter] = useState('all');
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
@@ -112,6 +115,10 @@ export default function AdminPage({ user, initialStays }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
   const pendingOrders = orders.filter((order) => order.status === 'pending');
+  const filteredOrders =
+    orderFilter === 'active'
+      ? orders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status))
+      : orders;
 
   const fetchOrders = async () => {
     try {
@@ -136,6 +143,20 @@ export default function AdminPage({ user, initialStays }) {
     const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [ordersLoaded]);
+
+  useEffect(() => {
+    const queryOrderId = router.query?.orderId;
+    if (!queryOrderId || !orders.length) return;
+
+    const timer = setTimeout(() => {
+      const targetElement = document.getElementById(`order-${String(queryOrderId)}`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [router.query?.orderId, orders]);
 
   const [newStay, setNewStay] = useState({
     name: '', slug: '', stayType: 'homestay', location: '', latitude: '', longitude: '',
@@ -628,20 +649,34 @@ export default function AdminPage({ user, initialStays }) {
 
           <Divider sx={{ my: 4 }} />
 
-          <Typography variant="h6" sx={{ mb: 1.5 }}>
-            Orders{ordersLoaded ? ` (${orders.length})` : ''}
-          </Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 1.5 }}>
+            <Typography variant="h6">
+              Orders{ordersLoaded ? ` (${filteredOrders.length})` : ''}
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel id="admin-order-filter-label">Order Filter</InputLabel>
+              <Select
+                labelId="admin-order-filter-label"
+                label="Order Filter"
+                value={orderFilter}
+                onChange={(event) => setOrderFilter(event.target.value)}
+              >
+                <MenuItem value="all">All Orders</MenuItem>
+                <MenuItem value="active">Active Orders</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
 
           {!ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
 
-          {ordersLoaded && orders.length === 0 && (
+          {ordersLoaded && filteredOrders.length === 0 && (
             <Paper sx={{ p: 3, textAlign: 'center' }}>
               <Typography color="text.secondary">No orders yet.</Typography>
             </Paper>
           )}
 
           <Stack spacing={2}>
-            {orders.map((order) => {
+            {filteredOrders.map((order) => {
               const isUpdating = updatingOrderId === order.id;
               const statusColor =
                 order.status === 'completed'
@@ -654,7 +689,7 @@ export default function AdminPage({ user, initialStays }) {
                         ? 'warning'
                         : 'default';
               return (
-                <Card key={order.id}>
+                <Card key={order.id} id={`order-${order.id}`}>
                   <CardContent>
                     <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
                       <Box sx={{ flex: 1 }}>

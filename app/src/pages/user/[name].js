@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LoginIcon from '@mui/icons-material/Login';
@@ -15,9 +16,12 @@ import {
   CardContent,
   Chip,
   Container,
+  FormControl,
   IconButton,
+  InputLabel,
   Menu,
   MenuItem,
+  Select,
   Stack,
   TextField,
   Toolbar,
@@ -54,12 +58,14 @@ function orderChipColor(status) {
 }
 
 export default function UserProfilePage({ profile, wishlistItems, initialOrders }) {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [statusMessage, setStatusMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState(profile.name || '');
   const [imageUrl, setImageUrl] = useState(profile.imageUrl || '');
   const [orders, setOrders] = useState(initialOrders || []);
+  const [orderFilter, setOrderFilter] = useState('all');
   const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
 
@@ -70,6 +76,27 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
   const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
 
   const effectiveImage = imageUrl || (ownProfile && profile.provider === 'google' ? session?.user?.image || '' : '');
+  const filteredOrders = useMemo(
+    () =>
+      orderFilter === 'active'
+        ? orders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status))
+        : orders,
+    [orderFilter, orders]
+  );
+
+  useEffect(() => {
+    const queryOrderId = router.query?.orderId;
+    if (!queryOrderId || !orders.length) return;
+
+    const timer = setTimeout(() => {
+      const targetElement = document.getElementById(`order-${String(queryOrderId)}`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [router.query?.orderId, orders]);
 
   const uploadImage = async (event) => {
     const file = event.target.files?.[0];
@@ -283,11 +310,25 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
 
           <Card sx={{ mb: 2 }}>
             <CardContent>
-              <Typography variant="h5" sx={{ mb: 1.5 }}>Orders</Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 1.5 }}>
+                <Typography variant="h5">Orders</Typography>
+                <FormControl size="small" sx={{ minWidth: 170 }}>
+                  <InputLabel id="profile-order-filter-label">Order Filter</InputLabel>
+                  <Select
+                    labelId="profile-order-filter-label"
+                    label="Order Filter"
+                    value={orderFilter}
+                    onChange={(event) => setOrderFilter(event.target.value)}
+                  >
+                    <MenuItem value="all">All Orders</MenuItem>
+                    <MenuItem value="active">Active Orders</MenuItem>
+                  </Select>
+                </FormControl>
+              </Stack>
 
               <Stack spacing={1.5}>
-                {orders.map((order) => (
-                  <Card key={order.id} variant="outlined">
+                {filteredOrders.map((order) => (
+                  <Card key={order.id} id={`order-${order.id}`} variant="outlined">
                     <CardContent>
                       <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
                         <Box sx={{ flex: 1 }}>
@@ -331,7 +372,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
                   </Card>
                 ))}
 
-                {orders.length === 0 && (
+                {filteredOrders.length === 0 && (
                   <Typography color="text.secondary">No orders yet.</Typography>
                 )}
               </Stack>

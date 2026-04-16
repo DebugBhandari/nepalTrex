@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { signOut, useSession } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -8,6 +9,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import {
   Alert,
   AppBar,
@@ -85,10 +87,13 @@ function initialsFromName(value) {
 }
 
 export default function HomePage({ allTreks, dataSource, dataError }) {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlistAnchor, setWishlistAnchor] = useState(null);
+  const [ordersAnchor, setOrdersAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
+  const [headerOrders, setHeaderOrders] = useState([]);
   const [wishlistLoginRequired, setWishlistLoginRequired] = useState(false);
   const [wishlistCountsBySlug, setWishlistCountsBySlug] = useState(() =>
     allTreks.reduce((acc, trek) => {
@@ -107,7 +112,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
   const isUserMenuOpen = Boolean(userMenuAnchor);
+  const isOrdersOpen = Boolean(ordersAnchor);
   const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
+  const visibleHeaderOrders = isAdminOrSuperUser
+    ? headerOrders.filter((order) => order.status === 'pending')
+    : headerOrders;
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -124,6 +133,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
   useEffect(() => {
     if (status !== 'authenticated') {
       setOrderNotification(null);
+      setHeaderOrders([]);
       previousPendingCountRef.current = 0;
       knownUserOrderStatusesRef.current = new Map();
       return;
@@ -139,8 +149,10 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
           if (!response.ok) return;
           const data = await response.json();
           if (!active) return;
+          const fetchedOrders = data.orders || [];
+          setHeaderOrders(fetchedOrders);
 
-          const pendingCount = (data.orders || []).filter((order) => order.status === 'pending').length;
+          const pendingCount = fetchedOrders.filter((order) => order.status === 'pending').length;
           if (previousPendingCountRef.current > 0 && pendingCount > previousPendingCountRef.current) {
             setOrderNotification({
               severity: 'info',
@@ -160,6 +172,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
         if (!active) return;
 
         const orders = data.orders || [];
+        setHeaderOrders(orders);
         const previousStatuses = knownUserOrderStatusesRef.current;
         const nextStatuses = new Map();
         const updates = [];
@@ -201,6 +214,15 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
       clearInterval(intervalId);
     };
   }, [status, session?.user?.role]);
+
+  const openOrderFromMenu = (orderId) => {
+    const targetPath = isAdminOrSuperUser
+      ? `/admin?orderId=${encodeURIComponent(orderId)}`
+      : `/user/${profileHandle}?orderId=${encodeURIComponent(orderId)}`;
+
+    setOrdersAnchor(null);
+    router.push(targetPath);
+  };
 
   const wishlistSet = useMemo(() => new Set(wishlist), [wishlist]);
 
@@ -364,6 +386,64 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               <FavoriteIcon sx={{ fontSize: 24, color: wishlistedTreks.length > 0 ? '#ef4444' : 'inherit' }} />
             </Badge>
           </IconButton>
+
+          {status === 'authenticated' && (
+            <>
+              <IconButton
+                color="inherit"
+                onClick={(event) => setOrdersAnchor(event.currentTarget)}
+                aria-label="Open orders"
+                sx={{ mr: 0.5, width: 42, height: 42 }}
+              >
+                <Badge
+                  badgeContent={
+                    isAdminOrSuperUser
+                      ? headerOrders.filter((order) => order.status === 'pending').length
+                      : headerOrders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status)).length
+                  }
+                  color="error"
+                  max={99}
+                >
+                  <NotificationsNoneIcon sx={{ fontSize: 24 }} />
+                </Badge>
+              </IconButton>
+
+              <Menu
+                anchorEl={ordersAnchor}
+                open={isOrdersOpen}
+                onClose={() => setOrdersAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{ sx: { width: 360, maxWidth: 'calc(100vw - 24px)' } }}
+              >
+                <MenuItem disabled sx={{ opacity: 1, fontWeight: 700 }}>
+                  {isAdminOrSuperUser ? 'Pending Orders' : 'Your Orders'} ({visibleHeaderOrders.length})
+                </MenuItem>
+                <Divider />
+                {visibleHeaderOrders.length === 0 ? (
+                  <MenuItem disabled>No orders available.</MenuItem>
+                ) : (
+                  visibleHeaderOrders.map((order) => (
+                    <MenuItem
+                      key={order.id}
+                      onClick={() => openOrderFromMenu(order.id)}
+                      sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
+                    >
+                      <Box>
+                        <Typography variant="body2" fontWeight={700}>{order.stayName || 'Order'}</Typography>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {order.customerName || 'Guest'} · {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice || 0).toLocaleString()}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize' }}>
+                          {order.status}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  ))
+                )}
+              </Menu>
+            </>
+          )}
 
           <Popover
             open={Boolean(wishlistAnchor)}

@@ -1,7 +1,8 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Alert,
   Box,
@@ -28,6 +29,7 @@ const DEFAULT_MENU_IMAGE = '/stays/food-thukpa.jpg';
 const NEARBY_THRESHOLD_KM = 35;
 
 function StayDetailView({ stay }) {
+  const { status } = useSession();
   const [cartItems, setCartItems] = useState([]);
   const [bookingStatus, setBookingStatus] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -37,6 +39,28 @@ function StayDetailView({ stay }) {
     customerPhone: '',
     notes: '',
   });
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    let active = true;
+    fetch('/api/users/profile')
+      .then((response) => response.json())
+      .then((data) => {
+        if (!active) return;
+        const profile = data?.profile || {};
+        setBookingForm((prev) => ({
+          ...prev,
+          customerName: profile.name || prev.customerName,
+          customerEmail: profile.email || prev.customerEmail,
+        }));
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [status]);
 
   const groupedMenu = useMemo(() => {
     const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
@@ -107,12 +131,11 @@ function StayDetailView({ stay }) {
 
       setBookingStatus('Booking placed successfully. The host will contact you soon.');
       setCartItems([]);
-      setBookingForm({
-        customerName: '',
-        customerEmail: '',
+      setBookingForm((prev) => ({
+        ...prev,
         customerPhone: '',
         notes: '',
-      });
+      }));
     } catch (error) {
       setBookingStatus(error.message || 'Failed to place booking');
     } finally {
