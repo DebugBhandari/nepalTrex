@@ -876,32 +876,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
           <Paper
             id="about"
             sx={(theme) => ({
-              p: 3,
-              mb: 3,
-              background:
-                theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                  : undefined,
-            })}
-          >
-            <Typography
-              variant="h5"
-              sx={(theme) => ({
-                mb: 1,
-                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-              })}
-            >
-              About NepalTrex
-            </Typography>
-            <Typography color="text.secondary">
-              NepalTrex helps international trekkers compare routes, understand elevation and pacing, and find suitable stays around each trekking corridor in Nepal.
-            </Typography>
-          </Paper>
-
-          <Paper
-            id="contact"
-            sx={(theme) => ({
-              mt: 1,
               p: { xs: 2.4, md: 3.2 },
               background:
                 theme.palette.mode === 'dark'
@@ -926,18 +900,20 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
                   variant="h6"
                   sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary })}
                 >
-                  NepalTrex
+                  About NepalTrex
                 </Typography>
                 <Typography color="text.secondary" sx={{ mt: 0.6, maxWidth: 460 }}>
-                  Trusted planning companion for international trekkers exploring Nepal. Compare routes, manage your shortlist, and prepare with confidence.
+                  NepalTrex helps international trekkers compare routes, understand elevation and pacing, and find suitable stays around each trekking corridor in Nepal. Trusted planning companion for comparing routes, managing your shortlist, and preparing with confidence.
                 </Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 0.7, fontWeight: 700 }}>
-                  Connect
+                  Contact
                 </Typography>
-                <Typography color="text.secondary">hello@nepaltrex.com</Typography>
-                <Typography color="text.secondary">Kathmandu, Nepal</Typography>
+                <Typography color="text.secondary">buddhavtrex@gmail.com</Typography>
+                <Typography color="text.secondary">Chitwan, Nepal</Typography>
+                <Typography color="text.secondary" sx={{ mt: 1 }}>bhandarideepakdev@gmail.com</Typography>
+                <Typography color="text.secondary">Helsinki, Finland</Typography>
               </Box>
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 0.7, fontWeight: 700 }}>
