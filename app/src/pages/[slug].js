@@ -20,6 +20,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import PlaceIcon from '@mui/icons-material/Place';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
+import SiteHeader from '../components/SiteHeader';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
 
 const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
@@ -168,6 +169,8 @@ function StayDetailView({ stay }) {
         <title>{stay.name} | NepalTrex</title>
         <meta name="description" content={stay.description} />
       </Head>
+
+      <SiteHeader />
 
       <Box
         sx={(theme) => ({
@@ -384,6 +387,8 @@ function TrekDetailView({ trek }) {
         <title>{trek.name} | NepalTrex</title>
         <meta name="description" content={trek.description || `${trek.name} detailed itinerary, route and nearby stays.`} />
       </Head>
+
+      <SiteHeader />
 
       <Box
         sx={(theme) => ({

@@ -366,7 +366,7 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               textDecoration: 'none',
             }}
           >
-            <NepalTrexLogo width={180} />
+            <NepalTrexLogo width={120} />
           </Box>
           <Box sx={{ flexGrow: 1 }} />
 

@@ -11,10 +11,23 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const result = await query(
-      `SELECT trek_slug FROM user_trek_wishlists WHERE user_id = $1 ORDER BY created_at DESC`,
+      `SELECT w.trek_slug, t.name, t.region, t.level, t.duration_days
+       FROM user_trek_wishlists w
+       LEFT JOIN treks t ON lower(regexp_replace(t.name, '[^a-zA-Z0-9]+', '-', 'g')) = w.trek_slug
+       WHERE w.user_id = $1
+       ORDER BY w.created_at DESC`,
       [session.user.id]
     );
-    return res.status(200).json({ slugs: result.rows.map((r) => r.trek_slug) });
+    return res.status(200).json({
+      slugs: result.rows.map((r) => r.trek_slug),
+      treks: result.rows.map((r) => ({
+        slug: r.trek_slug,
+        name: r.name,
+        region: r.region,
+        level: r.level,
+        durationDays: r.duration_days,
+      })),
+    });
   }
 
   if (req.method === 'POST') {
