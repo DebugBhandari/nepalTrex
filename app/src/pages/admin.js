@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -50,6 +50,8 @@ const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
 const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
+const ADMIN_ORDER_FILTERS_STORAGE_KEY = 'nepaltrex-admin-order-filters';
+const ADMIN_ORDER_COLLAPSE_STORAGE_KEY = 'nepaltrex-admin-order-collapsed';
 
 function normalizeHandle(value) {
   return (value || '')
@@ -104,8 +106,10 @@ export default function AdminPage({ user, initialStays }) {
 
   const [orders, setOrders] = useState([]);
   const [orderFilterByStayId, setOrderFilterByStayId] = useState({});
+  const [orderCollapsedByStayId, setOrderCollapsedByStayId] = useState({});
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
+  const [staySearch, setStaySearch] = useState('');
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState(null);
 
@@ -115,6 +119,22 @@ export default function AdminPage({ user, initialStays }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
   const pendingOrders = orders.filter((order) => order.status === 'pending');
+  const visibleStays = useMemo(() => {
+    if (!isSuperUser) {
+      return stays;
+    }
+
+    const needle = staySearch.trim().toLowerCase();
+    if (!needle) {
+      return stays;
+    }
+
+    return stays.filter((stay) => {
+      const stayName = String(stay.name || '').toLowerCase();
+      const ownerValue = String(stay.ownerEmail || '').toLowerCase();
+      return stayName.includes(needle) || ownerValue.includes(needle);
+    });
+  }, [isSuperUser, stays, staySearch]);
 
   const fetchOrders = async () => {
     try {
@@ -141,8 +161,54 @@ export default function AdminPage({ user, initialStays }) {
   }, [ordersLoaded]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const savedOrderFilters = window.localStorage.getItem(ADMIN_ORDER_FILTERS_STORAGE_KEY);
+      if (savedOrderFilters) {
+        const parsed = JSON.parse(savedOrderFilters);
+        if (parsed && typeof parsed === 'object') {
+          setOrderFilterByStayId(parsed);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse saved admin order filters:', error);
+    }
+
+    try {
+      const savedCollapsed = window.localStorage.getItem(ADMIN_ORDER_COLLAPSE_STORAGE_KEY);
+      if (savedCollapsed) {
+        const parsed = JSON.parse(savedCollapsed);
+        if (parsed && typeof parsed === 'object') {
+          setOrderCollapsedByStayId(parsed);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse saved admin order collapse state:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(ADMIN_ORDER_FILTERS_STORAGE_KEY, JSON.stringify(orderFilterByStayId));
+  }, [orderFilterByStayId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(ADMIN_ORDER_COLLAPSE_STORAGE_KEY, JSON.stringify(orderCollapsedByStayId));
+  }, [orderCollapsedByStayId]);
+
+  useEffect(() => {
     const queryOrderId = router.query?.orderId;
     if (!queryOrderId || !orders.length) return;
+
+    const targetOrder = orders.find((order) => String(order.id) === String(queryOrderId));
+    if (targetOrder?.stayId) {
+      setOrderCollapsedByStayId((prev) => ({
+        ...prev,
+        [targetOrder.stayId]: false,
+      }));
+    }
 
     const timer = setTimeout(() => {
       const targetElement = document.getElementById(`order-${String(queryOrderId)}`);
@@ -511,11 +577,25 @@ export default function AdminPage({ user, initialStays }) {
 
           <Typography variant="h6" sx={{ mt: 4, mb: 1.5 }}>Your Registered Stays ({stays.length})</Typography>
 
+          {isSuperUser && (
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Search stays by owner or stay name"
+                placeholder="Type stay name or owner email"
+                value={staySearch}
+                onChange={(event) => setStaySearch(event.target.value)}
+              />
+            </Box>
+          )}
+
           <Stack spacing={3}>
-            {stays.map((stay) => {
+            {visibleStays.map((stay) => {
               const isEditing = Boolean(editingById[stay.id]);
               const isMenuOpen = Boolean(menuOpenById[stay.id]);
               const isSaving = savingId === stay.id;
+              const isOrdersCollapsed = Boolean(orderCollapsedByStayId[stay.id]);
               const availableCount = (stay.menuItems || []).filter((m) => m.available !== false).length;
               const totalCount = (stay.menuItems || []).length;
               const stayOrderFilter = orderFilterByStayId[stay.id] || 'all';
@@ -645,35 +725,50 @@ export default function AdminPage({ user, initialStays }) {
                       <Typography variant="subtitle1" fontWeight={700}>
                         Orders{ordersLoaded ? ` (${visibleStayOrders.length})` : ''}
                       </Typography>
-                      <FormControl size="small" sx={{ minWidth: 170 }}>
-                        <InputLabel id={`admin-order-filter-${stay.id}`}>Order Filter</InputLabel>
-                        <Select
-                          labelId={`admin-order-filter-${stay.id}`}
-                          label="Order Filter"
-                          value={stayOrderFilter}
-                          onChange={(event) =>
-                            setOrderFilterByStayId((prev) => ({
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                        <FormControl size="small" sx={{ minWidth: 170 }}>
+                          <InputLabel id={`admin-order-filter-${stay.id}`}>Order Filter</InputLabel>
+                          <Select
+                            labelId={`admin-order-filter-${stay.id}`}
+                            label="Order Filter"
+                            value={stayOrderFilter}
+                            onChange={(event) =>
+                              setOrderFilterByStayId((prev) => ({
+                                ...prev,
+                                [stay.id]: event.target.value,
+                              }))
+                            }
+                          >
+                            <MenuItem value="all">All Orders</MenuItem>
+                            <MenuItem value="active">Active Orders</MenuItem>
+                          </Select>
+                        </FormControl>
+                        <AppButton
+                          size="small"
+                          variant="outlined"
+                          onClick={() =>
+                            setOrderCollapsedByStayId((prev) => ({
                               ...prev,
-                              [stay.id]: event.target.value,
+                              [stay.id]: !isOrdersCollapsed,
                             }))
                           }
                         >
-                          <MenuItem value="all">All Orders</MenuItem>
-                          <MenuItem value="active">Active Orders</MenuItem>
-                        </Select>
-                      </FormControl>
+                          {isOrdersCollapsed ? 'Expand Orders' : 'Collapse Orders'}
+                        </AppButton>
+                      </Stack>
                     </Stack>
 
-                    {!ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
+                    {!isOrdersCollapsed && !ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
 
-                    {ordersLoaded && visibleStayOrders.length === 0 && (
+                    {!isOrdersCollapsed && ordersLoaded && visibleStayOrders.length === 0 && (
                       <Paper sx={{ p: 2, textAlign: 'center' }}>
                         <Typography color="text.secondary">No orders for this stay.</Typography>
                       </Paper>
                     )}
 
-                    <Stack spacing={2}>
-                      {visibleStayOrders.map((order) => {
+                    {!isOrdersCollapsed && (
+                      <Stack spacing={2}>
+                        {visibleStayOrders.map((order) => {
                         const isUpdating = updatingOrderId === order.id;
                         const statusColor =
                           order.status === 'completed'
@@ -742,16 +837,21 @@ export default function AdminPage({ user, initialStays }) {
                             </CardContent>
                           </Card>
                         );
-                      })}
-                    </Stack>
+                        })}
+                      </Stack>
+                    )}
                   </CardContent>
                 </Card>
               );
             })}
 
-            {stays.length === 0 && (
+            {visibleStays.length === 0 && (
               <Paper sx={{ p: 3, textAlign: 'center' }}>
-                <Typography color="text.secondary">No stays yet. Click &ldquo;Add New Stay&rdquo; to register your first property.</Typography>
+                <Typography color="text.secondary">
+                  {isSuperUser && staySearch.trim()
+                    ? 'No stays match your search.'
+                    : 'No stays yet. Click &ldquo;Add New Stay&rdquo; to register your first property.'}
+                </Typography>
               </Paper>
             )}
           </Stack>
