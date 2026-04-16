@@ -27,6 +27,7 @@ import {
   InputLabel,
   Menu,
   MenuItem,
+  Pagination,
   Paper,
   Select,
   Stack,
@@ -46,6 +47,7 @@ import NepalTrexLogo from '../components/NepalTrexLogo';
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
 const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
 const DASHBOARD_TAB_STORAGE_KEY = 'nepaltrex-dashboard-active-tab';
+const USERS_PER_PAGE = 10;
 
 function normalizeHandle(value) {
   return (value || '')
@@ -165,6 +167,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
   const [usersMessage, setUsersMessage] = useState('');
   const [updatingRoleById, setUpdatingRoleById] = useState({});
   const [draftRolesById, setDraftRolesById] = useState({});
+  const [userPage, setUserPage] = useState(1);
 
   // Stay management state
   const [stayItems, setStayItems] = useState(() => stays.map((s) => ({ ...s })));
@@ -270,6 +273,16 @@ export default function DashboardPage({ user, treks, stays = [] }) {
     return sorted;
   }, [items, levelFilter, regionFilter, routeFilter, sortBy, sortDirection]);
 
+  const totalUserPages = useMemo(
+    () => Math.max(1, Math.ceil(users.length / USERS_PER_PAGE)),
+    [users.length]
+  );
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (userPage - 1) * USERS_PER_PAGE;
+    return users.slice(startIndex, startIndex + USERS_PER_PAGE);
+  }, [userPage, users]);
+
   const fetchUsers = useCallback(
     async (search = '') => {
       if (!canManage) {
@@ -294,6 +307,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
 
         const fetchedUsers = payload.users || [];
         setUsers(fetchedUsers);
+        setUserPage(1);
         setDraftRolesById(
           fetchedUsers.reduce((acc, current) => {
             acc[current.id] = current.role || 'user';
@@ -312,6 +326,12 @@ export default function DashboardPage({ user, treks, stays = [] }) {
     },
     [canManage]
   );
+
+  useEffect(() => {
+    if (userPage > totalUserPages) {
+      setUserPage(totalUserPages);
+    }
+  }, [totalUserPages, userPage]);
 
   useEffect(() => {
     if (canManage && activeTab === 'users' && users.length === 0 && !usersLoading) {
@@ -1312,6 +1332,7 @@ return (
                   disabled={usersLoading}
                   onClick={() => {
                     setUserSearch('');
+                    setUserPage(1);
                     fetchUsers('');
                   }}
                 >
@@ -1326,7 +1347,7 @@ return (
               )}
 
               <Stack spacing={1.5}>
-                {users.map((entry) => {
+                {paginatedUsers.map((entry) => {
                   const isSaving = Boolean(updatingRoleById[entry.id]);
                   const currentDraft = draftRolesById[entry.id] || entry.role || 'user';
                   const isSelf = entry.id === user.id;
@@ -1452,6 +1473,18 @@ return (
                   );
                 })}
               </Stack>
+
+              {users.length > USERS_PER_PAGE && (
+                <Stack direction="row" justifyContent="center" sx={{ mt: 2.5 }}>
+                  <Pagination
+                    count={totalUserPages}
+                    page={userPage}
+                    onChange={(_, value) => setUserPage(value)}
+                    color="primary"
+                    shape="rounded"
+                  />
+                </Stack>
+              )}
             </Box>
           )}
         </Paper>
