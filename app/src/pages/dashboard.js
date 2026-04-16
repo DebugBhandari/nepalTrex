@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { signOut } from 'next-auth/react';
@@ -146,6 +147,7 @@ function getRoutePointCount(routeGeojson) {
 }
 
 export default function DashboardPage({ user, treks, stays = [] }) {
+  const router = useRouter();
   const [items, setItems] = useState(() =>
     treks.map((t) => ({ ...t, waypoints: parseWaypointsFromGeojson(t.routeGeojson) }))
   );
@@ -282,6 +284,11 @@ export default function DashboardPage({ user, treks, stays = [] }) {
     const startIndex = (userPage - 1) * USERS_PER_PAGE;
     return users.slice(startIndex, startIndex + USERS_PER_PAGE);
   }, [userPage, users]);
+
+  const openOrderFromMenu = (orderId) => {
+    setNotificationsAnchor(null);
+    router.push(`/admin?orderId=${encodeURIComponent(orderId)}`);
+  };
 
   const fetchUsers = useCallback(
     async (search = '') => {
@@ -590,7 +597,7 @@ return (
               <MenuItem disabled>No pending orders.</MenuItem>
             ) : (
               pendingOrders.map((order) => (
-                <MenuItem key={order.id} onClick={() => setNotificationsAnchor(null)} sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}>
+                <MenuItem key={order.id} onClick={() => openOrderFromMenu(order.id)} sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}>
                   <Box>
                     <Typography variant="body2" fontWeight={700}>{order.stayName}</Typography>
                     <Typography variant="caption" color="text.secondary" display="block">

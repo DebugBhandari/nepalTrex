@@ -137,6 +137,11 @@ export default function AdminPage({ user, initialStays }) {
     });
   }, [isSuperUser, stays, staySearch]);
 
+  const openOrderFromMenu = (orderId) => {
+    setNotificationsAnchor(null);
+    router.push(`/admin?orderId=${encodeURIComponent(orderId)}`);
+  };
+
   const fetchOrders = async () => {
     try {
       const response = await fetch('/api/orders');
@@ -422,7 +427,7 @@ export default function AdminPage({ user, initialStays }) {
               <MenuItem disabled>No pending orders.</MenuItem>
             ) : (
               pendingOrders.map((order) => (
-                <MenuItem key={order.id} onClick={() => setNotificationsAnchor(null)} sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}>
+                <MenuItem key={order.id} onClick={() => openOrderFromMenu(order.id)} sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}>
                   <Box>
                     <Typography variant="body2" fontWeight={700}>{order.stayName}</Typography>
                     <Typography variant="caption" color="text.secondary" display="block">
