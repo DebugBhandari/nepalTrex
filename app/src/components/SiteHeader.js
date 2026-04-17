@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
@@ -57,18 +57,21 @@ export default function SiteHeader() {
   const [wishlistAnchor, setWishlistAnchor] = useState(null);
   const [ordersAnchor, setOrdersAnchor] = useState(null);
   const [wishlistTreks, setWishlistTreks] = useState([]);
-  const [headerOrders, setHeaderOrders] = useState([]);
-  const previousPendingCountRef = useRef(0);
-  const knownUserOrderStatusesRef = useRef(new Map());
+  const [myPurchases, setMyPurchases] = useState([]);
+  const [assignedOrders, setAssignedOrders] = useState([]);
 
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
   const isSuperUser = session?.user?.role === 'superUser';
   const isUserMenuOpen = Boolean(userMenuAnchor);
   const isOrdersOpen = Boolean(ordersAnchor);
   const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
-  const visibleHeaderOrders = isAdminOrSuperUser
-    ? headerOrders.filter((o) => o.status === 'pending')
-    : headerOrders;
+  const activePurchases = myPurchases.filter(
+    (o) => !['completed', 'declined', 'cancelled'].includes(o.status)
+  );
+  const pendingAssigned = assignedOrders.filter((o) => o.status === 'pending');
+  const notificationCount = isAdminOrSuperUser
+    ? activePurchases.length + pendingAssigned.length
+    : activePurchases.length;
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -84,36 +87,29 @@ export default function SiteHeader() {
 
   useEffect(() => {
     if (status !== 'authenticated') {
-      setHeaderOrders([]);
-      previousPendingCountRef.current = 0;
-      knownUserOrderStatusesRef.current = new Map();
+      setMyPurchases([]);
+      setAssignedOrders([]);
       return;
     }
 
     let active = true;
-    const role = session?.user?.role || 'user';
+    const isAdmin = ['admin', 'superUser'].includes(session?.user?.role || '');
 
     const poll = async () => {
       try {
-        if (['admin', 'superUser'].includes(role)) {
-          const res = await fetch('/api/orders');
-          if (!res.ok) return;
-          const data = await res.json();
-          if (!active) return;
-          setHeaderOrders(data.orders || []);
-          previousPendingCountRef.current = (data.orders || []).filter((o) => o.status === 'pending').length;
-          return;
+        const purchasesRes = await fetch('/api/orders/my-purchases');
+        if (purchasesRes.ok && active) {
+          const data = await purchasesRes.json();
+          setMyPurchases(data.orders || []);
         }
 
-        const res = await fetch('/api/orders/my');
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!active) return;
-        const orders = data.orders || [];
-        setHeaderOrders(orders);
-        const nextStatuses = new Map();
-        orders.forEach((o) => nextStatuses.set(String(o.id), o.status));
-        knownUserOrderStatusesRef.current = nextStatuses;
+        if (isAdmin) {
+          const ordersRes = await fetch('/api/orders');
+          if (ordersRes.ok && active) {
+            const data = await ordersRes.json();
+            setAssignedOrders(data.orders || []);
+          }
+        }
       } catch {
         // keep quiet on poll failure
       }
@@ -126,14 +122,6 @@ export default function SiteHeader() {
       clearInterval(id);
     };
   }, [status, session?.user?.role]);
-
-  const openOrderFromMenu = (orderId) => {
-    const target = isAdminOrSuperUser
-      ? `/admin?orderId=${encodeURIComponent(orderId)}`
-      : `/user/${profileHandle}?orderId=${encodeURIComponent(orderId)}`;
-    setOrdersAnchor(null);
-    router.push(target);
-  };
 
   return (
     <AppBar position="sticky" elevation={0} sx={{ backdropFilter: 'blur(8px)' }}>
@@ -185,18 +173,10 @@ export default function SiteHeader() {
             <IconButton
               color="inherit"
               onClick={(event) => setOrdersAnchor(event.currentTarget)}
-              aria-label="Open orders"
+              aria-label="Open notifications"
               sx={{ mr: 0.5, width: 42, height: 42 }}
             >
-              <Badge
-                badgeContent={
-                  isAdminOrSuperUser
-                    ? headerOrders.filter((o) => o.status === 'pending').length
-                    : headerOrders.filter((o) => !['completed', 'declined', 'cancelled'].includes(o.status)).length
-                }
-                color="error"
-                max={99}
-              >
+              <Badge badgeContent={notificationCount} color="error" max={99}>
                 <NotificationsNoneIcon sx={{ fontSize: 24 }} />
               </Badge>
             </IconButton>
@@ -209,30 +189,68 @@ export default function SiteHeader() {
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               PaperProps={{ sx: { width: 360, maxWidth: 'calc(100vw - 24px)' } }}
             >
-              <MenuItem disabled sx={{ opacity: 1, fontWeight: 700 }}>
-                {isAdminOrSuperUser ? 'Pending Orders' : 'Your Orders'} ({visibleHeaderOrders.length})
-              </MenuItem>
-              <Divider />
-              {visibleHeaderOrders.length === 0 ? (
-                <MenuItem disabled>No orders available.</MenuItem>
-              ) : (
-                visibleHeaderOrders.map((order) => (
-                  <MenuItem
-                    key={order.id}
-                    onClick={() => openOrderFromMenu(order.id)}
-                    sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
-                  >
-                    <Box>
-                      <Typography variant="body2" fontWeight={700}>{order.stayName || 'Order'}</Typography>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        {order.customerName || 'Guest'} · {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice || 0).toLocaleString()}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize' }}>
-                        {order.status}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))
+              {/* My Purchases section */}
+              {activePurchases.length > 0 && (
+                <MenuItem disabled sx={{ opacity: 1, fontWeight: 700 }}>
+                  My Purchases ({activePurchases.length})
+                </MenuItem>
+              )}
+              {activePurchases.length > 0 && <Divider />}
+              {activePurchases.map((order) => (
+                <MenuItem
+                  key={`purchase-${order.id}`}
+                  onClick={() => {
+                    setOrdersAnchor(null);
+                    router.push(`/user/${profileHandle}?orderId=${encodeURIComponent(order.id)}`);
+                  }}
+                  sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
+                >
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>{order.stayName || 'Order'}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice || 0).toLocaleString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize' }}>
+                      {order.status}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+
+              {/* Section divider (only if both sections have items) */}
+              {isAdminOrSuperUser && activePurchases.length > 0 && pendingAssigned.length > 0 && <Divider />}
+
+              {/* Orders section — admins/superUsers only */}
+              {isAdminOrSuperUser && pendingAssigned.length > 0 && (
+                <MenuItem disabled sx={{ opacity: 1, fontWeight: 700 }}>
+                  Orders ({pendingAssigned.length})
+                </MenuItem>
+              )}
+              {isAdminOrSuperUser && pendingAssigned.length > 0 && <Divider />}
+              {isAdminOrSuperUser && pendingAssigned.map((order) => (
+                <MenuItem
+                  key={`order-${order.id}`}
+                  onClick={() => {
+                    setOrdersAnchor(null);
+                    router.push(`/admin?orderId=${encodeURIComponent(order.id)}`);
+                  }}
+                  sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
+                >
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>{order.stayName || 'Order'}</Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {order.customerName || 'Guest'} · {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice || 0).toLocaleString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize' }}>
+                      {order.status}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+
+              {/* Empty state */}
+              {notificationCount === 0 && (
+                <MenuItem disabled>No notifications.</MenuItem>
               )}
             </Menu>
           </>
