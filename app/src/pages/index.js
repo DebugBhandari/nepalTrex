@@ -342,16 +342,16 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                       }}
                     >
                       <Box
-                        sx={{
+                        sx={(theme) => ({
                           position: 'relative',
                           paddingTop: '66.67%',
                           borderRadius: '16px',
                           overflow: 'hidden',
                           mb: 1.5,
-                          backgroundColor: '#f0f0f0',
+                          backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
                           '& img': { transition: 'transform 0.35s ease' },
                           '&:hover img': { transform: 'scale(1.04)' },
-                        }}
+                        })}
                       >
                         <Box
                           component="img"
@@ -367,21 +367,21 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                           }}
                         />
 
-                        {/* Badge */}
+                        {/* Stay Type Badge (Top Right) */}
                         <Box
-                          sx={{
+                          sx={(theme) => ({
                             position: 'absolute',
                             top: 12,
                             right: 12,
                             px: 1.25,
                             py: 0.5,
                             borderRadius: 999,
-                            bgcolor: 'rgba(0,0,0,0.52)',
+                            bgcolor: 'rgba(0,0,0,0.6)',
                             backdropFilter: 'blur(4px)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: 0.5,
-                          }}
+                          })}
                         >
                           <Typography
                             variant="caption"
@@ -396,21 +396,21 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                           </Typography>
                         </Box>
 
-                        {/* Discount Badge */}
+                        {/* Discount Badge (Top Left) */}
                         {stay.discountPercent > 0 && (
                           <Box
-                            sx={{
+                            sx={(theme) => ({
                               position: 'absolute',
                               top: 12,
                               left: 12,
                               px: 1.25,
                               py: 0.5,
                               borderRadius: 999,
-                              bgcolor: '#dc2626',
+                              bgcolor: theme.palette.error.main,
                               display: 'flex',
                               alignItems: 'center',
                               fontWeight: 700,
-                            }}
+                            })}
                           >
                             <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
                               -{stay.discountPercent}%
@@ -452,7 +452,10 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                             {stay.discountPercent > 0 && (
                               <Typography
                                 variant="caption"
-                                sx={{ textDecoration: 'line-through', color: 'text.disabled' }}
+                                sx={(theme) => ({
+                                  textDecoration: 'line-through',
+                                  color: theme.palette.text.disabled,
+                                })}
                               >
                                 NPR {stay.pricePerNight.toLocaleString()}
                               </Typography>
@@ -800,7 +803,7 @@ export async function getServerSideProps() {
 
     const featuredStaysRows = await query(
       `
-        SELECT id, name, slug, stay_type, location, description, image_url, price_per_night, is_featured, discount_percent,
+        SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.price_per_night, s.is_featured, s.discount_percent,
                COALESCE(ROUND(AVG(sr.rating)::numeric, 1), 0) as avg_rating,
                COUNT(sr.id) as review_count
         FROM stays s
