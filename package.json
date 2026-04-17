@@ -9,6 +9,10 @@
     "migrate:images:minio": "node scripts/migrate-public-images-to-minio.mjs"
   },
   "private": true,
+  "engines": {
+    "node": ">=20.9.0 <21",
+    "npm": ">=10"
+  },
   "devDependencies": {
     "@nx/js": "22.6.1",
     "@nx/next": "^22.6.1",

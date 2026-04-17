@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.0
           cache: npm
 
       - name: Install npm 11
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.0
           cache: npm
 
       - name: Install npm 11
@@ -92,7 +92,7 @@ jobs:
             fi
             if [ -s "$HOME/.nvm/nvm.sh" ]; then
               . "$HOME/.nvm/nvm.sh"
-              nvm use --lts >/dev/null 2>&1 || true
+              nvm use 20.19.0 >/dev/null 2>&1 || true
             fi
             set -u
 
@@ -111,8 +111,8 @@ jobs:
 
               set +u
               . "$HOME/.nvm/nvm.sh"
-              nvm install --lts
-              nvm use --lts
+              nvm install 20.19.0
+              nvm use 20.19.0
               set -u
             fi
 
