@@ -46,14 +46,10 @@ export default async function handler(req, res) {
       [user.id, token, expiresAt]
     );
 
-    // Send email with reset link
+    // Send email with reset link (log failure but don't leak it to the client)
     const emailResult = await sendPasswordResetEmail(user.email, token);
-
     if (!emailResult.success) {
       console.error('Failed to send reset email:', emailResult.error);
-      return res.status(500).json({
-        error: 'Failed to send reset email. Please try again later.',
-      });
     }
 
     return res.status(200).json({
