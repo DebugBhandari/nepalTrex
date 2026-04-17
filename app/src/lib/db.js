@@ -84,6 +84,12 @@ ALTER TABLE stays
 ALTER TABLE stays
   ADD COLUMN IF NOT EXISTS menu_items JSONB NOT NULL DEFAULT '[]'::jsonb;
 
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS discount_percent INT NOT NULL DEFAULT 0;
+
 UPDATE stays
 SET
   image_url = COALESCE(image_url, 'https://placehold.co/1000x620?text=NepalTrex+Stay'),
@@ -91,7 +97,39 @@ SET
     WHEN jsonb_typeof(menu_items) = 'array' THEN menu_items
     ELSE '[]'::jsonb
   END,
+  is_featured = COALESCE(is_featured, false),
+  discount_percent = CASE
+    WHEN discount_percent IS NULL OR discount_percent < 0 THEN 0
+    WHEN discount_percent > 100 THEN 100
+    ELSE discount_percent
+  END,
   updated_at = NOW();
+
+CREATE TABLE IF NOT EXISTS menu_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  category TEXT NOT NULL CHECK (category IN ('room', 'food')),
+  price NUMERIC(10, 2) NOT NULL,
+  is_available BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS menu_items_stay_id_idx ON menu_items(stay_id);
+
+CREATE TABLE IF NOT EXISTS stay_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  reviewer_name TEXT NOT NULL,
+  reviewer_initials TEXT NOT NULL,
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS stay_reviews_stay_id_idx ON stay_reviews(stay_id);
 
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
