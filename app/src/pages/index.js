@@ -7,25 +7,28 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import {
   Alert,
   Box,
-  Card,
-  CardContent,
-  CardMedia,
   Chip,
   Container,
-  Divider,
   FormControl,
+  InputAdornment,
   InputLabel,
   MenuItem,
   Paper,
   Select,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
+import AppsRoundedIcon from '@mui/icons-material/AppsRounded';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import TerrainRoundedIcon from '@mui/icons-material/TerrainRounded';
 import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
+import { gradients, themeColors } from '../lib/theme';
 
 const DURATION_FILTERS = [
   { value: 'all', label: 'Any Duration' },
@@ -44,12 +47,138 @@ const ALTITUDE_FILTERS = [
 
 const NEARBY_STAY_THRESHOLD_KM = 35;
 
+const TREK_TYPE_FILTERS = [
+  { label: 'All Treks', value: 'all', icon: AppsRoundedIcon },
+  { label: 'Featured', value: 'featured', icon: StarRoundedIcon },
+  { label: 'High Altitude', value: 'high-altitude', icon: TerrainRoundedIcon },
+];
+
 function normalizeDifficulty(level) {
   return (level || '').trim().toLowerCase();
 }
 
 function maxAltitude(trek) {
   return Math.max(trek.elevationMaxM || 0, trek.elevationMinM || 0);
+}
+
+function TrekCard({ trek, isSaved, wishlistCount, onToggleWishlist }) {
+  return (
+    <Box
+      sx={(theme) => ({
+        borderRadius: 4,
+        p: 1.2,
+        border: `1px solid ${theme.palette.divider}`,
+        background: theme.palette.background.paper,
+      })}
+    >
+      <Box
+        component={Link}
+        href={`/treks/${trek.slug}`}
+        sx={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+      >
+        <Box
+          sx={{
+            position: 'relative',
+            paddingTop: '66.67%',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            mb: 1.5,
+            '& img': { transition: 'transform 0.35s ease' },
+            '&:hover img': { transform: 'scale(1.04)' },
+          }}
+        >
+          <Box
+            component="img"
+            src={getTrekImage(trek.name)}
+            alt={`${trek.name} route preview`}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+            }}
+          />
+
+          {trek.isFeatured && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                px: 1.25,
+                py: 0.5,
+                borderRadius: 999,
+                bgcolor: themeColors.goldSun,
+              }}
+            >
+              <Typography variant="caption" sx={{ color: themeColors.ink, fontWeight: 700, lineHeight: 1 }}>
+                Featured
+              </Typography>
+            </Box>
+          )}
+
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              px: 1.25,
+              py: 0.5,
+              borderRadius: 999,
+              bgcolor: 'rgba(15,43,45,0.78)',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+              {trek.durationDays} days
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box sx={{ px: 0.5 }}>
+        <Link href={`/treks/${trek.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              mb: 0.8,
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            {trek.name}
+          </Typography>
+        </Link>
+
+        <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
+          <Chip label={trek.level} size="small" color="secondary" />
+          <Chip label={trek.region || 'Other'} size="small" variant="outlined" />
+          <Chip label={`${trek.nearbyStaysCount || 0} nearby stays`} size="small" variant="outlined" />
+        </Stack>
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+            ❤️ {Number(wishlistCount || 0)} saved
+          </Typography>
+          <AppButton
+            variant={isSaved ? 'contained' : 'outlined'}
+            size="small"
+            startIcon={isSaved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+            onClick={() => onToggleWishlist(trek.slug)}
+          >
+            {isSaved ? 'Saved' : 'Wishlist'}
+          </AppButton>
+        </Box>
+      </Box>
+    </Box>
+  );
 }
 
 export default function HomePage({ allTreks, featuredStays = [], dataSource, dataError }) {
@@ -67,6 +196,8 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
   const [selectedDuration, setSelectedDuration] = useState('all');
   const [selectedAltitude, setSelectedAltitude] = useState('all');
   const [showTrekFilters, setShowTrekFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTrekFilter, setActiveTrekFilter] = useState('all');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -131,11 +262,26 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
   }, [allTreks]);
 
   const filteredTreks = useMemo(() => {
+    const needle = searchQuery.trim().toLowerCase();
+
     return visibleTreks.filter((trek) => {
       const region = trek.region || 'Other';
       const difficulty = normalizeDifficulty(trek.level);
       const duration = Number(trek.durationDays) || 0;
       const altitude = maxAltitude(trek);
+      const searchable = `${trek.name || ''} ${trek.region || ''} ${trek.level || ''}`.toLowerCase();
+
+      if (needle && !searchable.includes(needle)) {
+        return false;
+      }
+
+      if (activeTrekFilter === 'featured' && !trek.isFeatured) {
+        return false;
+      }
+
+      if (activeTrekFilter === 'high-altitude' && altitude <= 5000) {
+        return false;
+      }
 
       if (selectedRegion !== 'all' && region !== selectedRegion) {
         return false;
@@ -179,7 +325,23 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
 
       return true;
     });
-  }, [visibleTreks, selectedRegion, selectedDifficulty, selectedDuration, selectedAltitude]);
+  }, [
+    visibleTreks,
+    selectedRegion,
+    selectedDifficulty,
+    selectedDuration,
+    selectedAltitude,
+    searchQuery,
+    activeTrekFilter,
+  ]);
+
+  const isFiltering =
+    searchQuery.trim() !== '' ||
+    activeTrekFilter !== 'all' ||
+    selectedRegion !== 'all' ||
+    selectedDifficulty !== 'all' ||
+    selectedDuration !== 'all' ||
+    selectedAltitude !== 'all';
 
   const treksByRegion = useMemo(() => {
     const map = new Map();
@@ -207,6 +369,91 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
       </Head>
 
       <SiteHeader />
+
+      <Box
+        sx={(theme) => ({
+          position: 'sticky',
+          top: 64,
+          zIndex: 1000,
+          bgcolor: theme.palette.background.default,
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          px: { xs: 2, md: 4 },
+          pt: 1.5,
+          pb: 0,
+        })}
+      >
+        <Box sx={{ maxWidth: 560, mx: 'auto', mb: 1.5 }}>
+          <TextField
+            fullWidth
+            placeholder="Search treks by name, region, or difficulty..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+              sx: { borderRadius: 999, bgcolor: 'background.paper', px: 1 },
+            }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 0,
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+            justifyContent: { sm: 'center' },
+          }}
+        >
+          {TREK_TYPE_FILTERS.map((filter) => {
+            const Icon = filter.icon;
+            const isActive = activeTrekFilter === filter.value;
+            return (
+              <Box
+                key={filter.value}
+                onClick={() => setActiveTrekFilter(filter.value)}
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 3,
+                  pb: 1.25,
+                  pt: 0.5,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  color: isActive ? 'text.primary' : 'text.secondary',
+                  flexShrink: 0,
+                  transition: 'color 0.15s',
+                  '&:hover': { color: 'text.primary' },
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: isActive ? '100%' : 0,
+                    height: 2,
+                    bgcolor: 'text.primary',
+                    borderRadius: 1,
+                    transition: 'width 0.2s ease',
+                  },
+                }}
+              >
+                <Icon sx={{ fontSize: 24 }} />
+                <Typography variant="caption" fontWeight={isActive ? 700 : 400} sx={{ lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  {filter.label}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
 
       <Box
         sx={(theme) => ({
@@ -240,58 +487,37 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
             </Alert>
           )}
 
-          <Paper
-            sx={(theme) => ({
-              position: 'relative',
-              overflow: 'hidden',
-              p: { xs: 3, md: 5 },
-              mb: 4,
-              background:
-                theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.95) 100%)'
-                  : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.98) 100%)',
-              boxShadow: '0 22px 44px rgba(15, 23, 42, 0.28)',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                right: { xs: -18, md: -12 },
-                bottom: { xs: -12, md: -16 },
-                width: { xs: '58%', sm: '46%', md: 360 },
-                height: { xs: 90, sm: 110, md: 140 },
-                backgroundImage: 'url(/brand/banner-mountains.svg)',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'bottom right',
-                backgroundSize: 'contain',
-                opacity: theme.palette.mode === 'dark' ? 0.2 : 0.16,
-                pointerEvents: 'none',
-              },
-            })}
-          >
-            <Typography variant="overline" color="primary" sx={{ letterSpacing: 1 }}>
-              Trek Planning in Nepal
-            </Typography>
-            <Typography
-              variant="h3"
-              sx={(theme) => ({
-                mt: 1,
-                mb: 2,
-                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-              })}
+          {!isFiltering && (
+            <Box
+              sx={{
+                background: gradients.landing,
+                py: { xs: 5, md: 8 },
+                textAlign: 'center',
+                borderRadius: 4,
+                px: 2,
+                mb: 5,
+              }}
             >
-              Plan your Himalayan trek with confidence
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 760 }}>
-              Discover routes by region, shortlist your favorites, and open complete trek pages with route maps and nearby stays. Built for international travelers preparing for Nepal.
-            </Typography>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <AppButton href="#treks" variant="contained" size="large">
-                Explore Treks
-              </AppButton>
-              <AppButton component={Link} href="/stays" variant="outlined" size="large">
-                Browse Stays
-              </AppButton>
-            </Stack>
-          </Paper>
+              <Typography
+                variant="h3"
+                fontWeight={900}
+                sx={{ mb: 1, color: themeColors.snow, fontSize: { xs: '2rem', md: '2.8rem' } }}
+              >
+                Plan your Himalayan trek with confidence
+              </Typography>
+              <Typography variant="h6" sx={{ color: 'rgba(248, 244, 235, 0.82)', maxWidth: 760, mx: 'auto' }}>
+                Discover routes by region, shortlist favorites, and open complete trek pages with route maps and nearby stays.
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2.5, justifyContent: 'center' }}>
+                <AppButton href="#treks" variant="contained" size="large">
+                  Explore Treks
+                </AppButton>
+                <AppButton component={Link} href="/stays" variant="outlined" size="large">
+                  Browse Stays
+                </AppButton>
+              </Stack>
+            </Box>
+          )}
 
           {/* Featured Stays Section - Airbnb Style */}
           {featuredStays && featuredStays.length > 0 && (
@@ -480,17 +706,11 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
           )}
 
           <Box id="treks" sx={{ mb: 4 }}>
-            <Typography
-              variant="h4"
-              sx={(theme) => ({
-                mb: 1,
-                color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-              })}
-            >
-              Explore
+            <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>
+              Explore Treks
             </Typography>
-            <Typography color="text.secondary" sx={{ mb: 2 }}>
-              Click any trek image to open full route details, map, and nearby stay options.
+            <Typography color="text.secondary" sx={{ mb: 2.3 }}>
+              Click any trek image to open route details, map, and nearby stay options.
             </Typography>
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
@@ -597,6 +817,8 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                     variant="outlined"
                     size="small"
                     onClick={() => {
+                      setSearchQuery('');
+                      setActiveTrekFilter('all');
                       setSelectedRegion('all');
                       setSelectedDifficulty('all');
                       setSelectedDuration('all');
@@ -624,7 +846,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                 <Box
                   sx={{
                     display: 'grid',
-                    gap: 2,
+                    gap: { xs: 3, md: 4 },
                     gridTemplateColumns: {
                       xs: '1fr',
                       sm: 'repeat(2, minmax(0, 1fr))',
@@ -632,68 +854,15 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                     },
                   }}
                 >
-                  {treks.map((trek) => {
-                    const isSaved = wishlistSet.has(trek.slug);
-
-                    return (
-                      <Card
-                        key={trek.slug}
-                        sx={(theme) => ({
-                          background:
-                            theme.palette.mode === 'dark'
-                              ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                              : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
-                          color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-                          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                          '&:hover': {
-                            transform: 'translateY(-3px)',
-                            boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
-                          },
-                        })}
-                      >
-                        <Link href={`/treks/${trek.slug}`}>
-                          <CardMedia
-                            component="img"
-                            height="220"
-                            image={getTrekImage(trek.name)}
-                            alt={`${trek.name} route preview`}
-                            sx={{ objectFit: 'cover', objectPosition: 'center', cursor: 'pointer' }}
-                          />
-                        </Link>
-                        <CardContent>
-                          <Link href={`/treks/${trek.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <Typography variant="h6" sx={{ mb: 1, color: 'inherit', '&:hover': { textDecoration: 'underline' } }}>
-                              {trek.name}
-                            </Typography>
-                          </Link>
-                          <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
-                            <Chip label={trek.level} size="small" color="secondary" />
-                            <Chip label={`${trek.durationDays} days`} size="small" variant="outlined" />
-                            <Chip
-                              label={`${trek.nearbyStaysCount || 0} nearby stays`}
-                              size="small"
-                              variant="outlined"
-                            />
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, color: 'text.secondary' }}
-                            >
-                              ❤️ {Number(wishlistCountsBySlug[trek.slug] ?? trek.wishlistCount ?? 0)}
-                            </Typography>
-                          </Stack>
-                          <AppButton
-                            variant={isSaved ? 'contained' : 'outlined'}
-                            size="small"
-                            startIcon={isSaved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                            onClick={() => toggleWishlist(trek.slug)}
-                          >
-                            {isSaved ? 'Saved' : 'Wishlist'}
-                          </AppButton>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                  {treks.map((trek) => (
+                    <TrekCard
+                      key={trek.slug}
+                      trek={trek}
+                      isSaved={wishlistSet.has(trek.slug)}
+                      wishlistCount={wishlistCountsBySlug[trek.slug] ?? trek.wishlistCount ?? 0}
+                      onToggleWishlist={toggleWishlist}
+                    />
+                  ))}
                 </Box>
               </Box>
             ))}
