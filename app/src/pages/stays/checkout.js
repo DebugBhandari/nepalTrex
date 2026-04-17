@@ -19,9 +19,9 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import AppButton from '../components/AppButton';
-import SiteHeader from '../components/SiteHeader';
-import { useCart } from '../hooks/useCart';
+import AppButton from '../../components/AppButton';
+import SiteHeader from '../../components/SiteHeader';
+import { useCart } from '../../hooks/useCart';
 
 export default function CheckoutPage() {
   const router = useRouter();
