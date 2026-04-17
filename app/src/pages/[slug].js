@@ -524,7 +524,6 @@ function StayDetailView({ stay }) {
                   >
                     Proceed to Checkout{cartItems.length > 0 ? ` (${cartItems.length} items)` : ''}
                   </AppButton>
-                  </AppButton>
                 </Stack>
               </CardContent>
             </Card>
