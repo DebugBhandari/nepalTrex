@@ -6,6 +6,7 @@
     "dev": "nx dev @org/web",
     "build": "nx build @org/web",
     "start": "nx start @org/web",
+    "seed:demo:stays": "node scripts/seed-demo-stays.mjs",
     "migrate:images:minio": "node scripts/migrate-public-images-to-minio.mjs"
   },
   "private": true,

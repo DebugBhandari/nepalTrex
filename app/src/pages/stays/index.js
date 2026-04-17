@@ -19,8 +19,9 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { query } from '../../lib/db';
 import SiteHeader from '../../components/SiteHeader';
+import { gradients, themeColors } from '../../lib/theme';
 
-const DEFAULT_STAY_IMAGE = 'https://placehold.co/800x600?text=NepalTrex+Stay';
+const DEFAULT_STAY_IMAGE = '/stays/lodge-exterior.jpg';
 
 const TYPE_FILTERS = [
   { label: 'All', value: null, icon: AppsRoundedIcon },
@@ -68,14 +69,14 @@ function StayCard({ stay }) {
               px: 1.25,
               py: 0.5,
               borderRadius: 999,
-              bgcolor: '#dc2626',
+              bgcolor: themeColors.goldSun,
               display: 'flex',
               alignItems: 'center',
               gap: 0.4,
             }}
           >
-            <LocalOfferRoundedIcon sx={{ fontSize: 12, color: '#fff' }} />
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+            <LocalOfferRoundedIcon sx={{ fontSize: 12, color: themeColors.ink }} />
+            <Typography variant="caption" sx={{ color: themeColors.ink, fontWeight: 800, lineHeight: 1 }}>
               -{stay.discountPercent}%
             </Typography>
           </Box>
@@ -107,8 +108,9 @@ function StayCard({ stay }) {
             px: 1.25,
             py: 0.5,
             borderRadius: 999,
-            bgcolor: 'rgba(0,0,0,0.52)',
+            bgcolor: 'rgba(15,43,45,0.78)',
             backdropFilter: 'blur(4px)',
+            border: `1px solid rgba(240, 180, 41, 0.28)`,
             display: 'flex',
             alignItems: 'center',
             gap: 0.5,
@@ -142,7 +144,7 @@ function StayCard({ stay }) {
           </Typography>
           {stay.avgRating && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
-              <StarRoundedIcon sx={{ fontSize: 15, color: '#f59e0b' }} />
+              <StarRoundedIcon sx={{ fontSize: 15, color: themeColors.goldSun }} />
               <Typography variant="body2" fontWeight={700}>{stay.avgRating}</Typography>
               <Typography variant="caption" color="text.secondary">({stay.reviewCount})</Typography>
             </Box>
@@ -385,19 +387,17 @@ export default function StaysPage({ stays }) {
 
       {!isFiltering && (
         <Box
-          sx={(theme) => ({
-            background: theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)'
-              : 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)',
+          sx={() => ({
+            background: gradients.landing,
             py: { xs: 5, md: 8 },
             textAlign: 'center',
           })}
         >
           <Container maxWidth="md">
-            <Typography variant="h3" fontWeight={900} sx={{ mb: 1, fontSize: { xs: '2rem', md: '2.8rem' } }}>
+            <Typography variant="h3" fontWeight={900} sx={{ mb: 1, color: themeColors.snow, fontSize: { xs: '2rem', md: '2.8rem' } }}>
               Where to in Nepal?
             </Typography>
-            <Typography variant="h6" color="text.secondary">
+            <Typography variant="h6" sx={{ color: 'rgba(248, 244, 235, 0.82)' }}>
               {stays.length} unique stays — teahouses, heritage inns, jungle camps and city boutiques
             </Typography>
           </Container>
@@ -405,9 +405,9 @@ export default function StaysPage({ stays }) {
       )}
 
       {!isFiltering && deals.length > 0 && (
-        <Box sx={{ bgcolor: '#dc2626', py: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-          <LocalOfferRoundedIcon sx={{ fontSize: 16, color: '#fff' }} />
-          <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+        <Box sx={{ bgcolor: themeColors.midTeal, py: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+          <LocalOfferRoundedIcon sx={{ fontSize: 16, color: themeColors.goldSun }} />
+          <Typography variant="body2" sx={{ color: themeColors.snow, fontWeight: 600 }}>
             Limited-time deals — save up to {maxDiscount}% on selected stays
           </Typography>
         </Box>
@@ -418,7 +418,7 @@ export default function StaysPage({ stays }) {
           minHeight: '60vh',
           py: { xs: 3, md: 5 },
           background: theme.palette.mode === 'dark'
-            ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.12) 0%, transparent 38%), linear-gradient(160deg, #1f2937 0%, #1e293b 100%)'
+            ? 'radial-gradient(circle at 18% 12%, rgba(30,111,92,0.14) 0%, transparent 38%), linear-gradient(160deg, #0f2b2d 0%, #173b3f 100%)'
             : theme.palette.background.default,
         })}
       >
@@ -460,9 +460,9 @@ export default function StaysPage({ stays }) {
                 emoji="🏛️"
                 headline="Ancient Cities, Modern Spirit"
                 subline="Temples, courtyards, and heritage hotels in the heart of the Kathmandu Valley"
-                bgFrom="#7c2d12"
-                bgMid="#b91c1c"
-                bgTo="#c2410c"
+                bgFrom={themeColors.deepTeal}
+                bgMid={themeColors.midTeal}
+                bgTo={themeColors.moss}
               />
 
               <Box sx={{ mb: 5 }}>
@@ -491,7 +491,7 @@ export default function StaysPage({ stays }) {
                         border: `1px solid ${theme.palette.divider}`,
                         bgcolor: theme.palette.background.paper,
                         transition: 'transform 0.2s, box-shadow 0.2s',
-                        '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 12px 28px rgba(0,0,0,0.12)' },
+                        '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 12px 28px rgba(15, 43, 45, 0.14)' },
                       })}
                     >
                       <Typography sx={{ fontSize: 32, lineHeight: 1, mb: 0.8 }}>{dest.emoji}</Typography>
@@ -506,9 +506,10 @@ export default function StaysPage({ stays }) {
                 emoji="🏙️"
                 headline="City Stays & Heritage Inns"
                 subline="From Thamel's buzzing lanes to Bhaktapur's ancient squares — find your perfect city base"
-                bgFrom="#78350f"
-                bgMid="#b45309"
-                bgTo="#d97706"
+                bgFrom={themeColors.midTeal}
+                bgMid={themeColors.moss}
+                bgTo={themeColors.goldSun}
+                dark
               />
 
               <Section
@@ -523,9 +524,9 @@ export default function StaysPage({ stays }) {
                   emoji="⛰️"
                   headline="The Roof of the World"
                   subline="Sleep above the clouds on Nepal's legendary trekking routes"
-                  bgFrom="#1e3a5f"
-                  bgMid="#1e40af"
-                  bgTo="#0369a1"
+                  bgFrom={themeColors.deepTeal}
+                  bgMid={themeColors.moss}
+                  bgTo={themeColors.midTeal}
                 />
               )}
 
@@ -541,9 +542,9 @@ export default function StaysPage({ stays }) {
                   emoji="🌊"
                   headline="Lakeside Paradise"
                   subline="Phewa Lake reflections, Machhapuchhre silhouettes, and pure calm"
-                  bgFrom="#134e4a"
-                  bgMid="#0f766e"
-                  bgTo="#0891b2"
+                  bgFrom={themeColors.moss}
+                  bgMid={themeColors.midTeal}
+                  bgTo={themeColors.deepTeal}
                 />
               )}
 

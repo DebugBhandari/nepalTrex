@@ -717,4 +717,116 @@ FROM new_stay s, (VALUES
 -- Set new featured stays and special offers
 UPDATE stays SET is_featured = true WHERE slug IN ('lukla-adventure-hotel', 'ghorepani-poon-hill-inn', 'kyanjin-ri-lodge', 'lo-manthang-kingdom-lodge', 'kanchenjunga-sacred-peak-lodge');
 UPDATE stays SET discount_percent = 15 WHERE slug = 'lukla-adventure-hotel';
-UPDATE stays SET discount_percent = 12 WHERE slug = 'qhorepani-poon-hill-inn';
+UPDATE stays SET discount_percent = 12 WHERE slug = 'ghorepani-poon-hill-inn';
+
+-- Stay 25: Lobuche Glacier Rest
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude, is_featured, discount_percent)
+  SELECT u.id, 'Lobuche Glacier Rest', 'lobuche-glacier-rest', 'hotel', 'Lobuche, Solukhumbu',
+    'A high-altitude lodge at 4,940m with thick duvets, expedition briefings, and a front-row seat to Khumbu glacier light at sunrise.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Khumbu_Glacier.jpg/1280px-Khumbu_Glacier.jpg', 6100, '+977-9800000025', 27.9500, 86.8000, true, 10
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Glacier Edge Room', 'Insulated twin room with glacier-facing window and heated dining access.', 6100::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('food'::TEXT, 'Acclimatisation Broth', 'Light vegetable broth with herbs and garlic for altitude comfort.', 650::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 2),
+  ('food'::TEXT, 'Khumbu Energy Breakfast', 'Porridge, eggs, butter toast, and altitude tea before the EBC push.', 900::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 26: Gokyo Blue Lake Lodge
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude, is_featured, discount_percent)
+  SELECT u.id, 'Gokyo Blue Lake Lodge', 'gokyo-blue-lake-lodge', 'hotel', 'Gokyo, Solukhumbu',
+    'Boutique trekking lodge overlooking the turquoise Gokyo Lakes. Perfect for rest days, ridge ascents, and Renjo La transitions.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Gokyo_lake.jpg/1280px-Gokyo_lake.jpg', 5600, '+977-9800000026', 27.9600, 86.6900, true, 0
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Lake View Double', 'Private room with uninterrupted Gokyo lake views and extra-warm bedding.', 5600::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('food'::TEXT, 'Blue Lake Breakfast', 'Hot oats, local bread, fruit, and tea with lakefront sunrise seating.', 850::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 2),
+  ('food'::TEXT, 'Sherpa Momo Supper', 'Steamed momos and soup for a relaxed post-hike dinner.', 780::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 3)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 27: Chhomrong Hillside Homestay
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude, is_featured, discount_percent)
+  SELECT u.id, 'Chhomrong Hillside Homestay', 'chhomrong-hillside-homestay', 'homestay', 'Chhomrong, Kaski',
+    'A friendly Gurung family homestay above the stone staircases of Chhomrong, with sweeping Annapurna South views and a kitchen that never stops cooking.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Chhomrong.jpg/1280px-Chhomrong.jpg', 2600, '+977-9800000027', 28.4000, 83.8000, false, 6
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Stone Terrace Room', 'Simple village room with shared bath and valley terrace access.', 2600::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('food'::TEXT, 'Homestyle Dal Bhat', 'Refill-friendly dal bhat cooked the Chhomrong family way.', 650::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 2),
+  ('food'::TEXT, 'Trail Thermos Tea', 'Fresh ginger-lemon honey tea packed for the ABC climb.', 350::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 28: Lama Hotel Riverside Inn
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude, is_featured, discount_percent)
+  SELECT u.id, 'Lama Hotel Riverside Inn', 'lama-hotel-riverside-inn', 'homestay', 'Lama Hotel, Rasuwa',
+    'Forest-wrapped stopover on the Langtang trail with river sounds, hanging prayer flags, and a warm communal room for rainy trekking days.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Langtang_Valley.jpg/1280px-Langtang_Valley.jpg', 2400, '+977-9800000028', 28.2100, 85.4300, false, 0
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Riverside Trek Room', 'Cosy room with timber walls and access to hot bucket showers.', 2400::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('food'::TEXT, 'Forest Thukpa Bowl', 'Noodle soup with herbs, vegetables, and garlic after a damp trail day.', 520::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 2),
+  ('food'::TEXT, 'Morning Bread & Chiya', 'Fresh griddle bread, jam, and spiced milk tea before the valley climb.', 380::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 29: Namrung Horizon Lodge
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude, is_featured, discount_percent)
+  SELECT u.id, 'Namrung Horizon Lodge', 'namrung-horizon-lodge', 'hotel', 'Namrung, Gorkha',
+    'Stone-built mountain lodge on the Manaslu Circuit with pine views, yak-wool blankets, and an airy dining hall for acclimatisation stops.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Manaslu_%281%29.jpg/1280px-Manaslu_%281%29.jpg', 3700, '+977-9800000029', 28.5700, 85.0300, true, 8
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Pine Ridge Room', 'Twin room with warm quilts and ridge-facing window seats.', 3700::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('food'::TEXT, 'Circuit Set Meal', 'Soup, dal bhat, achar, and tea designed for a full trekking day.', 720::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 2),
+  ('food'::TEXT, 'Yak Cheese Toast', 'Toasted bread with local yak cheese and tomato chutney.', 480::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 3)
+) AS m(category, name, description, price, image_url, sort_order);
+
+-- Stay 30: Kagbeni Monastery Guesthouse
+WITH new_stay AS (
+  INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude, is_featured, discount_percent)
+  SELECT u.id, 'Kagbeni Monastery Guesthouse', 'kagbeni-monastery-guesthouse', 'homestay', 'Kagbeni, Mustang',
+    'Quiet guesthouse beside the old alleys of Kagbeni where trekkers pause before Upper Mustang. Expect whitewashed walls, monastery bells, and wide river valley views.',
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Kagbeni_Mustang_Nepal.jpg/1280px-Kagbeni_Mustang_Nepal.jpg', 2900, '+977-9800000030', 28.8300, 83.8000, false, 0
+  FROM users u WHERE u.username = 'admin'
+  RETURNING id
+)
+INSERT INTO menu_items (stay_id, category, name, description, price, image_url, available, sort_order)
+SELECT s.id, m.category, m.name, m.description, m.price, m.image_url, true, m.sort_order
+FROM new_stay s, (VALUES
+  ('room'::TEXT, 'Monastery Courtyard Room', 'Simple stone room with a quiet courtyard and warm layered bedding.', 2900::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Ghorepani_teahouse_room.jpg/1280px-Ghorepani_teahouse_room.jpg', 1),
+  ('food'::TEXT, 'Mustang Butter Tea Set', 'Butter tea, barley bread, and roasted potatoes for chilly evenings.', 540::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Dal_Bhat_Tarkari.jpg/1280px-Dal_Bhat_Tarkari.jpg', 2),
+  ('food'::TEXT, 'Kagbeni Momo Plate', 'Handmade momos with mountain herbs and tomato-sesame achar.', 620::NUMERIC, 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mokto_or_moktoo_02.jpg/1280px-Mokto_or_moktoo_02.jpg', 3)
+) AS m(category, name, description, price, image_url, sort_order);
+
+UPDATE stays SET is_featured = true WHERE slug IN ('gokyo-blue-lake-lodge', 'lobuche-glacier-rest', 'namrung-horizon-lodge');
+
+INSERT INTO stay_reviews (stay_id, reviewer_name, reviewer_initials, rating, comment) VALUES
+  ((SELECT id FROM stays WHERE slug = 'gokyo-blue-lake-lodge'), 'Elena Petrova', 'EP', 5, 'The blue lake outside the breakfast room looked unreal. One of the most memorable lodge views on our whole trek.'),
+  ((SELECT id FROM stays WHERE slug = 'lobuche-glacier-rest'), 'Samir Khan', 'SK', 4, 'A very solid final stop before base camp. Warmest blankets we found above Dingboche.'),
+  ((SELECT id FROM stays WHERE slug = 'chhomrong-hillside-homestay'), 'Lara Nguyen', 'LN', 5, 'The family dinner and terrace view made this feel like the real Annapurna experience.'),
+  ((SELECT id FROM stays WHERE slug = 'lama-hotel-riverside-inn'), 'Jonas Meyer', 'JM', 4, 'Fell asleep to the river and woke up to prayer flags moving in the mist. Exactly what I hoped for on Langtang.'),
+  ((SELECT id FROM stays WHERE slug = 'namrung-horizon-lodge'), 'Sita Bista', 'SB', 5, 'Clean rooms, great meals, and the staff knew every detail of the next section of the Manaslu Circuit.'),
+  ((SELECT id FROM stays WHERE slug = 'kagbeni-monastery-guesthouse'), 'Marta Silva', 'MS', 5, 'Quiet, atmospheric, and a perfect stop before heading deeper into Mustang. Loved the butter tea set.');
