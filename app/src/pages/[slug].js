@@ -3,6 +3,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 import {
   Alert,
   Avatar,
@@ -25,6 +26,7 @@ import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
+import { useCart } from '../hooks/useCart';
 
 const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
 
@@ -52,50 +54,16 @@ function StarRow({ rating, count }) {
 }
 
 function StayDetailView({ stay }) {
+  const router = useRouter();
   const { status, data: session } = useSession();
-  const [cartItems, setCartItems] = useState([]);
-  const [bookingStatus, setBookingStatus] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const { cart, addToCart, updateItemQuantity, removeFromCart } = useCart();
   const [loginPrompt, setLoginPrompt] = useState(false);
   const [ownerAlert, setOwnerAlert] = useState(false);
-  const [bookingForm, setBookingForm] = useState({
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    notes: '',
-  });
 
-  useEffect(() => {
-    if (status !== 'authenticated') return;
+  const stayCart = cart[stay.slug] || { items: [] };
+  const cartItems = stayCart.items;
 
-    let active = true;
-    fetch('/api/users/profile')
-      .then((response) => response.json())
-      .then((data) => {
-        if (!active) return;
-        const profile = data?.profile || {};
-        setBookingForm((prev) => ({
-          ...prev,
-          customerName: profile.name || prev.customerName,
-          customerEmail: profile.email || prev.customerEmail,
-        }));
-      })
-      .catch(() => {});
-
-    return () => {
-      active = false;
-    };
-  }, [status]);
-
-  const groupedMenu = useMemo(() => {
-    const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
-    return {
-      rooms: items.filter((item) => item.category === 'room' && item.available !== false),
-      foods: items.filter((item) => item.category === 'food' && item.available !== false),
-    };
-  }, [stay.menuItems]);
-
-  const addToCart = (item) => {
+  const handleAddToCart = (item) => {
     if (status !== 'authenticated') {
       setLoginPrompt(true);
       return;
@@ -104,40 +72,18 @@ function StayDetailView({ stay }) {
       setOwnerAlert(true);
       return;
     }
-    setCartItems((prev) => {
-      const idx = prev.findIndex((entry) => entry.menuItemName === item.name && entry.menuItemCategory === item.category);
-      if (idx === -1) {
-        return [
-          ...prev,
-          {
-            menuItemId: item.id || null,
-            menuItemName: item.name,
-            menuItemCategory: item.category,
-            unitPrice: Number(item.price),
-            quantity: 1,
-          },
-        ];
-      }
-
-      const next = [...prev];
-      next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
-      return next;
-    });
+    addToCart(stay, item);
   };
 
-  const updateCartQuantity = (index, quantity) => {
-    setCartItems((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], quantity: Math.max(1, Number(quantity || 1)) };
-      return next;
-    });
+  const handleUpdateQuantity = (index, quantity) => {
+    updateItemQuantity(stay.slug, index, quantity);
   };
 
-  const removeFromCart = (index) => {
-    setCartItems((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveFromCart = (index) => {
+    removeFromCart(stay.slug, index);
   };
 
-  const handleBook = async () => {
+  const handleCheckout = () => {
     if (status !== 'authenticated') {
       setLoginPrompt(true);
       return;
@@ -147,49 +93,20 @@ function StayDetailView({ stay }) {
       return;
     }
     if (cartItems.length === 0) return;
-
-    setSubmitting(true);
-    setBookingStatus('');
-
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stayId: stay.id,
-          items: cartItems,
-          customerName: bookingForm.customerName,
-          customerEmail: bookingForm.customerEmail,
-          customerPhone: bookingForm.customerPhone,
-          notes: bookingForm.notes,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to place booking');
-      }
-
-      setBookingStatus('Booking placed successfully. The host will contact you soon.');
-      setCartItems([]);
-      setBookingForm((prev) => ({
-        ...prev,
-        customerPhone: '',
-        notes: '',
-      }));
-    } catch (error) {
-      setBookingStatus(error.message || 'Failed to place booking');
-    } finally {
-      setSubmitting(false);
-    }
+    router.push('/stays/checkout');
   };
+
+  const groupedMenu = useMemo(() => {
+    const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
+    return {
+      rooms: items.filter((item) => item.category === 'room' && item.available !== false),
+      foods: items.filter((item) => item.category === 'food' && item.available !== false),
+    };
+  }, [stay.menuItems]);
 
   const finalPrice = stay.pricePerNight && stay.discountPercent > 0
     ? Math.round(stay.pricePerNight * (1 - stay.discountPercent / 100))
     : stay.pricePerNight;
-
-  const totalCartPrice = cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   const reviews = Array.isArray(stay.reviews) ? stay.reviews : [];
 
@@ -392,7 +309,7 @@ function StayDetailView({ stay }) {
                             <Typography variant="body1" fontWeight={700} color="primary.main">
                               NPR {Number(item.price).toLocaleString()}
                             </Typography>
-                            <AppButton variant="contained" size="small" onClick={() => addToCart(item)}>
+                            <AppButton variant="contained" size="small" onClick={() => handleAddToCart(item)}>
                               Add to order
                             </AppButton>
                           </Box>
@@ -435,7 +352,7 @@ function StayDetailView({ stay }) {
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.2 }}>{item.description}</Typography>
                           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Typography variant="body2" fontWeight={700}>NPR {Number(item.price).toLocaleString()}</Typography>
-                            <AppButton variant="outlined" size="small" onClick={() => addToCart(item)}>Add</AppButton>
+                            <AppButton variant="outlined" size="small" onClick={() => handleAddToCart(item)}>Add</AppButton>
                           </Box>
                         </CardContent>
                       </Card>
@@ -563,13 +480,12 @@ function StayDetailView({ stay }) {
                   </Alert>
                 )}
 
-                {bookingStatus && (
-                  <Alert sx={{ mb: 2 }} severity="info">{bookingStatus}</Alert>
-                )}
-
                 <Stack spacing={1.5}>
                   {cartItems.length > 0 && (
-                    <Stack spacing={1} sx={{ mb: 0.5 }}>
+                    <Stack spacing={1} sx={{ mb: 1.5 }}>
+                      <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+                        Items in your cart
+                      </Typography>
                       {cartItems.map((item, index) => (
                         <Paper key={`${item.menuItemCategory}-${item.menuItemName}-${index}`} variant="outlined" sx={{ p: 1.2 }}>
                           <Typography variant="subtitle2">{item.menuItemName}</Typography>
@@ -583,52 +499,31 @@ function StayDetailView({ stay }) {
                               size="small"
                               inputProps={{ min: 1 }}
                               value={item.quantity}
-                              onChange={(event) => updateCartQuantity(index, event.target.value)}
+                              onChange={(event) => handleUpdateQuantity(index, event.target.value)}
                               sx={{ width: 90 }}
                             />
-                            <AppButton size="small" variant="outlined" color="error" onClick={() => removeFromCart(index)}>
+                            <AppButton size="small" variant="outlined" color="error" onClick={() => handleRemoveFromCart(index)}>
                               Remove
                             </AppButton>
                           </Stack>
                         </Paper>
                       ))}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">Total</Typography>
+                        <Typography variant="body2" color="text.secondary">Subtotal for this stay</Typography>
                         <Typography variant="body1" fontWeight={700}>
-                          NPR {totalCartPrice.toLocaleString()}
+                          NPR {cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toLocaleString()}
                         </Typography>
                       </Box>
                     </Stack>
                   )}
-
-                  <TextField
-                    label="Your Name"
-                    value={bookingForm.customerName}
-                    onChange={(event) => setBookingForm((prev) => ({ ...prev, customerName: event.target.value }))}
-                  />
-                  <TextField
-                    label="Email (optional)"
-                    value={bookingForm.customerEmail}
-                    onChange={(event) => setBookingForm((prev) => ({ ...prev, customerEmail: event.target.value }))}
-                  />
-                  <TextField
-                    label="Phone"
-                    value={bookingForm.customerPhone}
-                    onChange={(event) => setBookingForm((prev) => ({ ...prev, customerPhone: event.target.value }))}
-                  />
-                  <TextField
-                    label="Notes (optional)"
-                    multiline
-                    minRows={3}
-                    value={bookingForm.notes}
-                    onChange={(event) => setBookingForm((prev) => ({ ...prev, notes: event.target.value }))}
-                  />
+                  
                   <AppButton
                     variant="contained"
-                    disabled={cartItems.length === 0 || !bookingForm.customerName || submitting}
-                    onClick={handleBook}
+                    disabled={cartItems.length === 0}
+                    onClick={handleCheckout}
                   >
-                    {submitting ? 'Submitting...' : `Confirm Booking${cartItems.length > 0 ? ' (' + cartItems.length + ')' : ''}`}
+                    Proceed to Checkout{cartItems.length > 0 ? ` (${cartItems.length} items)` : ''}
+                  </AppButton>
                   </AppButton>
                 </Stack>
               </CardContent>

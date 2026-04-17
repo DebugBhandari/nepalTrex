@@ -197,8 +197,17 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
 
       <SiteHeader />
 
-      <Box sx={(theme) => ({ minHeight: '100vh', py: 4, background: theme.palette.background.default })}>
-        <Container maxWidth="md">
+      <Box
+        sx={(theme) => ({
+          minHeight: '100vh',
+          py: 4,
+          background:
+            theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              : theme.palette.background.default,
+        })}
+      >
+        <Container maxWidth="lg">
           <Card sx={{ mb: 2 }}>
             <CardContent>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>

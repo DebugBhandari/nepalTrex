@@ -10,6 +10,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import {
   AppBar,
   Avatar,
@@ -27,6 +28,7 @@ import {
   Typography,
 } from '@mui/material';
 import AppButton from './AppButton';
+import { useCart } from '../hooks/useCart';
 import NepalTrexLogo from './NepalTrexLogo';
 
 function initialsFromName(value) {
@@ -50,6 +52,7 @@ function normalizeHandle(value) {
 export default function SiteHeader() {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { cart, isHydrated, getCartTotals } = useCart();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlistAnchor, setWishlistAnchor] = useState(null);
   const [ordersAnchor, setOrdersAnchor] = useState(null);
@@ -143,6 +146,21 @@ export default function SiteHeader() {
           <NepalTrexLogo width={120} />
         </Box>
         <Box sx={{ flexGrow: 1 }} />
+
+        {/* Cart */}
+        {isHydrated && (
+          <IconButton
+            color="inherit"
+            component={Link}
+            href="/stays/checkout"
+            aria-label="Open cart"
+            sx={{ mr: 0.5, width: 42, height: 42 }}
+          >
+            <Badge badgeContent={getCartTotals().totalItems} color="error" max={99}>
+              <ShoppingCartIcon sx={{ fontSize: 24 }} />
+            </Badge>
+          </IconButton>
+        )}
 
         {/* Wishlist */}
         <IconButton
