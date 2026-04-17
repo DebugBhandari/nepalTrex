@@ -52,7 +52,7 @@ function maxAltitude(trek) {
   return Math.max(trek.elevationMaxM || 0, trek.elevationMinM || 0);
 }
 
-export default function HomePage({ allTreks, dataSource, dataError }) {
+export default function HomePage({ allTreks, featuredStays = [], dataSource, dataError }) {
   const { data: session, status } = useSession();
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoginRequired, setWishlistLoginRequired] = useState(false);
@@ -292,6 +292,189 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
               </AppButton>
             </Stack>
           </Paper>
+
+          {/* Featured Stays Section - Airbnb Style */}
+          {featuredStays && featuredStays.length > 0 && (
+            <Box sx={{ mb: 6 }}>
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="h5"
+                  sx={(theme) => ({
+                    mb: 0.5,
+                    fontWeight: 800,
+                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                  })}
+                >
+                  ✨ Featured Stays
+                </Typography>
+                <Typography color="text.secondary">Hand-picked accommodations near your favorite treks</Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: { xs: 2, md: 3 },
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    lg: 'repeat(3, minmax(0, 1fr))',
+                  },
+                }}
+              >
+                {featuredStays.map((stay) => {
+                  const finalPrice = stay.discountPercent > 0
+                    ? Math.round(stay.pricePerNight * (1 - stay.discountPercent / 100))
+                    : stay.pricePerNight;
+
+                  return (
+                    <Box
+                      key={stay.id}
+                      component={Link}
+                      href={`/stays/${stay.slug}`}
+                      sx={{
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        display: 'block',
+                        transition: 'transform 0.2s ease',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                        },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          position: 'relative',
+                          paddingTop: '66.67%',
+                          borderRadius: '16px',
+                          overflow: 'hidden',
+                          mb: 1.5,
+                          backgroundColor: '#f0f0f0',
+                          '& img': { transition: 'transform 0.35s ease' },
+                          '&:hover img': { transform: 'scale(1.04)' },
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={stay.imageUrl || 'https://placehold.co/800x600?text=NepalTrex+Stay'}
+                          alt={stay.name}
+                          sx={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                          }}
+                        />
+
+                        {/* Badge */}
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            px: 1.25,
+                            py: 0.5,
+                            borderRadius: 999,
+                            bgcolor: 'rgba(0,0,0,0.52)',
+                            backdropFilter: 'blur(4px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: '#fff',
+                              fontWeight: 600,
+                              textTransform: 'capitalize',
+                              lineHeight: 1,
+                            }}
+                          >
+                            {stay.stayType}
+                          </Typography>
+                        </Box>
+
+                        {/* Discount Badge */}
+                        {stay.discountPercent > 0 && (
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 12,
+                              left: 12,
+                              px: 1.25,
+                              py: 0.5,
+                              borderRadius: 999,
+                              bgcolor: '#dc2626',
+                              display: 'flex',
+                              alignItems: 'center',
+                              fontWeight: 700,
+                            }}
+                          >
+                            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                              -{stay.discountPercent}%
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+
+                      {/* Stay Details */}
+                      <Box>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={700}
+                          sx={{
+                            lineHeight: 1.3,
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            mb: 0.5,
+                          }}
+                        >
+                          {stay.name}
+                        </Typography>
+
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
+                          {stay.location}
+                        </Typography>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {stay.avgRating > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                              <Typography variant="body2" fontWeight={700}>{stay.avgRating}</Typography>
+                              <Typography variant="caption" color="text.secondary">({stay.reviewCount})</Typography>
+                            </Box>
+                          )}
+
+                          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, ml: 'auto' }}>
+                            {stay.discountPercent > 0 && (
+                              <Typography
+                                variant="caption"
+                                sx={{ textDecoration: 'line-through', color: 'text.disabled' }}
+                              >
+                                NPR {stay.pricePerNight.toLocaleString()}
+                              </Typography>
+                            )}
+                            <Typography variant="body2" fontWeight={700}>
+                              NPR {finalPrice.toLocaleString()}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              <Box sx={{ textAlign: 'center', mt: 4 }}>
+                <AppButton component={Link} href="/stays" variant="outlined" size="large">
+                  Browse All Stays
+                </AppButton>
+              </Box>
+            </Box>
+          )}
 
           <Box id="treks" sx={{ mb: 4 }}>
             <Typography
@@ -615,6 +798,20 @@ export async function getServerSideProps() {
       }))
       .filter((stay) => Number.isFinite(stay.lat) && Number.isFinite(stay.lng));
 
+    const featuredStaysRows = await query(
+      `
+        SELECT id, name, slug, stay_type, location, description, image_url, price_per_night, is_featured, discount_percent,
+               COALESCE(ROUND(AVG(sr.rating)::numeric, 1), 0) as avg_rating,
+               COUNT(sr.id) as review_count
+        FROM stays s
+        LEFT JOIN stay_reviews sr ON s.id = sr.stay_id
+        WHERE s.is_featured = true
+        GROUP BY s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.price_per_night, s.is_featured, s.discount_percent
+        ORDER BY RANDOM()
+        LIMIT 6
+      `
+    );
+
     const allTreks = trekRows.rows.map((row) => ({
       routeWaypoints: parseRouteWaypoints(row.route_geojson),
       name: row.name,
@@ -649,9 +846,25 @@ export async function getServerSideProps() {
       };
     });
 
+    const featuredStays = featuredStaysRows.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      stayType: row.stay_type,
+      location: row.location,
+      description: row.description,
+      imageUrl: row.image_url,
+      pricePerNight: Number(row.price_per_night),
+      isFeatured: row.is_featured,
+      discountPercent: Number(row.discount_percent || 0),
+      avgRating: Number(row.avg_rating || 0),
+      reviewCount: Number(row.review_count || 0),
+    }));
+
     return {
       props: {
         allTreks,
+        featuredStays,
         dataSource: 'database',
         dataError: '',
       },
@@ -673,6 +886,7 @@ export async function getServerSideProps() {
     return {
       props: {
         allTreks: fallbackTreks,
+        featuredStays: [],
         dataSource: 'fallback',
         dataError: error?.message || 'Unknown database error',
       },
