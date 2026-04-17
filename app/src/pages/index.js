@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -53,11 +52,8 @@ function maxAltitude(trek) {
   return Math.max(trek.elevationMaxM || 0, trek.elevationMinM || 0);
 }
 
-function normalizeHandle(value) {
 export default function HomePage({ allTreks, dataSource, dataError }) {
-  const router = useRouter();
   const { data: session, status } = useSession();
-  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoginRequired, setWishlistLoginRequired] = useState(false);
   const [wishlistCountsBySlug, setWishlistCountsBySlug] = useState(() =>
@@ -84,13 +80,11 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
     }
   }, [status]);
 
-  useEffect(() => {
   const wishlistSet = useMemo(() => new Set(wishlist), [wishlist]);
 
   const toggleWishlist = (slug) => {
     if (status !== 'authenticated') {
       setWishlistLoginRequired(true);
-      setWishlistAnchor(null);
       return;
     }
 
@@ -212,7 +206,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
         <title>NepalTrex | Trek Wishlist & Planning</title>
       </Head>
 
-      <AppBar position="sticky" elevation={0} sx={{ backdropFilter: 'blur(8px)' }}>
       <SiteHeader />
 
       <Box
@@ -240,7 +233,6 @@ export default function HomePage({ allTreks, dataSource, dataError }) {
             </Alert>
           )}
 
-          {orderNotification && (
           {dataSource === 'fallback' && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               Showing fallback trek data because database routes could not be loaded.
