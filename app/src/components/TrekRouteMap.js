@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
 
@@ -83,6 +84,7 @@ function TrekRouteBounds({ routeGeojson }) {
 }
 
 export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredStayId = null }) {
+  const router = useRouter();
   const routeGeojson = useMemo(() => normalizeGeoJson(selectedTrek?.routeGeojson), [selectedTrek]);
   const namedWaypoints = useMemo(() => extractNamedWaypoints(selectedTrek?.routeGeojson), [selectedTrek]);
 
@@ -119,6 +121,13 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
             key={`stay-${stay.id}`}
             center={[Number(stay.latitude), Number(stay.longitude)]}
             radius={isHovered ? 11 : 7}
+            eventHandlers={{
+              click: () => {
+                if (stay.slug) {
+                  router.push(`/stays/${stay.slug}`);
+                }
+              },
+            }}
             pathOptions={{
               color: isHovered ? '#92400e' : '#1e40af',
               fillColor: isHovered ? '#f59e0b' : '#3b82f6',
@@ -132,6 +141,8 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
               <span style={{ fontSize: '0.75em', opacity: 0.8 }}>
                 {Number(stay.latitude).toFixed(5)}, {Number(stay.longitude).toFixed(5)}
               </span>
+              <br />
+              <span style={{ fontSize: '0.72em', opacity: 0.9 }}>Click to view stay</span>
             </Tooltip>
           </CircleMarker>
         );

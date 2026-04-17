@@ -879,7 +879,7 @@ export async function getServerSideProps(context) {
         s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url,
         s.contact_phone, s.owner_user_id, s.price_per_night, s.is_featured, s.discount_percent,
         COALESCE(
-          json_agg(
+          jsonb_agg(
             DISTINCT jsonb_build_object(
               'id', m.id, 'category', m.category, 'name', m.name, 'description', m.description,
               'price', m.price, 'imageUrl', m.image_url, 'available', m.available
@@ -888,7 +888,7 @@ export async function getServerSideProps(context) {
           '[]'::jsonb
         ) AS menu_items,
         COALESCE(
-          json_agg(
+          jsonb_agg(
             DISTINCT jsonb_build_object(
               'reviewerName', r.reviewer_name, 'reviewerInitials', r.reviewer_initials,
               'rating', r.rating, 'comment', r.comment

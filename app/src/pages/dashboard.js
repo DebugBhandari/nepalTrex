@@ -14,6 +14,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import {
   Alert,
   AppBar,
+  Autocomplete,
   Avatar,
   Badge,
   Box,
@@ -161,7 +162,7 @@ function fileToDataUrl(file) {
   });
 }
 
-export default function DashboardPage({ user, treks, stays = [] }) {
+export default function DashboardPage({ user, treks, stays = [], ownerCandidates = [] }) {
   const router = useRouter();
   const [items, setItems] = useState(() =>
     treks.map((t) => ({ ...t, waypoints: parseWaypointsFromGeojson(t.routeGeojson) }))
@@ -598,6 +599,7 @@ export default function DashboardPage({ user, treks, stays = [] }) {
           description: stay.description,
           imageUrl: stay.imageUrl,
           contactPhone: stay.contactPhone,
+          ownerUserId: stay.ownerUserId || null,
           latitude: stay.latitude !== '' ? Number(stay.latitude) : null,
           longitude: stay.longitude !== '' ? Number(stay.longitude) : null,
           menuItems: stay.menuItems,
@@ -622,6 +624,10 @@ export default function DashboardPage({ user, treks, stays = [] }) {
                 pricePerNight: payload.stay.price_per_night,
                 latitude: payload.stay.latitude || '',
                 longitude: payload.stay.longitude || '',
+                ownerEmail: payload.stay.owner_email || s.ownerEmail || 'N/A',
+                ownerUsername: payload.stay.owner_username || s.ownerUsername || '',
+                ownerDisplayName: payload.stay.owner_display_name || s.ownerDisplayName || '',
+                ownerUserId: payload.stay.owner_user_id || s.ownerUserId || '',
               }
             : s
         )
@@ -1183,6 +1189,7 @@ return (
                 {paginatedStays.map((stay) => {
                   const isEditing = Boolean(editingStayById[stay.id]);
                   const isSaving = Boolean(savingStayById[stay.id]);
+                  const selectedOwner = ownerCandidates.find((candidate) => candidate.id === stay.ownerUserId) || null;
                   const ownerHandle = normalizeHandle(
                     stay.ownerDisplayName || stay.ownerUsername || stay.ownerEmail?.split('@')[0] || 'user'
                   );
@@ -1281,6 +1288,37 @@ return (
                                   <MenuItem value="homestay">Homestay</MenuItem>
                                 </Select>
                               </FormControl>
+                              <Autocomplete
+                                fullWidth
+                                options={ownerCandidates}
+                                value={selectedOwner}
+                                onChange={(_, value) => handleStayFieldChange(stay.id, 'ownerUserId', value?.id || '')}
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                getOptionLabel={(option) => option.label || ''}
+                                filterOptions={(options, state) => {
+                                  const needle = state.inputValue.trim().toLowerCase();
+                                  if (!needle) return options;
+                                  return options.filter((option) =>
+                                    `${option.label} ${option.role}`.toLowerCase().includes(needle)
+                                  );
+                                }}
+                                disabled={isSaving}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="Search Owner"
+                                    helperText="Selecting a regular user auto-upgrades them to admin"
+                                  />
+                                )}
+                                renderOption={(props, option) => (
+                                  <Box component="li" {...props} sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, width: '100%' }}>
+                                    <Typography variant="body2" sx={{ flex: 1 }}>
+                                      {option.label}
+                                    </Typography>
+                                    <Chip size="small" label={option.role} />
+                                  </Box>
+                                )}
+                              />
                               <TextField
                                 label="Contact Phone"
                                 value={stay.contactPhone}
@@ -1692,6 +1730,7 @@ export async function getServerSideProps(context) {
   }));
 
   let stays = [];
+  let ownerCandidates = [];
   if (session.user?.role === 'superUser') {
     const stayRows = await query(
       `
@@ -1732,6 +1771,25 @@ export async function getServerSideProps(context) {
       ownerDisplayName: row.owner_display_name || '',
       ownerUserId: row.owner_user_id,
     }));
+
+    const ownerRows = await query(
+      `
+        SELECT id, email, username, display_name, role
+        FROM users
+        ORDER BY CASE WHEN role = 'superUser' THEN 0 WHEN role = 'admin' THEN 1 ELSE 2 END,
+                 COALESCE(display_name, username, email)
+      `
+    );
+
+    ownerCandidates = ownerRows.rows.map((row) => {
+      const primary = row.display_name || row.username || row.email || row.id;
+      const emailPart = row.email ? ` (${row.email})` : '';
+      return {
+        id: row.id,
+        label: `${primary}${emailPart}`,
+        role: row.role || 'user',
+      };
+    });
   }
 
   return {
@@ -1742,6 +1800,7 @@ export async function getServerSideProps(context) {
       },
       treks,
       stays,
+      ownerCandidates,
     },
   };
 }

@@ -456,15 +456,6 @@ export default function StaysPage({ stays }) {
                 viewAll={deals.length > 4}
               />
 
-              <HeroStrip
-                emoji="🏛️"
-                headline="Ancient Cities, Modern Spirit"
-                subline="Temples, courtyards, and heritage hotels in the heart of the Kathmandu Valley"
-                bgFrom={themeColors.deepTeal}
-                bgMid={themeColors.midTeal}
-                bgTo={themeColors.moss}
-              />
-
               <Box sx={{ mb: 5 }}>
                 <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>Explore by Destination</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
@@ -504,7 +495,7 @@ export default function StaysPage({ stays }) {
 
               <HeroStrip
                 emoji="🏙️"
-                headline="City Stays & Heritage Inns"
+                headline="Ancient Cities, Modern Spirit"
                 subline="From Thamel's buzzing lanes to Bhaktapur's ancient squares — find your perfect city base"
                 bgFrom={themeColors.midTeal}
                 bgMid={themeColors.moss}

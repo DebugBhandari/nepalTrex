@@ -88,7 +88,7 @@ export default async function handler(req, res) {
   }
 
   const stayId = req.query.id;
-  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone, latitude, longitude } = req.body || {};
+  const { name, slug, stayType, location, description, menuItems, imageUrl, contactPhone, latitude, longitude, ownerUserId } = req.body || {};
 
   if (!stayId) {
     return res.status(400).json({ error: 'Missing stay id' });
@@ -145,14 +145,45 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'You can only update your own stays' });
     }
 
+    let nextOwnerUserId = ownerId;
+    const requestedOwnerUserId = ownerUserId ? String(ownerUserId).trim() : '';
+
+    if (requestedOwnerUserId && requestedOwnerUserId !== ownerId) {
+      if (!isSuper) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Only superUser can change stay ownership' });
+      }
+
+      const ownerCandidate = await client.query(
+        `SELECT id, role FROM users WHERE id = $1 LIMIT 1`,
+        [requestedOwnerUserId]
+      );
+
+      if (ownerCandidate.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Selected owner user does not exist' });
+      }
+
+      // If a regular user is assigned as owner, promote them to admin.
+      if (ownerCandidate.rows[0].role === 'user') {
+        await client.query(
+          `UPDATE users SET role = 'admin', updated_at = NOW() WHERE id = $1`,
+          [requestedOwnerUserId]
+        );
+      }
+
+      nextOwnerUserId = ownerCandidate.rows[0].id;
+    }
+
     await client.query(
       `
         UPDATE stays
         SET
           name = $1, slug = $2, stay_type = $3, location = $4, description = $5,
           image_url = $6, price_per_night = $7, contact_phone = $8, latitude = $9, longitude = $10,
+          owner_user_id = $11,
           updated_at = NOW()
-        WHERE id = $11
+        WHERE id = $12
       `,
       [
         name.trim(),
@@ -165,6 +196,7 @@ export default async function handler(req, res) {
         contactPhone?.trim() || null,
         normalizedLatitude,
         normalizedLongitude,
+        nextOwnerUserId,
         stayId,
       ]
     );
@@ -189,11 +221,13 @@ export default async function handler(req, res) {
       `
         SELECT s.id, s.owner_user_id, s.name, s.slug, s.stay_type, s.location, s.description,
                s.image_url, s.price_per_night, s.contact_phone, s.latitude, s.longitude,
+               u.email AS owner_email, u.username AS owner_username, u.display_name AS owner_display_name,
                ${MENU_AGG}
         FROM stays s
+        LEFT JOIN users u ON u.id = s.owner_user_id
         LEFT JOIN menu_items m ON m.stay_id = s.id
         WHERE s.id = $1
-        GROUP BY s.id
+        GROUP BY s.id, u.email, u.username, u.display_name
       `,
       [stayId]
     );
