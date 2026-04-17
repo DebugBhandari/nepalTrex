@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
+import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
@@ -300,6 +301,7 @@ export default function SiteHeader() {
                 Home
               </MenuItem>
               <MenuItem component={Link} href="/stays" onClick={() => setUserMenuAnchor(null)}>
+                <HotelRoundedIcon fontSize="small" style={{ marginRight: 8 }} />
                 Stays
               </MenuItem>
               <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>

@@ -195,7 +195,7 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Ghandruk Homestay', 'ghandruk-homestay', 'homestay', 'Ghandruk, Kaski',
     'Warm local homestay nestled in the Gurung village of Ghandruk with stunning Annapurna panoramas, home-cooked Nepali meals, and authentic village cultural experiences.',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 2500, '+977-9800000001', 28.3735, 83.8082
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ghandruk_%286%29.JPG/1280px-Ghandruk_%286%29.JPG', 2500, '+977-9800000001', 28.3735, 83.8082
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
@@ -214,7 +214,7 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Namche Teahouse Hotel', 'namche-teahouse-hotel', 'hotel', 'Namche Bazaar, Solukhumbu',
     'Comfortable teahouse-style hotel in the heart of Namche Bazaar — the gateway to Everest. Enjoy panoramic Himalayan views, hot showers, and reliable WiFi after a day on the trail.',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 3500, '+977-9800000002', 27.8050, 86.7140
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Namche_bazzar.jpg/1280px-Namche_bazzar.jpg', 3500, '+977-9800000002', 27.8050, 86.7140
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
@@ -234,7 +234,7 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Pokhara Lakeside Inn', 'pokhara-lakeside-inn', 'hotel', 'Lakeside, Pokhara',
     'Charming boutique inn steps from Phewa Lake offering peaceful garden rooms, a rooftop breakfast terrace with Machhapuchhre views, and curated local dining.',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 4500, '+977-9800000003', 28.2096, 83.9556
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Phewa_Lake_of_Pokhara_city.jpg/1280px-Phewa_Lake_of_Pokhara_city.jpg', 4500, '+977-9800000003', 28.2096, 83.9556
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
@@ -253,7 +253,7 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Chitwan Jungle Camp', 'chitwan-jungle-camp', 'homestay', 'Sauraha, Chitwan',
     'Eco-friendly jungle camp on the edge of Chitwan National Park. Wake up to elephant calls, explore the park on foot or by canoe, and enjoy organic farm-to-table meals with your hosting Tharu family.',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 3200, '+977-9800000004', 27.5749, 84.5057
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Asian_Elephant_Safari_in_Chitwan_National_Park%2C_Chitwan%2C_Nepal_%28Indian_Rhinoceros_Unicornis%29_05.jpg/1280px-Asian_Elephant_Safari_in_Chitwan_National_Park%2C_Chitwan%2C_Nepal_%28Indian_Rhinoceros_Unicornis%29_05.jpg', 3200, '+977-9800000004', 27.5749, 84.5057
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
@@ -272,7 +272,7 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Bandipur Heritage Guesthouse', 'bandipur-heritage-guesthouse', 'hotel', 'Bandipur, Tanahun',
     'Restored Newari house with carved wooden windows, hilltop valley views, and easy walking access to Bandipur bazaar.',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 3800, '+977-9800000005', 27.9364, 84.4195
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Mountain_view_from_Bandipur%2C_Nepal.jpg/1280px-Mountain_view_from_Bandipur%2C_Nepal.jpg', 3800, '+977-9800000005', 27.9364, 84.4195
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
@@ -290,7 +290,7 @@ WITH new_stay AS (
   INSERT INTO stays (owner_user_id, name, slug, stay_type, location, description, image_url, price_per_night, contact_phone, latitude, longitude)
   SELECT u.id, 'Nagarkot Sunrise Lodge', 'nagarkot-sunrise-lodge', 'homestay', 'Nagarkot, Bhaktapur',
     'Quiet ridge-side stay known for Himalayan sunrise decks, pine-forest trails, and cozy evening fireplaces.',
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Teahouse_Himalaya.jpg/1280px-Teahouse_Himalaya.jpg', 2900, '+977-9800000006', 27.7120, 85.5208
+    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/The_Nagarkot_Photography_Experiences.JPG/1280px-The_Nagarkot_Photography_Experiences.JPG', 2900, '+977-9800000006', 27.7120, 85.5208
   FROM users u WHERE u.username = 'admin'
   RETURNING id
 )
