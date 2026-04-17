@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   try {
     const result = await query(
       `
-        SELECT id, username, email, display_name, role, provider, profile_image_url, created_at
+        SELECT id, username, email, display_name, role, is_banned, provider, profile_image_url, created_at
         FROM users
         WHERE (
           $1 = ''
@@ -42,6 +42,7 @@ export default async function handler(req, res) {
       email: row.email,
       displayName: row.display_name,
       role: row.role || 'user',
+      isBanned: Boolean(row.is_banned),
       provider: row.provider,
       profileImageUrl: row.profile_image_url || '',
       createdAt: row.created_at,

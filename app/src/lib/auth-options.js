@@ -21,7 +21,7 @@ const providers = [
 
       const result = await query(
         `
-          SELECT id, username, email, display_name, password_hash, role
+          SELECT id, username, email, display_name, password_hash, role, is_banned
           FROM users
           WHERE (username = $1 OR LOWER(email) = LOWER($1)) AND provider = 'credentials'
           LIMIT 1
@@ -34,6 +34,10 @@ const providers = [
       }
 
       const userRow = result.rows[0];
+
+      if (userRow.is_banned) {
+        return null;
+      }
 
       const isPasswordValid = userRow.password_hash
         ? await compare(credentials.password, userRow.password_hash)
@@ -48,6 +52,7 @@ const providers = [
         name: userRow.display_name || userRow.username,
         email: userRow.email,
         role: userRow.role || 'user',
+        isBanned: Boolean(userRow.is_banned),
       };
     },
   }),
@@ -73,8 +78,27 @@ export const authOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
+      const normalizedEmail = (user?.email || '').trim().toLowerCase();
+
+      if (normalizedEmail) {
+        const existingUser = await query(
+          `
+            SELECT id, is_banned
+            FROM users
+            WHERE LOWER(email) = $1
+               OR (provider = $2 AND provider_account_id = $3)
+            ORDER BY created_at DESC
+            LIMIT 1
+          `,
+          [normalizedEmail, account?.provider || '', account?.providerAccountId || '']
+        );
+
+        if (existingUser.rows[0]?.is_banned) {
+          return false;
+        }
+      }
+
       if (account?.provider === 'google') {
-        const normalizedEmail = (user.email || '').trim().toLowerCase();
         const role = normalizedEmail === SUPERUSER_EMAIL ? 'superUser' : 'user';
 
         await query(
@@ -120,10 +144,11 @@ export const authOptions = {
       if (user) {
         token.userId = user.id;
         token.role = user.role || token.role || 'user';
+        token.isBanned = Boolean(user.isBanned);
       } else if (token?.email) {
         const result = await query(
           `
-            SELECT id, role
+            SELECT id, role, is_banned
             FROM users
             WHERE email = $1
             ORDER BY created_at DESC
@@ -139,6 +164,8 @@ export const authOptions = {
         if (result.rows[0]?.role) {
           token.role = result.rows[0].role;
         }
+
+        token.isBanned = Boolean(result.rows[0]?.is_banned);
       }
       return token;
     },
@@ -146,6 +173,7 @@ export const authOptions = {
       if (token?.userId && session?.user) {
         session.user.id = token.userId;
         session.user.role = token.role || 'user';
+        session.user.isBanned = Boolean(token.isBanned);
 
         const result = await query(
           `

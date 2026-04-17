@@ -186,7 +186,10 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
   const [userSearch, setUserSearch] = useState('');
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersMessage, setUsersMessage] = useState('');
+  const [usersMessageSeverity, setUsersMessageSeverity] = useState('success');
   const [updatingRoleById, setUpdatingRoleById] = useState({});
+  const [updatingBanById, setUpdatingBanById] = useState({});
+  const [deletingUserById, setDeletingUserById] = useState({});
   const [draftRolesById, setDraftRolesById] = useState({});
   const [userPage, setUserPage] = useState(1);
   const [userRoleFilter, setUserRoleFilter] = useState('all');
@@ -357,6 +360,7 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
 
       setUsersLoading(true);
       setUsersMessage('');
+      setUsersMessageSeverity('success');
 
       try {
         const params = new URLSearchParams();
@@ -383,9 +387,11 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
 
         if (search.trim()) {
           setUsersMessage(`Found ${fetchedUsers.length} matching users.`);
+          setUsersMessageSeverity('success');
         }
       } catch (error) {
         setUsersMessage(error.message || 'Failed to fetch users');
+        setUsersMessageSeverity('error');
       } finally {
         setUsersLoading(false);
       }
@@ -514,6 +520,7 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
 
     setUpdatingRoleById((prev) => ({ ...prev, [targetUserId]: true }));
     setUsersMessage('');
+    setUsersMessageSeverity('success');
 
     try {
       const response = await fetch(`/api/users/${targetUserId}/role`, {
@@ -535,10 +542,86 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
       );
       setDraftRolesById((prev) => ({ ...prev, [targetUserId]: payload.user.role }));
       setUsersMessage(`Updated role for ${payload.user.email || payload.user.username} to ${payload.user.role}.`);
+      setUsersMessageSeverity('success');
     } catch (error) {
       setUsersMessage(error.message || 'Failed to update user role');
+      setUsersMessageSeverity('error');
     } finally {
       setUpdatingRoleById((prev) => ({ ...prev, [targetUserId]: false }));
+    }
+  };
+
+  const toggleUserBan = async (targetUserId, nextIsBanned) => {
+    setUpdatingBanById((prev) => ({ ...prev, [targetUserId]: true }));
+    setUsersMessage('');
+
+    try {
+      const response = await fetch(`/api/users/${targetUserId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isBanned: nextIsBanned }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to update user status');
+      }
+
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === targetUserId ? { ...item, isBanned: Boolean(payload.user.isBanned) } : item
+        )
+      );
+      setUsersMessage(
+        `${payload.user.email || payload.user.username} ${payload.user.isBanned ? 'was banned' : 'was unbanned'}.`
+      );
+      setUsersMessageSeverity('success');
+    } catch (error) {
+      setUsersMessage(error.message || 'Failed to update ban status');
+      setUsersMessageSeverity('error');
+    } finally {
+      setUpdatingBanById((prev) => ({ ...prev, [targetUserId]: false }));
+    }
+  };
+
+  const deleteUser = async (targetUserId, label) => {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    setDeletingUserById((prev) => ({ ...prev, [targetUserId]: true }));
+    setUsersMessage('');
+
+    try {
+      const response = await fetch(`/api/users/${targetUserId}`, {
+        method: 'DELETE',
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to delete user');
+      }
+
+      setUsers((prev) => prev.filter((item) => item.id !== targetUserId));
+      setDraftRolesById((prev) => {
+        const next = { ...prev };
+        delete next[targetUserId];
+        return next;
+      });
+      setUsersMessage(`Deleted ${payload.user.email || payload.user.username || label}.`);
+      setUsersMessageSeverity('success');
+    } catch (error) {
+      setUsersMessage(error.message || 'Failed to delete user');
+      setUsersMessageSeverity('error');
+    } finally {
+      setDeletingUserById((prev) => ({ ...prev, [targetUserId]: false }));
     }
   };
 
@@ -1544,7 +1627,7 @@ return (
               )}
 
               {usersMessage && (
-                <Alert severity="success" sx={{ mb: 2 }}>
+                <Alert severity={usersMessageSeverity} sx={{ mb: 2 }}>
                   {usersMessage}
                 </Alert>
               )}
@@ -1552,10 +1635,13 @@ return (
               <Stack spacing={1.5}>
                 {paginatedUsers.map((entry) => {
                   const isSaving = Boolean(updatingRoleById[entry.id]);
+                  const isUpdatingBan = Boolean(updatingBanById[entry.id]);
+                  const isDeleting = Boolean(deletingUserById[entry.id]);
                   const currentDraft = draftRolesById[entry.id] || entry.role || 'user';
                   const isSelf = entry.id === user.id;
                   const isAdminLike = ['admin', 'superUser'].includes(entry.role || '');
                   const ownedStays = stayItems.filter((stay) => String(stay.ownerUserId) === String(entry.id));
+                  const displayLabel = entry.displayName || entry.username || entry.email || 'User';
 
                   return (
                     <Card
@@ -1584,12 +1670,20 @@ return (
                             </Avatar>
                             <Box sx={{ flex: 1 }}>
                               <Typography variant="subtitle1">
-                                {entry.displayName || entry.username || 'N/A'}
+                                {displayLabel}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {entry.email || 'N/A'}
                               </Typography>
-                              <Chip label={`Current role: ${entry.role || 'user'}`} size="small" sx={{ mt: 1 }} />
+                              <Stack direction="row" spacing={0.8} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                                <Chip label={`Current role: ${entry.role || 'user'}`} size="small" />
+                                <Chip
+                                  label={entry.isBanned ? 'Banned' : 'Active'}
+                                  size="small"
+                                  color={entry.isBanned ? 'error' : 'success'}
+                                  variant={entry.isBanned ? 'filled' : 'outlined'}
+                                />
+                              </Stack>
                               {isAdminLike && (
                                 <Box sx={{ mt: 1.2 }}>
                                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.6 }}>
@@ -1637,7 +1731,7 @@ return (
                                 onChange={(event) =>
                                   setDraftRolesById((prev) => ({ ...prev, [entry.id]: event.target.value }))
                                 }
-                                disabled={isSaving || isSelf}
+                                disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               >
                                 {ROLE_OPTIONS.map((roleOption) => (
                                   <MenuItem key={roleOption} value={roleOption}>
@@ -1648,7 +1742,7 @@ return (
                             </FormControl>
                             <AppButton
                               variant="contained"
-                              disabled={isSaving || isSelf || currentDraft === entry.role}
+                              disabled={isSaving || isUpdatingBan || isDeleting || isSelf || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
                               sx={{
                                 height: 36,
@@ -1668,6 +1762,34 @@ return (
                               }}
                             >
                               {isSaving ? 'Saving...' : 'Update Role'}
+                            </AppButton>
+                            <AppButton
+                              variant="outlined"
+                              disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
+                              onClick={() => toggleUserBan(entry.id, !entry.isBanned)}
+                              sx={{
+                                height: 36,
+                                minHeight: 36,
+                                px: 1.8,
+                                color: entry.isBanned ? '#0f766e' : '#b45309',
+                                borderColor: entry.isBanned ? 'rgba(15, 118, 110, 0.45)' : 'rgba(180, 83, 9, 0.45)',
+                              }}
+                            >
+                              {isUpdatingBan ? 'Saving...' : entry.isBanned ? 'Unban' : 'Ban'}
+                            </AppButton>
+                            <AppButton
+                              variant="outlined"
+                              disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
+                              onClick={() => deleteUser(entry.id, displayLabel)}
+                              sx={{
+                                height: 36,
+                                minHeight: 36,
+                                px: 1.8,
+                                color: '#b91c1c',
+                                borderColor: 'rgba(185, 28, 28, 0.38)',
+                              }}
+                            >
+                              {isDeleting ? 'Deleting...' : 'Delete'}
                             </AppButton>
                           </Stack>
                         </Stack>

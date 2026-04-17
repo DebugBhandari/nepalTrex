@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name TEXT,
   profile_image_url TEXT,
   role TEXT NOT NULL DEFAULT 'user',
+  is_banned BOOLEAN NOT NULL DEFAULT false,
   password_hash TEXT,
   provider TEXT NOT NULL DEFAULT 'credentials',
   provider_account_id TEXT,
@@ -31,6 +32,9 @@ ALTER TABLE users
 
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS profile_image_url TEXT;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT false;
 
 UPDATE users
 SET role = 'user', updated_at = NOW()
