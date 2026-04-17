@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Alert, Box, Card, CardContent, Container, LinearProgress, Stack, TextField, Typography } from '@mui/material';
 import AppButton from '../../components/AppButton';
+import { getEmailValidationError } from '../../lib/email-validation';
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -42,10 +43,13 @@ export default function SignUpPage() {
       setError('Email is required');
       return false;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      setError('Please enter a valid email address');
+
+    const emailError = getEmailValidationError(formData.email);
+    if (emailError) {
+      setError(emailError);
       return false;
     }
+
     if (!formData.username.trim()) {
       setError('Username is required');
       return false;

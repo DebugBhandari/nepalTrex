@@ -93,6 +93,12 @@ export default function SignInPage({ csrfToken, providers, error }) {
                 </Stack>
               </Box>
 
+              <Typography sx={{ mt: 2, textAlign: 'center' }}>
+                <Link href="/auth/forgot-password" style={{ fontSize: '0.875rem' }}>
+                  Forgot password?
+                </Link>
+              </Typography>
+
               <Typography sx={{ mt: 2 }}>
                 Don't have an account? <Link href="/auth/signup">Sign up</Link>
               </Typography>

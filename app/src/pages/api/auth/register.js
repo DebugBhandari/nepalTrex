@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { query } from '../../../lib/db';
+import { isValidEmail } from '../../../lib/email-validation';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,8 +14,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ error: 'Invalid email format' });
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ error: 'Invalid email address' });
   }
 
   if (username.length < 3) {
