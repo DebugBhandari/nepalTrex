@@ -55,6 +55,50 @@ export async function sendPasswordResetEmail(email, resetToken, resetUrl) {
   }
 }
 
+export async function sendStayOwnershipEmail(email, displayName, stayName, staySlug) {
+  const stayUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/stays/${staySlug}`;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'noreply@nepaltrex.com',
+      to: email,
+      subject: `You've been assigned ownership of ${stayName} on NepalTrex`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Stay Ownership Assigned</h2>
+          <p>Hi ${displayName || 'there'},</p>
+          <p>You have been assigned as the owner of <strong>${stayName}</strong> on NepalTrex.</p>
+          <p>You can now manage this stay from your dashboard.</p>
+          <a href="${stayUrl}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #f0b429; color: #102023; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            View Stay
+          </a>
+          <p>Or copy and paste this link:</p>
+          <p style="word-break: break-all; color: #666;">${stayUrl}</p>
+          <hr style="margin: 30px 0; color: #eee;">
+          <p style="color: #999; font-size: 12px;">
+            If you believe this was a mistake, please contact us.
+          </p>
+        </div>
+      `,
+      text: `
+        Stay Ownership Assigned
+
+        Hi ${displayName || 'there'},
+
+        You have been assigned as the owner of "${stayName}" on NepalTrex.
+        You can manage it at: ${stayUrl}
+
+        If you believe this was a mistake, please contact us.
+      `,
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send stay ownership email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function sendVerificationEmail(email, verificationToken) {
   const verificationLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/verify-email?token=${verificationToken}`;
 

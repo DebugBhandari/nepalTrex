@@ -1677,6 +1677,8 @@ return (
                                 {entry.email || 'N/A'}
                               </Typography>
                               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.6 }}>
+                                Joined: {entry.createdAt ? new Date(entry.createdAt).toLocaleDateString() : 'N/A'}
+                                {' · '}
                                 Last login: {entry.lastLoginAt ? new Date(entry.lastLoginAt).toLocaleString() : 'Never'}
                               </Typography>
                               <Stack direction="row" spacing={0.8} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../lib/auth-options';
 import { pool, query } from '../../../../lib/db';
 import { resolveImageInput } from '../../../../lib/object-storage';
+import { sendStayOwnershipEmail } from '../../../../lib/email';
 
 const ALLOWED_STAY_TYPES = new Set(['hotel', 'homestay']);
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
@@ -155,7 +156,7 @@ export default async function handler(req, res) {
       }
 
       const ownerCandidate = await client.query(
-        `SELECT id, role FROM users WHERE id = $1 LIMIT 1`,
+        `SELECT id, role, email, display_name, username FROM users WHERE id = $1 LIMIT 1`,
         [requestedOwnerUserId]
       );
 
@@ -174,6 +175,9 @@ export default async function handler(req, res) {
 
       nextOwnerUserId = ownerCandidate.rows[0].id;
     }
+
+    const ownershipChanged = nextOwnerUserId !== ownerId;
+    const newOwnerInfo = ownershipChanged ? ownerCandidate?.rows[0] : null;
 
     await client.query(
       `
@@ -216,6 +220,15 @@ export default async function handler(req, res) {
     }
 
     await client.query('COMMIT');
+
+    if (ownershipChanged && newOwnerInfo?.email) {
+      const stayName = name.trim();
+      const staySlug = slug.trim();
+      const displayName = newOwnerInfo.display_name || newOwnerInfo.username || '';
+      sendStayOwnershipEmail(newOwnerInfo.email, displayName, stayName, staySlug).catch(
+        (err) => console.error('Failed to send ownership email:', err)
+      );
+    }
 
     const finalResult = await query(
       `
