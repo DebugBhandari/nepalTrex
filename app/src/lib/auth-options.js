@@ -5,6 +5,17 @@ import { query } from './db';
 
 const SUPERUSER_EMAIL = 'bhandarideepakdev@gmail.com';
 
+function scopesForRole(role) {
+  const normalized = role || 'user';
+  if (normalized === 'superUser') {
+    return ['user', 'admin', 'superUser'];
+  }
+  if (normalized === 'admin') {
+    return ['user', 'admin'];
+  }
+  return ['user'];
+}
+
 const providers = [
   CredentialsProvider({
     name: 'Username and Password',
@@ -46,6 +57,15 @@ const providers = [
       if (!isPasswordValid) {
         return null;
       }
+
+      await query(
+        `
+          UPDATE users
+          SET last_login_at = NOW(), updated_at = NOW()
+          WHERE id = $1
+        `,
+        [userRow.id]
+      );
 
       return {
         id: userRow.id,
@@ -115,6 +135,15 @@ export const authOptions = {
           [user.email || null, user.name || null, account.providerAccountId, role]
         );
 
+        await query(
+          `
+            UPDATE users
+            SET last_login_at = NOW(), updated_at = NOW()
+            WHERE provider = 'google' AND provider_account_id = $1
+          `,
+          [account.providerAccountId]
+        );
+
         if (normalizedEmail === SUPERUSER_EMAIL) {
           await query(
             `
@@ -138,6 +167,17 @@ export const authOptions = {
         );
       }
 
+      if (user?.id) {
+        await query(
+          `
+            UPDATE users
+            SET last_login_at = NOW(), updated_at = NOW()
+            WHERE id = $1
+          `,
+          [user.id]
+        );
+      }
+
       return true;
     },
     async jwt({ token, user }) {
@@ -145,6 +185,7 @@ export const authOptions = {
         token.userId = user.id;
         token.role = user.role || token.role || 'user';
         token.isBanned = Boolean(user.isBanned);
+        token.scopes = scopesForRole(token.role);
       } else if (token?.email) {
         const result = await query(
           `
@@ -166,6 +207,7 @@ export const authOptions = {
         }
 
         token.isBanned = Boolean(result.rows[0]?.is_banned);
+        token.scopes = scopesForRole(token.role);
       }
       return token;
     },
@@ -174,6 +216,7 @@ export const authOptions = {
         session.user.id = token.userId;
         session.user.role = token.role || 'user';
         session.user.isBanned = Boolean(token.isBanned);
+        session.user.scopes = Array.isArray(token.scopes) ? token.scopes : scopesForRole(token.role);
 
         const result = await query(
           `

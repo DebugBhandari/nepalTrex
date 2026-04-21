@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   try {
     const result = await query(
       `
-        SELECT id, username, email, display_name, role, is_banned, provider, profile_image_url, created_at
+        SELECT id, username, email, display_name, role, is_banned, provider, profile_image_url, created_at, last_login_at
         FROM users
         WHERE (
           $1 = ''
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
           OR COALESCE(email, '') ILIKE '%' || $1 || '%'
           OR COALESCE(display_name, '') ILIKE '%' || $1 || '%'
         )
-        ORDER BY created_at DESC
+        ORDER BY last_login_at DESC NULLS LAST, created_at DESC
         LIMIT 200
       `,
       [search]
@@ -46,6 +46,7 @@ export default async function handler(req, res) {
       provider: row.provider,
       profileImageUrl: row.profile_image_url || '',
       createdAt: row.created_at,
+      lastLoginAt: row.last_login_at,
     }));
 
     return res.status(200).json({ users });

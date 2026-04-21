@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect, useMemo } from 'react';
 import { getServerSession } from 'next-auth/next';
+import { getToken } from 'next-auth/jwt';
 import { signOut } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
@@ -904,8 +905,16 @@ export default function AdminPage({ user, initialStays }) {
 
 export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
+  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
   if (!session) return { redirect: { destination: '/auth/signin?callbackUrl=%2Fadmin', permanent: false } };
-  if (!['admin', 'superUser'].includes(session.user.role || '')) return { redirect: { destination: '/', permanent: false } };
+
+  const tokenScopes = Array.isArray(token?.scopes)
+    ? token.scopes
+    : (session.user?.role === 'superUser' ? ['user', 'admin', 'superUser'] : session.user?.role === 'admin' ? ['user', 'admin'] : ['user']);
+
+  if (!tokenScopes.includes('admin') && !tokenScopes.includes('superUser')) {
+    return { redirect: { destination: '/', permanent: false } };
+  }
 
   const isSuper = session.user.role === 'superUser';
   const rows = isSuper

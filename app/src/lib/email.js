@@ -29,7 +29,7 @@ export async function sendPasswordResetEmail(email, resetToken, resetUrl) {
           </a>
           <p>Or copy and paste this link:</p>
           <p style="word-break: break-all; color: #666;">${resetLink}</p>
-          <p>This link expires in 1 hour.</p>
+          <p>This link expires in 24 hours.</p>
           <hr style="margin: 30px 0; color: #eee;">
           <p style="color: #999; font-size: 12px;">
             If you didn't request this, you can ignore this email. Your password won't change unless you click the link above.
@@ -42,7 +42,7 @@ export async function sendPasswordResetEmail(email, resetToken, resetUrl) {
         Click the link below to reset your password:
         ${resetLink}
         
-        This link expires in 1 hour.
+        This link expires in 24 hours.
         
         If you didn't request this, you can ignore this email.
       `,

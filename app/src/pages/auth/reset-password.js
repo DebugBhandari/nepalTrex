@@ -81,7 +81,13 @@ export default function ResetPasswordPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to reset password');
+        const apiError = data.error || 'Failed to reset password';
+        setError(apiError);
+        if (/expired/i.test(apiError)) {
+          setTimeout(() => {
+            router.push('/auth/signin');
+          }, 1500);
+        }
         setLoading(false);
         return;
       }

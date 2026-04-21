@@ -36,6 +36,9 @@ ALTER TABLE users
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT false;
 
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
 UPDATE users
 SET role = 'user', updated_at = NOW()
 WHERE role IS NULL OR TRIM(role) = '';

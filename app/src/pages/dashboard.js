@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
+import { getToken } from 'next-auth/jwt';
 import { signOut } from 'next-auth/react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
@@ -1675,6 +1676,9 @@ return (
                               <Typography variant="body2" color="text.secondary">
                                 {entry.email || 'N/A'}
                               </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.6 }}>
+                                Last login: {entry.lastLoginAt ? new Date(entry.lastLoginAt).toLocaleString() : 'Never'}
+                              </Typography>
                               <Stack direction="row" spacing={0.8} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
                                 <Chip label={`Current role: ${entry.role || 'user'}`} size="small" />
                                 <Chip
@@ -1820,11 +1824,25 @@ return (
 
 export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
+  const token = await getToken({ req: context.req, secret: process.env.NEXTAUTH_SECRET });
 
   if (!session) {
     return {
       redirect: {
         destination: '/auth/signin?callbackUrl=%2Fdashboard',
+        permanent: false,
+      },
+    };
+  }
+
+  const tokenScopes = Array.isArray(token?.scopes)
+    ? token.scopes
+    : (session.user?.role === 'superUser' ? ['user', 'admin', 'superUser'] : session.user?.role === 'admin' ? ['user', 'admin'] : ['user']);
+
+  if (!tokenScopes.includes('superUser')) {
+    return {
+      redirect: {
+        destination: '/',
         permanent: false,
       },
     };

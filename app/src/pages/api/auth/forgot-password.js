@@ -33,9 +33,9 @@ export default async function handler(req, res) {
 
     const user = userResult.rows[0];
 
-    // Create reset token (valid for 1 hour)
+    // Create reset token (valid for 24 hours)
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     // Store reset token in database
     await query(
