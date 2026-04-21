@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box } from '@mui/material';
 
 const BRAND_LOGO_SOURCES = [
-  '/brand/nepaltrex-logo.png',
-  '/brand/nepaltrex-logo.jpg',
-  '/brand/nepaltrex-logo.jpeg',
-  '/brand/nepaltrex-logo.webp',
+  '/brand/banner-mountains.svg',
 ];
 
 function resolveBrandLogo(setSrc) {
