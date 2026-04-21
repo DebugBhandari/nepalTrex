@@ -150,15 +150,16 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
         )}
 
         {finalPrice && (
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8, mt: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8, mt: 0.5, flexWrap: 'wrap' }}>
             {stay.discountPercent > 0 && (
               <Typography variant="caption" sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
                 NPR {stay.pricePerNight.toLocaleString()}
               </Typography>
             )}
             <Typography variant="body2">
+              <Box component="span" color="text.secondary">From </Box>
               <Box component="span" fontWeight={700}>NPR {finalPrice.toLocaleString()}</Box>
-              <Box component="span" color="text.secondary"> /night</Box>
+              <Box component="span" color="text.secondary"> /night (room only)</Box>
             </Typography>
           </Box>
         )}

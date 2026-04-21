@@ -103,6 +103,10 @@ async function handleGet(req, res) {
           SELECT
             s.id, s.name, s.slug, s.stay_type, s.location, s.description,
             s.image_url, s.price_per_night, s.is_featured, s.discount_percent, s.contact_phone,
+            COALESCE(
+              MIN(CASE WHEN m.category = 'room' AND m.available = true THEN m.price END),
+              MIN(CASE WHEN m.category = 'room' THEN m.price END)
+            ) AS cheapest_room_price,
             COUNT(DISTINCT m.id)::int AS menu_count,
             ROUND(AVG(sr.rating)::numeric, 1) AS avg_rating,
             COUNT(DISTINCT sr.id)::int AS review_count
@@ -124,7 +128,7 @@ async function handleGet(req, res) {
         location: row.location,
         description: row.description || '',
         imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
-        pricePerNight: row.price_per_night ? Number(row.price_per_night) : null,
+        pricePerNight: row.cheapest_room_price ? Number(row.cheapest_room_price) : null,
         isFeatured: Boolean(row.is_featured),
         discountPercent: Number(row.discount_percent || 0),
         avgRating: row.avg_rating ? Number(row.avg_rating).toFixed(1) : null,

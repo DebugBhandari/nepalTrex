@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
-import { query } from '../../../lib/db';
+import { pool, query } from '../../../lib/db';
 
 const ADMIN_ALLOWED_STATUSES = new Set(['accepted', 'completed', 'declined']);
 const USER_ALLOWED_STATUSES = new Set(['cancelled']);
@@ -87,15 +87,63 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Completed orders cannot be changed' });
   }
 
-  const updateResult = await query(
-    `
-      UPDATE orders
-      SET status = $1
-      WHERE COALESCE(order_group_id::text, id::text) = $2
-      RETURNING id
-    `,
-    [status, String(targetGroupId)]
-  );
+  const client = await pool.connect();
+  let updateResult;
+
+  try {
+    await client.query('BEGIN');
+
+    updateResult = await client.query(
+      `
+        UPDATE orders
+        SET status = $1
+        WHERE COALESCE(order_group_id::text, id::text) = $2
+        RETURNING id
+      `,
+      [status, String(targetGroupId)]
+    );
+
+    if (status === 'accepted') {
+      await client.query(
+        `
+          UPDATE menu_items
+          SET available = false
+          WHERE id IN (
+            SELECT DISTINCT o.menu_item_id
+            FROM orders o
+            WHERE COALESCE(o.order_group_id::text, o.id::text) = $1
+              AND o.menu_item_category = 'room'
+              AND o.menu_item_id IS NOT NULL
+          )
+        `,
+        [String(targetGroupId)]
+      );
+    }
+
+    if (['completed', 'declined', 'cancelled'].includes(status)) {
+      await client.query(
+        `
+          UPDATE menu_items
+          SET available = true
+          WHERE id IN (
+            SELECT DISTINCT o.menu_item_id
+            FROM orders o
+            WHERE COALESCE(o.order_group_id::text, o.id::text) = $1
+              AND o.menu_item_category = 'room'
+              AND o.menu_item_id IS NOT NULL
+          )
+        `,
+        [String(targetGroupId)]
+      );
+    }
+
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 
   return res.status(200).json({
     order: {

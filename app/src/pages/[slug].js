@@ -72,15 +72,28 @@ function StayDetailView({ stay }) {
 
   const groupedMenu = useMemo(() => {
     const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
+    const roomItems = items.filter((item) => item.category === 'room');
+    const availableRoomPrices = roomItems
+      .filter((item) => item.available !== false)
+      .map((item) => Number(item.price))
+      .filter((price) => Number.isFinite(price) && price > 0);
+    const allRoomPrices = roomItems
+      .map((item) => Number(item.price))
+      .filter((price) => Number.isFinite(price) && price > 0);
+
     return {
-      rooms: items.filter((item) => item.category === 'room' && item.available !== false),
-      foods: items.filter((item) => item.category === 'food' && item.available !== false),
+      rooms: roomItems,
+      foods: items.filter((item) => item.category === 'food'),
+      cheapestRoomPrice: availableRoomPrices.length > 0
+        ? Math.min(...availableRoomPrices)
+        : (allRoomPrices.length > 0 ? Math.min(...allRoomPrices) : null),
     };
   }, [stay.menuItems]);
 
-  const finalPrice = stay.pricePerNight && stay.discountPercent > 0
-    ? Math.round(stay.pricePerNight * (1 - stay.discountPercent / 100))
-    : stay.pricePerNight;
+  const baseRoomPrice = groupedMenu.cheapestRoomPrice;
+  const finalPrice = baseRoomPrice && stay.discountPercent > 0
+    ? Math.round(baseRoomPrice * (1 - stay.discountPercent / 100))
+    : baseRoomPrice;
 
   const reviews = Array.isArray(stay.reviews) ? stay.reviews : [];
 
@@ -209,17 +222,17 @@ function StayDetailView({ stay }) {
           >
             {finalPrice && (
               <Box>
-                <Typography variant="caption" color="text.secondary">From</Typography>
+                <Typography variant="caption" color="text.secondary">From (room only)</Typography>
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8 }}>
                   {stay.discountPercent > 0 && (
                     <Typography variant="body2" sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
-                      NPR {stay.pricePerNight.toLocaleString()}
+                      NPR {baseRoomPrice.toLocaleString()}
                     </Typography>
                   )}
                   <Typography variant="h5" fontWeight={800} color="primary.main">
                     NPR {finalPrice.toLocaleString()}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">/night</Typography>
+                  <Typography variant="body2" color="text.secondary">/night (not incl. food)</Typography>
                 </Box>
               </Box>
             )}
@@ -275,37 +288,44 @@ function StayDetailView({ stay }) {
                   <Typography color="text.secondary">No room options listed yet.</Typography>
                 ) : (
                   <Stack spacing={2}>
-                    {groupedMenu.rooms.map((item, index) => (
-                      <Card
-                        key={`room-${index}`}
-                        sx={(theme) => ({
-                          display: 'flex', flexDirection: { xs: 'column', sm: 'row' },
-                          overflow: 'hidden', border: `1px solid ${theme.palette.divider}`,
-                        })}
-                        elevation={0}
-                      >
-                        <CardMedia
-                          component="img"
-                          image={item.imageUrl || DEFAULT_MENU_IMAGE}
-                          alt={item.name}
-                          sx={{ width: { xs: '100%', sm: 160 }, height: { xs: 180, sm: 140 }, objectFit: 'cover', flexShrink: 0 }}
-                        />
-                        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2 }}>
-                          <Box>
-                            <Typography variant="subtitle1" fontWeight={700}>{item.name}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4, mb: 1.2 }}>{item.description}</Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="body1" fontWeight={700} color="primary.main">
-                              NPR {Number(item.price).toLocaleString()}
-                            </Typography>
-                            <AppButton variant="contained" size="small" onClick={() => handleAddToCart(item)}>
-                              Add to order
-                            </AppButton>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {groupedMenu.rooms.map((item, index) => {
+                      const isUnavailable = item.available === false;
+                      return (
+                        <Card
+                          key={`room-${index}`}
+                          sx={(theme) => ({
+                            display: 'flex', flexDirection: { xs: 'column', sm: 'row' },
+                            overflow: 'hidden', border: `1px solid ${theme.palette.divider}`,
+                            opacity: isUnavailable ? 0.62 : 1,
+                          })}
+                          elevation={0}
+                        >
+                          <CardMedia
+                            component="img"
+                            image={item.imageUrl || DEFAULT_MENU_IMAGE}
+                            alt={item.name}
+                            sx={{ width: { xs: '100%', sm: 160 }, height: { xs: 180, sm: 140 }, objectFit: 'cover', flexShrink: 0, filter: isUnavailable ? 'grayscale(0.9) blur(1px)' : 'none' }}
+                          />
+                          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2 }}>
+                            <Box>
+                              <Typography variant="subtitle1" fontWeight={700}>{item.name}</Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4, mb: 1.2 }}>{item.description}</Typography>
+                              {isUnavailable && (
+                                <Chip size="small" color="default" label="Unavailable" sx={{ mb: 1 }} />
+                              )}
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <Typography variant="body1" fontWeight={700} color="primary.main">
+                                NPR {Number(item.price).toLocaleString()}
+                              </Typography>
+                              <AppButton variant="contained" size="small" disabled={isUnavailable} onClick={() => handleAddToCart(item)}>
+                                {isUnavailable ? 'Unavailable' : 'Add to order'}
+                              </AppButton>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </Stack>
                 )}
               </Box>
