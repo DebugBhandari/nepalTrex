@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Container,
@@ -93,19 +93,43 @@ function Section({ title, subtitle, stays, viewAll }) {
 }
 
 export default function StaysPage({ stays }) {
+  const [staysData, setStaysData] = useState(stays || []);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeType, setActiveType] = useState(null);
 
+  useEffect(() => {
+    let active = true;
+
+    const fetchStays = async () => {
+      try {
+        const response = await fetch('/api/stays?view=listing');
+        if (!response.ok || !active) {
+          return;
+        }
+        const data = await response.json();
+        setStaysData(Array.isArray(data.stays) ? data.stays : []);
+      } catch {
+        // Keep SSR data if client fetch fails
+      }
+    };
+
+    fetchStays();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const filteredStays = useMemo(() => {
     const needle = searchQuery.trim().toLowerCase();
-    return stays.filter((stay) => {
+    return staysData.filter((stay) => {
       if (activeType !== null && stay.stayType !== activeType) return false;
       if (!needle) return true;
       const name = String(stay.name || '').toLowerCase();
       const location = String(stay.location || '').toLowerCase();
       return name.includes(needle) || location.includes(needle);
     });
-  }, [stays, searchQuery, activeType]);
+  }, [staysData, searchQuery, activeType]);
 
   const isFiltering = searchQuery.trim() !== '' || activeType !== null;
 
@@ -233,7 +257,7 @@ export default function StaysPage({ stays }) {
               Where to in Nepal?
             </Typography>
             <Typography variant="h6" sx={{ color: 'rgba(248, 244, 235, 0.82)' }}>
-              {stays.length} unique stays — teahouses, heritage inns, jungle camps and city boutiques
+              {staysData.length} unique stays — teahouses, heritage inns, jungle camps and city boutiques
             </Typography>
           </Container>
         </Box>
@@ -295,7 +319,7 @@ export default function StaysPage({ stays }) {
                     { label: 'Kathmandu Valley', emoji: '🏛️', count: kathmandu.length, search: 'Kathmandu' },
                     { label: 'Mountain Escapes', emoji: '⛰️', count: mountain.length, search: 'Solukhumbu' },
                     { label: 'Lakeside Pokhara', emoji: '🌊', count: lakeside.length, search: 'Pokhara' },
-                    { label: 'All Stays', emoji: '🗺️', count: stays.length, search: '' },
+                    { label: 'All Stays', emoji: '🗺️', count: staysData.length, search: '' },
                   ].map((dest) => (
                     <Box
                       key={dest.label}
@@ -378,7 +402,7 @@ export default function StaysPage({ stays }) {
               <Box id="all" sx={{ pt: 2 }}>
                 <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>All Stays</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  {stays.length} stay{stays.length === 1 ? '' : 's'} across Nepal
+                  {staysData.length} stay{staysData.length === 1 ? '' : 's'} across Nepal
                 </Typography>
                 <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
                   {filteredStays.map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}

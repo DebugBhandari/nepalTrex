@@ -2,12 +2,9 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 import {
   Alert,
   Box,
-  Chip,
   Container,
   FormControl,
   InputAdornment,
@@ -27,8 +24,9 @@ import { FEATURED_TREKS } from '@org/types';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
 import StayThumbnailCard from '../components/StayThumbnailCard';
+import TrekThumbnailCard from '../components/TrekThumbnailCard';
 import ThumbnailGrid from '../components/ThumbnailGrid';
-import { getTrekImage, slugifyTrekName } from '../lib/treks';
+import { slugifyTrekName } from '../lib/treks';
 import { gradients, themeColors } from '../lib/theme';
 
 const DURATION_FILTERS = [
@@ -60,132 +58,14 @@ function maxAltitude(trek) {
   return Math.max(trek.elevationMaxM || 0, trek.elevationMinM || 0);
 }
 
-function TrekCard({ trek, isSaved, wishlistCount, onToggleWishlist }) {
-  return (
-    <Box
-      sx={(theme) => ({
-        borderRadius: 4,
-        p: 1.2,
-        border: `1px solid ${theme.palette.divider}`,
-        background: theme.palette.background.paper,
-      })}
-    >
-      <Box
-        component={Link}
-        href={`/treks/${trek.slug}`}
-        sx={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-      >
-        <Box
-          sx={{
-            position: 'relative',
-            paddingTop: '66.67%',
-            borderRadius: '16px',
-            overflow: 'hidden',
-            mb: 1.5,
-            '& img': { transition: 'transform 0.35s ease' },
-            '&:hover img': { transform: 'scale(1.04)' },
-          }}
-        >
-          <Box
-            component="img"
-            src={getTrekImage(trek.name)}
-            alt={`${trek.name} route preview`}
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-            }}
-          />
-
-          {trek.isFeatured && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
-                px: 1.25,
-                py: 0.5,
-                borderRadius: 999,
-                bgcolor: themeColors.goldSun,
-              }}
-            >
-              <Typography variant="caption" sx={{ color: themeColors.ink, fontWeight: 700, lineHeight: 1 }}>
-                Featured
-              </Typography>
-            </Box>
-          )}
-
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              px: 1.25,
-              py: 0.5,
-              borderRadius: 999,
-              bgcolor: 'rgba(15,43,45,0.78)',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
-              {trek.durationDays} days
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      <Box sx={{ px: 0.5 }}>
-        <Link href={`/treks/${trek.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{
-              lineHeight: 1.3,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              mb: 0.8,
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            {trek.name}
-          </Typography>
-        </Link>
-
-        <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
-          <Chip label={trek.level} size="small" color="secondary" />
-          <Chip label={trek.region || 'Other'} size="small" variant="outlined" />
-          <Chip label={`${trek.nearbyStaysCount || 0} nearby stays`} size="small" variant="outlined" />
-        </Stack>
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            ❤️ {Number(wishlistCount || 0)} saved
-          </Typography>
-          <AppButton
-            variant={isSaved ? 'contained' : 'outlined'}
-            size="small"
-            startIcon={isSaved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-            onClick={() => onToggleWishlist(trek.slug)}
-          >
-            {isSaved ? 'Saved' : 'Wishlist'}
-          </AppButton>
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
 export default function HomePage({ allTreks, featuredStays = [], dataSource, dataError }) {
   const { data: session, status } = useSession();
+  const [treks, setTreks] = useState(allTreks || []);
+  const [landingStays, setLandingStays] = useState(featuredStays || []);
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoginRequired, setWishlistLoginRequired] = useState(false);
   const [wishlistCountsBySlug, setWishlistCountsBySlug] = useState(() =>
-    allTreks.reduce((acc, trek) => {
+    (allTreks || []).reduce((acc, trek) => {
       acc[trek.slug] = Number(trek.wishlistCount || 0);
       return acc;
     }, {})
@@ -197,6 +77,44 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
   const [showTrekFilters, setShowTrekFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTrekFilter, setActiveTrekFilter] = useState('all');
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchLandingData = async () => {
+      try {
+        const [treksRes, staysRes] = await Promise.all([
+          fetch('/api/treks'),
+          fetch('/api/stays?view=listing&featuredOnly=true&limit=6'),
+        ]);
+
+        if (!treksRes.ok || !staysRes.ok || !active) {
+          return;
+        }
+
+        const [treksData, staysData] = await Promise.all([treksRes.json(), staysRes.json()]);
+        const nextTreks = Array.isArray(treksData.treks) ? treksData.treks : [];
+        const nextStays = Array.isArray(staysData.stays) ? staysData.stays : [];
+
+        setTreks(nextTreks);
+        setLandingStays(nextStays);
+        setWishlistCountsBySlug(
+          nextTreks.reduce((acc, trek) => {
+            acc[trek.slug] = Number(trek.wishlistCount || 0);
+            return acc;
+          }, {})
+        );
+      } catch {
+        // Keep SSR data if client fetch fails
+      }
+    };
+
+    fetchLandingData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -243,22 +161,22 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
       .catch(() => {});
   };
 
-  const visibleTreks = allTreks;
+  const visibleTreks = treks;
 
   const regionOptions = useMemo(() => {
-    const regions = new Set(allTreks.map((trek) => trek.region || 'Other'));
+    const regions = new Set(treks.map((trek) => trek.region || 'Other'));
     return ['all', ...Array.from(regions).sort((a, b) => a.localeCompare(b))];
-  }, [allTreks]);
+  }, [treks]);
 
   const difficultyOptions = useMemo(() => {
     const values = new Set(
-      allTreks
+      treks
         .map((trek) => normalizeDifficulty(trek.level))
         .filter(Boolean)
     );
 
     return ['all', ...Array.from(values).sort((a, b) => a.localeCompare(b))];
-  }, [allTreks]);
+  }, [treks]);
 
   const filteredTreks = useMemo(() => {
     const needle = searchQuery.trim().toLowerCase();
@@ -525,7 +443,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
           )}
 
           {/* Featured Stays Section - Airbnb Style */}
-          {featuredStays && featuredStays.length > 0 && (
+          {landingStays && landingStays.length > 0 && (
             <Box sx={{ mb: 6 }}>
               <Box sx={{ mb: 3 }}>
                 <Typography
@@ -549,7 +467,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   lg: 'repeat(3, minmax(0, 1fr))',
                 }}
               >
-                {featuredStays.map((stay) => (
+                {landingStays.map((stay) => (
                   <StayThumbnailCard key={stay.id} stay={stay} showMenuCount={false} />
                 ))}
               </ThumbnailGrid>
@@ -709,7 +627,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   }}
                 >
                   {treks.map((trek) => (
-                    <TrekCard
+                    <TrekThumbnailCard
                       key={trek.slug}
                       trek={trek}
                       isSaved={wishlistSet.has(trek.slug)}
