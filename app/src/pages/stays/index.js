@@ -19,6 +19,7 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { query } from '../../lib/db';
 import SiteHeader from '../../components/SiteHeader';
+import ThumbnailGrid from '../../components/ThumbnailGrid';
 import { gradients, themeColors } from '../../lib/theme';
 
 const DEFAULT_STAY_IMAGE = '/stays/lodge-exterior.jpg';
@@ -244,15 +245,9 @@ function Section({ title, subtitle, stays, viewAll }) {
           {subtitle}
         </Typography>
       )}
-      <Box
-        sx={{
-          display: 'grid',
-          gap: { xs: 3, md: 4 },
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' },
-        }}
-      >
+      <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
         {stays.slice(0, 8).map((stay) => <StayCard key={stay.id} stay={stay} />)}
-      </Box>
+      </ThumbnailGrid>
     </Box>
   );
 }
@@ -428,15 +423,9 @@ export default function StaysPage({ stays }) {
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
                 {filteredStays.length === 0 ? 'No stays match your filters.' : `${filteredStays.length} stay${filteredStays.length === 1 ? '' : 's'}`}
               </Typography>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: { xs: 3, md: 4 },
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' },
-                }}
-              >
+              <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
                 {filteredStays.map((stay) => <StayCard key={stay.id} stay={stay} />)}
-              </Box>
+              </ThumbnailGrid>
             </>
           ) : (
             <>
@@ -551,15 +540,9 @@ export default function StaysPage({ stays }) {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                   {stays.length} stay{stays.length === 1 ? '' : 's'} across Nepal
                 </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gap: { xs: 3, md: 4 },
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' },
-                  }}
-                >
+                <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
                   {filteredStays.map((stay) => <StayCard key={stay.id} stay={stay} />)}
-                </Box>
+                </ThumbnailGrid>
               </Box>
             </>
           )}

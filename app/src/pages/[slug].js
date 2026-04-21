@@ -14,9 +14,7 @@ import {
   Chip,
   Container,
   Divider,
-  Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
@@ -54,14 +52,10 @@ function StarRow({ rating, count }) {
 }
 
 function StayDetailView({ stay }) {
-  const router = useRouter();
   const { status, data: session } = useSession();
-  const { cart, addToCart, updateItemQuantity, removeFromCart } = useCart();
+  const { addToCart } = useCart();
   const [loginPrompt, setLoginPrompt] = useState(false);
   const [ownerAlert, setOwnerAlert] = useState(false);
-
-  const stayCart = cart[stay.slug] || { items: [] };
-  const cartItems = stayCart.items;
 
   const handleAddToCart = (item) => {
     if (status !== 'authenticated') {
@@ -73,27 +67,6 @@ function StayDetailView({ stay }) {
       return;
     }
     addToCart(stay, item);
-  };
-
-  const handleUpdateQuantity = (index, quantity) => {
-    updateItemQuantity(stay.slug, index, quantity);
-  };
-
-  const handleRemoveFromCart = (index) => {
-    removeFromCart(stay.slug, index);
-  };
-
-  const handleCheckout = () => {
-    if (status !== 'authenticated') {
-      setLoginPrompt(true);
-      return;
-    }
-    if (session?.user?.id && stay.ownerUserId && session.user.id === stay.ownerUserId) {
-      setOwnerAlert(true);
-      return;
-    }
-    if (cartItems.length === 0) return;
-    router.push('/stays/checkout');
   };
 
   const groupedMenu = useMemo(() => {
@@ -265,10 +238,26 @@ function StayDetailView({ stay }) {
             )}
           </Box>
 
-          {/* Two-column layout */}
-          <Stack direction={{ xs: 'column', lg: 'row' }} spacing={4} alignItems="flex-start">
-            {/* Left column */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ minWidth: 0 }}>
+            {ownerAlert && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setOwnerAlert(false)}>
+                You cannot book your own stay.
+              </Alert>
+            )}
+
+            {loginPrompt && status !== 'authenticated' && (
+              <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLoginPrompt(false)}>
+                Please{' '}
+                <Link
+                  href={`/auth/signin?callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
+                  style={{ fontWeight: 700 }}
+                >
+                  sign in
+                </Link>
+                {' '}to place an order.
+              </Alert>
+            )}
+
               {stay.description && (
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="h5" fontWeight={800} sx={{ mb: 1.5 }}>About this stay</Typography>
@@ -422,112 +411,7 @@ function StayDetailView({ stay }) {
                   </Box>
                 </>
               )}
-            </Box>
-
-            {/* Right column: sticky booking card */}
-            <Card
-              sx={(theme) => ({
-                width: { xs: '100%', lg: 400 },
-                flexShrink: 0,
-                position: { lg: 'sticky' }, top: 88,
-                border: `1px solid ${theme.palette.divider}`,
-              })}
-              elevation={0}
-            >
-              <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
-                {finalPrice && (
-                  <Box sx={{ mb: 2.5, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8 }}>
-                      {stay.discountPercent > 0 && (
-                        <Typography variant="caption" sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
-                          NPR {stay.pricePerNight.toLocaleString()}
-                        </Typography>
-                      )}
-                      <Typography variant="h5" fontWeight={800} color="primary.main">
-                        NPR {finalPrice.toLocaleString()}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">/night</Typography>
-                    </Box>
-                    {stay.discountPercent > 0 && (
-                      <Typography variant="caption" sx={{ color: '#dc2626', fontWeight: 600 }}>
-                        {stay.discountPercent}% off — limited time
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-
-                <Typography variant="h6" sx={{ mb: 0.3 }}>Book / Purchase</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Add items from the menu, then confirm your order.
-                </Typography>
-
-                {ownerAlert && (
-                  <Alert severity="error" sx={{ mb: 2 }} onClose={() => setOwnerAlert(false)}>
-                    You cannot book your own stay.
-                  </Alert>
-                )}
-
-                {loginPrompt && status !== 'authenticated' && (
-                  <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setLoginPrompt(false)}>
-                    Please{' '}
-                    <Link
-                      href={`/auth/signin?callbackUrl=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '')}`}
-                      style={{ fontWeight: 700 }}
-                    >
-                      sign in
-                    </Link>
-                    {' '}to place an order.
-                  </Alert>
-                )}
-
-                <Stack spacing={1.5}>
-                  {cartItems.length > 0 && (
-                    <Stack spacing={1} sx={{ mb: 1.5 }}>
-                      <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
-                        Items in your cart
-                      </Typography>
-                      {cartItems.map((item, index) => (
-                        <Paper key={`${item.menuItemCategory}-${item.menuItemName}-${index}`} variant="outlined" sx={{ p: 1.2 }}>
-                          <Typography variant="subtitle2">{item.menuItemName}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {item.menuItemCategory} — NPR {Number(item.unitPrice).toLocaleString()} each
-                          </Typography>
-                          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.8 }}>
-                            <TextField
-                              label="Qty"
-                              type="number"
-                              size="small"
-                              inputProps={{ min: 1 }}
-                              value={item.quantity}
-                              onChange={(event) => handleUpdateQuantity(index, event.target.value)}
-                              sx={{ width: 90 }}
-                            />
-                            <AppButton size="small" variant="outlined" color="error" onClick={() => handleRemoveFromCart(index)}>
-                              Remove
-                            </AppButton>
-                          </Stack>
-                        </Paper>
-                      ))}
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">Subtotal for this stay</Typography>
-                        <Typography variant="body1" fontWeight={700}>
-                          NPR {cartItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0).toLocaleString()}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  )}
-                  
-                  <AppButton
-                    variant="contained"
-                    disabled={cartItems.length === 0}
-                    onClick={handleCheckout}
-                  >
-                    Proceed to Checkout{cartItems.length > 0 ? ` (${cartItems.length} items)` : ''}
-                  </AppButton>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Stack>
+          </Box>
         </Container>
       </Box>
     </>

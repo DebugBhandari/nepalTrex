@@ -27,6 +27,7 @@ import { FEATURED_TREKS } from '@org/types';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
+import ThumbnailGrid from '../components/ThumbnailGrid';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
 import { gradients, themeColors } from '../lib/theme';
 
@@ -512,7 +513,13 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                 <AppButton href="#treks" variant="contained" size="large">
                   Explore Treks
                 </AppButton>
-                <AppButton component={Link} href="/stays" variant="outlined" size="large">
+                <AppButton
+                  component={Link}
+                  href="/stays"
+                  variant="outlined"
+                  size="large"
+                  sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.8)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}
+                >
                   Browse Stays
                 </AppButton>
               </Stack>
@@ -843,15 +850,12 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   {region}
                 </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gap: { xs: 3, md: 4 },
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: 'repeat(2, minmax(0, 1fr))',
-                      lg: 'repeat(3, minmax(0, 1fr))',
-                    },
+                <ThumbnailGrid
+                  gap={{ xs: 3, md: 4 }}
+                  columns={{
+                    xs: '1fr',
+                    sm: 'repeat(2, minmax(0, 1fr))',
+                    lg: 'repeat(3, minmax(0, 1fr))',
                   }}
                 >
                   {treks.map((trek) => (
@@ -863,7 +867,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                       onToggleWishlist={toggleWishlist}
                     />
                   ))}
-                </Box>
+                </ThumbnailGrid>
               </Box>
             ))}
 
