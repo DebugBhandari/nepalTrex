@@ -5,6 +5,7 @@ import { resolveImageInput } from '../../../lib/object-storage';
 
 const ALLOWED_STAY_TYPES = new Set(['hotel', 'homestay']);
 const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
+const DEFAULT_STAY_IMAGE = '/stays/lodge-exterior.jpg';
 
 function normalizeCoordinate(value, min, max) {
   if (value === null || value === undefined || value === '') {
@@ -86,8 +87,55 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   const mine = req.query.mine === 'true';
+  const view = (req.query.view || '').toString();
 
   if (!mine) {
+    if (view === 'listing') {
+      const featuredOnly = req.query.featuredOnly === 'true';
+      const limit = Number(req.query.limit);
+      const hasLimit = Number.isInteger(limit) && limit > 0;
+
+      const whereClause = featuredOnly ? 'WHERE s.is_featured = true' : '';
+      const limitClause = hasLimit ? `LIMIT ${Math.min(limit, 48)}` : '';
+
+      const result = await query(
+        `
+          SELECT
+            s.id, s.name, s.slug, s.stay_type, s.location, s.description,
+            s.image_url, s.price_per_night, s.is_featured, s.discount_percent, s.contact_phone,
+            COUNT(DISTINCT m.id)::int AS menu_count,
+            ROUND(AVG(sr.rating)::numeric, 1) AS avg_rating,
+            COUNT(DISTINCT sr.id)::int AS review_count
+          FROM stays s
+          LEFT JOIN menu_items m ON m.stay_id = s.id
+          LEFT JOIN stay_reviews sr ON sr.stay_id = s.id
+          ${whereClause}
+          GROUP BY s.id
+          ORDER BY s.is_featured DESC, s.created_at DESC
+          ${limitClause}
+        `
+      );
+
+      const stays = result.rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        stayType: row.stay_type,
+        location: row.location,
+        description: row.description || '',
+        imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
+        pricePerNight: row.price_per_night ? Number(row.price_per_night) : null,
+        isFeatured: Boolean(row.is_featured),
+        discountPercent: Number(row.discount_percent || 0),
+        avgRating: row.avg_rating ? Number(row.avg_rating).toFixed(1) : null,
+        reviewCount: Number(row.review_count || 0),
+        contactPhone: row.contact_phone || '',
+        menuCount: Number(row.menu_count || 0),
+      }));
+
+      return res.status(200).json({ stays });
+    }
+
     const result = await query(
       `
         SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url,

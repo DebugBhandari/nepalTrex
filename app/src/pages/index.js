@@ -24,11 +24,11 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import TerrainRoundedIcon from '@mui/icons-material/TerrainRounded';
 import { FEATURED_TREKS } from '@org/types';
-import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
+import StayThumbnailCard from '../components/StayThumbnailCard';
 import ThumbnailGrid from '../components/ThumbnailGrid';
-import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints, slugifyTrekName } from '../lib/treks';
+import { getTrekImage, slugifyTrekName } from '../lib/treks';
 import { gradients, themeColors } from '../lib/theme';
 
 const DURATION_FILTERS = [
@@ -45,8 +45,6 @@ const ALTITUDE_FILTERS = [
   { value: 'high', label: 'Above 5,000m' },
   { value: 'unknown', label: 'Altitude not listed' },
 ];
-
-const NEARBY_STAY_THRESHOLD_KM = 35;
 
 const TREK_TYPE_FILTERS = [
   { label: 'All Treks', value: 'all', icon: AppsRoundedIcon },
@@ -543,166 +541,18 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                 <Typography color="text.secondary">Hand-picked accommodations near your favorite treks</Typography>
               </Box>
 
-              <Box
-                sx={{
-                  display: 'grid',
-                  gap: { xs: 2, md: 3 },
-                  gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: 'repeat(2, minmax(0, 1fr))',
-                    lg: 'repeat(3, minmax(0, 1fr))',
-                  },
+              <ThumbnailGrid
+                gap={{ xs: 2, md: 3 }}
+                columns={{
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  lg: 'repeat(3, minmax(0, 1fr))',
                 }}
               >
-                {featuredStays.map((stay) => {
-                  const finalPrice = stay.discountPercent > 0
-                    ? Math.round(stay.pricePerNight * (1 - stay.discountPercent / 100))
-                    : stay.pricePerNight;
-
-                  return (
-                    <Box
-                      key={stay.id}
-                      component={Link}
-                      href={`/stays/${stay.slug}`}
-                      sx={{
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        display: 'block',
-                        transition: 'transform 0.2s ease',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={(theme) => ({
-                          position: 'relative',
-                          paddingTop: '66.67%',
-                          borderRadius: '16px',
-                          overflow: 'hidden',
-                          mb: 1.5,
-                          backgroundColor: theme.palette.mode === 'dark' ? '#2d2d2d' : '#f5f5f5',
-                          '& img': { transition: 'transform 0.35s ease' },
-                          '&:hover img': { transform: 'scale(1.04)' },
-                        })}
-                      >
-                        <Box
-                          component="img"
-                          src={stay.imageUrl || 'https://placehold.co/800x600?text=NepalTrex+Stay'}
-                          alt={stay.name}
-                          sx={{
-                            position: 'absolute',
-                            inset: 0,
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            objectPosition: 'center',
-                          }}
-                        />
-
-                        {/* Stay Type Badge (Top Right) */}
-                        <Box
-                          sx={(theme) => ({
-                            position: 'absolute',
-                            top: 12,
-                            right: 12,
-                            px: 1.25,
-                            py: 0.5,
-                            borderRadius: 999,
-                            bgcolor: 'rgba(0,0,0,0.6)',
-                            backdropFilter: 'blur(4px)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                          })}
-                        >
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              color: '#fff',
-                              fontWeight: 600,
-                              textTransform: 'capitalize',
-                              lineHeight: 1,
-                            }}
-                          >
-                            {stay.stayType}
-                          </Typography>
-                        </Box>
-
-                        {/* Discount Badge (Top Left) */}
-                        {stay.discountPercent > 0 && (
-                          <Box
-                            sx={(theme) => ({
-                              position: 'absolute',
-                              top: 12,
-                              left: 12,
-                              px: 1.25,
-                              py: 0.5,
-                              borderRadius: 999,
-                              bgcolor: theme.palette.error.main,
-                              display: 'flex',
-                              alignItems: 'center',
-                              fontWeight: 700,
-                            })}
-                          >
-                            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
-                              -{stay.discountPercent}%
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-
-                      {/* Stay Details */}
-                      <Box>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight={700}
-                          sx={{
-                            lineHeight: 1.3,
-                            overflow: 'hidden',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            mb: 0.5,
-                          }}
-                        >
-                          {stay.name}
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
-                          {stay.location}
-                        </Typography>
-
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          {stay.avgRating > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.3 }}>
-                              <Typography variant="body2" fontWeight={700}>{stay.avgRating}</Typography>
-                              <Typography variant="caption" color="text.secondary">({stay.reviewCount})</Typography>
-                            </Box>
-                          )}
-
-                          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, ml: 'auto' }}>
-                            {stay.discountPercent > 0 && (
-                              <Typography
-                                variant="caption"
-                                sx={(theme) => ({
-                                  textDecoration: 'line-through',
-                                  color: theme.palette.text.disabled,
-                                })}
-                              >
-                                NPR {stay.pricePerNight.toLocaleString()}
-                              </Typography>
-                            )}
-                            <Typography variant="body2" fontWeight={700}>
-                              NPR {finalPrice.toLocaleString()}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                  );
-                })}
-              </Box>
+                {featuredStays.map((stay) => (
+                  <StayThumbnailCard key={stay.id} stay={stay} showMenuCount={false} />
+                ))}
+              </ThumbnailGrid>
 
               <Box sx={{ textAlign: 'center', mt: 4 }}>
                 <AppButton component={Link} href="/stays" variant="outlined" size="large">
@@ -936,106 +786,26 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
   );
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps(context) {
   try {
-    const trekRows = await query(
-      `
-        SELECT name, duration_days, level, region, description, route_geojson, is_featured, elevation_min_m, elevation_max_m
-        FROM treks
-        ORDER BY name ASC
-      `
-    );
+    const proto = (context.req.headers['x-forwarded-proto'] || 'http').toString().split(',')[0].trim();
+    const host = (context.req.headers['x-forwarded-host'] || context.req.headers.host || '').toString();
+    const baseUrl = `${proto}://${host}`;
 
-    const wishlistCountRows = await query(
-      `
-        SELECT trek_slug, COUNT(*)::int AS wishlist_count
-        FROM user_trek_wishlists
-        GROUP BY trek_slug
-      `
-    );
+    const [treksResponse, staysResponse] = await Promise.all([
+      fetch(`${baseUrl}/api/treks`),
+      fetch(`${baseUrl}/api/stays?view=listing&featuredOnly=true&limit=6`),
+    ]);
 
-    const wishlistCountBySlug = wishlistCountRows.rows.reduce((acc, row) => {
-      acc[row.trek_slug] = Number(row.wishlist_count || 0);
-      return acc;
-    }, {});
+    if (!treksResponse.ok || !staysResponse.ok) {
+      throw new Error(`Failed to fetch API data (treks ${treksResponse.status}, stays ${staysResponse.status})`);
+    }
 
-    const stayRows = await query(
-      `
-        SELECT latitude, longitude
-        FROM stays
-        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
-      `
-    );
+    const treksData = await treksResponse.json();
+    const staysData = await staysResponse.json();
 
-    const stayCoordinates = stayRows.rows
-      .map((stay) => ({
-        lat: Number(stay.latitude),
-        lng: Number(stay.longitude),
-      }))
-      .filter((stay) => Number.isFinite(stay.lat) && Number.isFinite(stay.lng));
-
-    const featuredStaysRows = await query(
-      `
-        SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.price_per_night, s.is_featured, s.discount_percent,
-               COALESCE(ROUND(AVG(sr.rating)::numeric, 1), 0) as avg_rating,
-               COUNT(sr.id) as review_count
-        FROM stays s
-        LEFT JOIN stay_reviews sr ON s.id = sr.stay_id
-        WHERE s.is_featured = true
-        GROUP BY s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.price_per_night, s.is_featured, s.discount_percent
-        ORDER BY RANDOM()
-        LIMIT 6
-      `
-    );
-
-    const allTreks = trekRows.rows.map((row) => ({
-      routeWaypoints: parseRouteWaypoints(row.route_geojson),
-      name: row.name,
-      slug: slugifyTrekName(row.name),
-      durationDays: row.duration_days,
-      level: row.level,
-      region: row.region,
-      description: row.description || '',
-      routeGeojson: row.route_geojson,
-      isFeatured: row.is_featured,
-      elevationMinM: row.elevation_min_m || null,
-      elevationMaxM: row.elevation_max_m || null,
-    })).map((trek) => {
-      const nearbyStaysCount = stayCoordinates.filter((stay) => {
-        const distanceKm = minDistanceToRouteKm(trek.routeWaypoints, stay.lat, stay.lng);
-        return Number.isFinite(distanceKm) && distanceKm <= NEARBY_STAY_THRESHOLD_KM;
-      }).length;
-
-      return {
-        name: trek.name,
-        slug: trek.slug,
-        durationDays: trek.durationDays,
-        level: trek.level,
-        region: trek.region,
-        description: trek.description,
-        routeGeojson: trek.routeGeojson,
-        isFeatured: trek.isFeatured,
-        elevationMinM: trek.elevationMinM,
-        elevationMaxM: trek.elevationMaxM,
-        nearbyStaysCount,
-        wishlistCount: Number(wishlistCountBySlug[trek.slug] || 0),
-      };
-    });
-
-    const featuredStays = featuredStaysRows.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      stayType: row.stay_type,
-      location: row.location,
-      description: row.description,
-      imageUrl: row.image_url,
-      pricePerNight: Number(row.price_per_night),
-      isFeatured: row.is_featured,
-      discountPercent: Number(row.discount_percent || 0),
-      avgRating: Number(row.avg_rating || 0),
-      reviewCount: Number(row.review_count || 0),
-    }));
+    const allTreks = Array.isArray(treksData.treks) ? treksData.treks : [];
+    const featuredStays = Array.isArray(staysData.stays) ? staysData.stays : [];
 
     return {
       props: {

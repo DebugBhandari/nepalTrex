@@ -1,5 +1,4 @@
 import Head from 'next/head';
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   Box,
@@ -13,176 +12,17 @@ import AppsRoundedIcon from '@mui/icons-material/AppsRounded';
 import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import StarRoundedIcon from '@mui/icons-material/StarRounded';
-import { query } from '../../lib/db';
 import SiteHeader from '../../components/SiteHeader';
+import StayThumbnailCard from '../../components/StayThumbnailCard';
 import ThumbnailGrid from '../../components/ThumbnailGrid';
 import { gradients, themeColors } from '../../lib/theme';
-
-const DEFAULT_STAY_IMAGE = '/stays/lodge-exterior.jpg';
 
 const TYPE_FILTERS = [
   { label: 'All', value: null, icon: AppsRoundedIcon },
   { label: 'Hotels', value: 'hotel', icon: HotelRoundedIcon },
   { label: 'Homestays', value: 'homestay', icon: HomeRoundedIcon },
 ];
-
-function discountedPrice(stay) {
-  if (!stay.pricePerNight) return null;
-  if (stay.discountPercent > 0) {
-    return Math.round(stay.pricePerNight * (1 - stay.discountPercent / 100));
-  }
-  return stay.pricePerNight;
-}
-
-function StayCard({ stay }) {
-  const finalPrice = discountedPrice(stay);
-
-  return (
-    <Box component={Link} href={`/stays/${stay.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-      <Box
-        sx={{
-          position: 'relative',
-          paddingTop: '66.67%',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          mb: 1.5,
-          '& img': { transition: 'transform 0.35s ease' },
-          '&:hover img': { transform: 'scale(1.04)' },
-        }}
-      >
-        <Box
-          component="img"
-          src={stay.imageUrl || DEFAULT_STAY_IMAGE}
-          alt={stay.name}
-          sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-        />
-
-        {stay.discountPercent > 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              px: 1.25,
-              py: 0.5,
-              borderRadius: 999,
-              bgcolor: themeColors.goldSun,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.4,
-            }}
-          >
-            <LocalOfferRoundedIcon sx={{ fontSize: 12, color: themeColors.ink }} />
-            <Typography variant="caption" sx={{ color: themeColors.ink, fontWeight: 800, lineHeight: 1 }}>
-              -{stay.discountPercent}%
-            </Typography>
-          </Box>
-        )}
-
-        {stay.isFeatured && stay.discountPercent === 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              px: 1.25,
-              py: 0.5,
-              borderRadius: 999,
-              bgcolor: 'primary.main',
-            }}
-          >
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
-              Featured
-            </Typography>
-          </Box>
-        )}
-
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            px: 1.25,
-            py: 0.5,
-            borderRadius: 999,
-            bgcolor: 'rgba(15,43,45,0.78)',
-            backdropFilter: 'blur(4px)',
-            border: `1px solid rgba(240, 180, 41, 0.28)`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-          }}
-        >
-          {stay.stayType === 'hotel'
-            ? <HotelRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />
-            : <HomeRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />}
-          <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, textTransform: 'capitalize', lineHeight: 1 }}>
-            {stay.stayType}
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box sx={{ px: 0.5 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.3 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{
-              lineHeight: 1.3,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              flex: 1,
-              mr: 1,
-            }}
-          >
-            {stay.name}
-          </Typography>
-          {stay.avgRating && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
-              <StarRoundedIcon sx={{ fontSize: 15, color: themeColors.goldSun }} />
-              <Typography variant="body2" fontWeight={700}>{stay.avgRating}</Typography>
-              <Typography variant="caption" color="text.secondary">({stay.reviewCount})</Typography>
-            </Box>
-          )}
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.4 }}>
-          <LocationOnOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-          <Typography variant="body2" color="text.secondary" noWrap>{stay.location}</Typography>
-        </Box>
-
-        {stay.menuCount > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.4 }}>
-            <MenuBookOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-            <Typography variant="body2" color="text.secondary">
-              {stay.menuCount} menu item{stay.menuCount === 1 ? '' : 's'}
-            </Typography>
-          </Box>
-        )}
-
-        {finalPrice && (
-          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8, mt: 0.5 }}>
-            {stay.discountPercent > 0 && (
-              <Typography variant="caption" sx={{ textDecoration: 'line-through', color: 'text.disabled' }}>
-                NPR {stay.pricePerNight.toLocaleString()}
-              </Typography>
-            )}
-            <Typography variant="body2">
-              <Box component="span" fontWeight={700}>NPR {finalPrice.toLocaleString()}</Box>
-              <Box component="span" color="text.secondary"> /night</Box>
-            </Typography>
-          </Box>
-        )}
-      </Box>
-    </Box>
-  );
-}
 
 function HeroStrip({ emoji, headline, subline, bgFrom, bgMid, bgTo, dark = false }) {
   return (
@@ -246,7 +86,7 @@ function Section({ title, subtitle, stays, viewAll }) {
         </Typography>
       )}
       <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
-        {stays.slice(0, 8).map((stay) => <StayCard key={stay.id} stay={stay} />)}
+        {stays.slice(0, 8).map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}
       </ThumbnailGrid>
     </Box>
   );
@@ -424,7 +264,7 @@ export default function StaysPage({ stays }) {
                 {filteredStays.length === 0 ? 'No stays match your filters.' : `${filteredStays.length} stay${filteredStays.length === 1 ? '' : 's'}`}
               </Typography>
               <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
-                {filteredStays.map((stay) => <StayCard key={stay.id} stay={stay} />)}
+                {filteredStays.map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}
               </ThumbnailGrid>
             </>
           ) : (
@@ -541,7 +381,7 @@ export default function StaysPage({ stays }) {
                   {stays.length} stay{stays.length === 1 ? '' : 's'} across Nepal
                 </Typography>
                 <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
-                  {filteredStays.map((stay) => <StayCard key={stay.id} stay={stay} />)}
+                  {filteredStays.map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}
                 </ThumbnailGrid>
               </Box>
             </>
@@ -552,39 +392,20 @@ export default function StaysPage({ stays }) {
   );
 }
 
-export async function getServerSideProps() {
-  const result = await query(
-    `
-      SELECT
-        s.id, s.name, s.slug, s.stay_type, s.location, s.description,
-        s.image_url, s.price_per_night, s.is_featured, s.discount_percent, s.contact_phone,
-        COUNT(DISTINCT m.id)::int AS menu_count,
-        ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
-        COUNT(DISTINCT r.id)::int AS review_count
-      FROM stays s
-      LEFT JOIN menu_items m ON m.stay_id = s.id
-      LEFT JOIN stay_reviews r ON r.stay_id = s.id
-      GROUP BY s.id
-      ORDER BY s.is_featured DESC, s.created_at DESC
-    `
-  );
+export async function getServerSideProps(context) {
+  const proto = (context.req.headers['x-forwarded-proto'] || 'http').toString().split(',')[0].trim();
+  const host = (context.req.headers['x-forwarded-host'] || context.req.headers.host || '').toString();
+  const baseUrl = `${proto}://${host}`;
 
-  const stays = result.rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    stayType: row.stay_type,
-    location: row.location,
-    description: row.description || '',
-    imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
-    pricePerNight: row.price_per_night ? Number(row.price_per_night) : null,
-    isFeatured: Boolean(row.is_featured),
-    discountPercent: Number(row.discount_percent || 0),
-    avgRating: row.avg_rating ? Number(row.avg_rating).toFixed(1) : null,
-    reviewCount: Number(row.review_count || 0),
-    contactPhone: row.contact_phone || '',
-    menuCount: Number(row.menu_count || 0),
-  }));
-
-  return { props: { stays } };
+  try {
+    const response = await fetch(`${baseUrl}/api/stays?view=listing`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch stays (${response.status})`);
+    }
+    const data = await response.json();
+    return { props: { stays: Array.isArray(data.stays) ? data.stays : [] } };
+  } catch (error) {
+    console.error('Stays page data fetch failed:', error);
+    return { props: { stays: [] } };
+  }
 }
