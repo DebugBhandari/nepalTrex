@@ -32,8 +32,13 @@ jobs:
 
       - run: npm install -g npm@11
 
-      # Install workspace root dependencies
-      - run: cd ./app && npm install
+      # Install root dependencies and generate lock file
+      - run: npm install --no-fund --no-audit
+
+      # Install workspace dependencies using lock file
+      - run: cd ./app && npm ci --workspace=@org/app
+      - run: cd ./types && npm ci --workspace=@org/types
+      - run: cd ./utils && npm ci --workspace=@org/utils
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
       - run: npx nx record -- npx nx format:check  --base="remotes/origin/main"
