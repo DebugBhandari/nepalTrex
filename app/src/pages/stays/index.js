@@ -24,7 +24,15 @@ const TYPE_FILTERS = [
   { label: 'Homestays', value: 'homestay', icon: HomeRoundedIcon },
 ];
 
-function HeroStrip({ emoji, headline, subline, bgFrom, bgMid, bgTo, dark = false }) {
+function HeroStrip({
+  emoji,
+  headline,
+  subline,
+  bgFrom,
+  bgMid,
+  bgTo,
+  dark = false,
+}) {
   return (
     <Box
       sx={{
@@ -39,7 +47,14 @@ function HeroStrip({ emoji, headline, subline, bgFrom, bgMid, bgTo, dark = false
         gap: { xs: 2, md: 3 },
       }}
     >
-      <Typography sx={{ fontSize: { xs: 40, md: 56 }, lineHeight: 1, flexShrink: 0, userSelect: 'none' }}>
+      <Typography
+        sx={{
+          fontSize: { xs: 40, md: 56 },
+          lineHeight: 1,
+          flexShrink: 0,
+          userSelect: 'none',
+        }}
+      >
         {emoji}
       </Typography>
       <Box>
@@ -58,7 +73,10 @@ function HeroStrip({ emoji, headline, subline, bgFrom, bgMid, bgTo, dark = false
         </Typography>
         <Typography
           variant="body1"
-          sx={{ color: dark ? 'rgba(0,0,0,0.62)' : 'rgba(255,255,255,0.88)', fontWeight: 400 }}
+          sx={{
+            color: dark ? 'rgba(0,0,0,0.62)' : 'rgba(255,255,255,0.88)',
+            fontWeight: 400,
+          }}
         >
           {subline}
         </Typography>
@@ -72,10 +90,29 @@ function Section({ title, subtitle, stays, viewAll }) {
 
   return (
     <Box sx={{ mb: 5 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: subtitle ? 0.4 : 2 }}>
-        <Typography variant="h5" fontWeight={800}>{title}</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          mb: subtitle ? 0.4 : 2,
+        }}
+      >
+        <Typography variant="h5" fontWeight={800}>
+          {title}
+        </Typography>
         {viewAll && (
-          <Typography component="a" href="#all" variant="body2" sx={{ color: 'primary.main', textDecoration: 'underline', fontWeight: 600, flexShrink: 0 }}>
+          <Typography
+            component="a"
+            href="#all"
+            variant="body2"
+            sx={{
+              color: 'primary.main',
+              textDecoration: 'underline',
+              fontWeight: 600,
+              flexShrink: 0,
+            }}
+          >
             Show all
           </Typography>
         )}
@@ -85,8 +122,17 @@ function Section({ title, subtitle, stays, viewAll }) {
           {subtitle}
         </Typography>
       )}
-      <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
-        {stays.slice(0, 8).map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}
+      <ThumbnailGrid
+        columns={{
+          xs: '1fr',
+          sm: 'repeat(2,1fr)',
+          md: 'repeat(3,1fr)',
+          xl: 'repeat(4,1fr)',
+        }}
+      >
+        {stays.slice(0, 8).map((stay) => (
+          <StayThumbnailCard key={stay.id} stay={stay} />
+        ))}
       </ThumbnailGrid>
     </Box>
   );
@@ -133,28 +179,73 @@ export default function StaysPage({ stays }) {
 
   const isFiltering = searchQuery.trim() !== '' || activeType !== null;
 
-  const featured = useMemo(() => filteredStays.filter((s) => s.isFeatured), [filteredStays]);
-  const deals = useMemo(() => filteredStays.filter((s) => s.discountPercent > 0), [filteredStays]);
-  const kathmandu = useMemo(() => filteredStays.filter((s) => {
-    const loc = s.location.toLowerCase();
-    return loc.includes('kathmandu') || loc.includes('thamel') || loc.includes('bhaktapur') || loc.includes('patan') || loc.includes('lalitpur') || loc.includes('bagmati');
-  }), [filteredStays]);
-  const mountain = useMemo(() => filteredStays.filter((s) => {
-    const loc = s.location.toLowerCase();
-    return loc.includes('solukhumbu') || loc.includes('annapurna') || loc.includes('langtang') || loc.includes('manang') || loc.includes('namche') || loc.includes('ghandruk') || loc.includes('nagarkot') || loc.includes('syangboche') || loc.includes('kaski') || loc.includes('khumbu');
-  }), [filteredStays]);
-  const lakeside = useMemo(() => filteredStays.filter((s) => {
-    const loc = s.location.toLowerCase();
-    return loc.includes('pokhara') || loc.includes('lake') || loc.includes('lakeside') || loc.includes('phewa');
-  }), [filteredStays]);
+  const featured = useMemo(
+    () => filteredStays.filter((s) => s.isFeatured),
+    [filteredStays]
+  );
+  const deals = useMemo(
+    () => filteredStays.filter((s) => s.discountPercent > 0),
+    [filteredStays]
+  );
+  const kathmandu = useMemo(
+    () =>
+      filteredStays.filter((s) => {
+        const loc = s.location.toLowerCase();
+        return (
+          loc.includes('kathmandu') ||
+          loc.includes('thamel') ||
+          loc.includes('bhaktapur') ||
+          loc.includes('patan') ||
+          loc.includes('lalitpur') ||
+          loc.includes('bagmati')
+        );
+      }),
+    [filteredStays]
+  );
+  const mountain = useMemo(
+    () =>
+      filteredStays.filter((s) => {
+        const loc = s.location.toLowerCase();
+        return (
+          loc.includes('solukhumbu') ||
+          loc.includes('annapurna') ||
+          loc.includes('langtang') ||
+          loc.includes('manang') ||
+          loc.includes('namche') ||
+          loc.includes('ghandruk') ||
+          loc.includes('nagarkot') ||
+          loc.includes('syangboche') ||
+          loc.includes('kaski') ||
+          loc.includes('khumbu')
+        );
+      }),
+    [filteredStays]
+  );
+  const lakeside = useMemo(
+    () =>
+      filteredStays.filter((s) => {
+        const loc = s.location.toLowerCase();
+        return (
+          loc.includes('pokhara') ||
+          loc.includes('lake') ||
+          loc.includes('lakeside') ||
+          loc.includes('phewa')
+        );
+      }),
+    [filteredStays]
+  );
 
-  const maxDiscount = deals.length > 0 ? Math.max(...deals.map((s) => s.discountPercent)) : 0;
+  const maxDiscount =
+    deals.length > 0 ? Math.max(...deals.map((s) => s.discountPercent)) : 0;
 
   return (
     <>
       <Head>
         <title>Stays | NepalTrex</title>
-        <meta name="description" content="Browse hotels and homestays across Nepal — featured stays, best deals, Kathmandu city stays, mountain escapes, and lakeside retreats." />
+        <meta
+          name="description"
+          content="Browse hotels and homestays across Nepal — featured stays, best deals, Kathmandu city stays, mountain escapes, and lakeside retreats."
+        />
       </Head>
 
       <SiteHeader />
@@ -181,7 +272,10 @@ export default function StaysPage({ stays }) {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <SearchRoundedIcon
+                    fontSize="small"
+                    sx={{ color: 'text.secondary' }}
+                  />
                 </InputAdornment>
               ),
               sx: { borderRadius: 999, bgcolor: 'background.paper', px: 1 },
@@ -235,7 +329,11 @@ export default function StaysPage({ stays }) {
                 }}
               >
                 <Icon sx={{ fontSize: 24 }} />
-                <Typography variant="caption" fontWeight={isActive ? 700 : 400} sx={{ lineHeight: 1, whiteSpace: 'nowrap' }}>
+                <Typography
+                  variant="caption"
+                  fontWeight={isActive ? 700 : 400}
+                  sx={{ lineHeight: 1, whiteSpace: 'nowrap' }}
+                >
                   {filter.label}
                 </Typography>
               </Box>
@@ -253,20 +351,47 @@ export default function StaysPage({ stays }) {
           })}
         >
           <Container maxWidth="md">
-            <Typography variant="h3" fontWeight={900} sx={{ mb: 1, color: themeColors.snow, fontSize: { xs: '2rem', md: '2.8rem' } }}>
+            <Typography
+              variant="h3"
+              fontWeight={900}
+              sx={{
+                mb: 1,
+                color: themeColors.snow,
+                fontSize: { xs: '2rem', md: '2.8rem' },
+              }}
+            >
               Where to in Nepal?
             </Typography>
-            <Typography variant="h6" sx={{ color: 'rgba(248, 244, 235, 0.82)' }}>
-              {staysData.length} unique stays — teahouses, heritage inns, jungle camps and city boutiques
+            <Typography
+              variant="h6"
+              sx={{ color: 'rgba(248, 244, 235, 0.82)' }}
+            >
+              {staysData.length} unique stays — teahouses, heritage inns, jungle
+              camps and city boutiques
             </Typography>
           </Container>
         </Box>
       )}
 
       {!isFiltering && deals.length > 0 && (
-        <Box sx={{ bgcolor: themeColors.midTeal, py: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-          <LocalOfferRoundedIcon sx={{ fontSize: 16, color: themeColors.goldSun }} />
-          <Typography variant="body2" sx={{ color: themeColors.snow, fontWeight: 600 }}>
+        <Box
+          sx={{
+            bgcolor: themeColors.midTeal,
+            py: 1,
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+          }}
+        >
+          <LocalOfferRoundedIcon
+            sx={{ fontSize: 16, color: themeColors.goldSun }}
+          />
+          <Typography
+            variant="body2"
+            sx={{ color: themeColors.snow, fontWeight: 600 }}
+          >
             Limited-time deals — save up to {maxDiscount}% on selected stays
           </Typography>
         </Box>
@@ -276,19 +401,37 @@ export default function StaysPage({ stays }) {
         sx={(theme) => ({
           minHeight: '60vh',
           py: { xs: 3, md: 5 },
-          background: theme.palette.mode === 'dark'
-            ? 'radial-gradient(circle at 18% 12%, rgba(30,111,92,0.14) 0%, transparent 38%), linear-gradient(160deg, #0f2b2d 0%, #173b3f 100%)'
-            : theme.palette.background.default,
+          background:
+            theme.palette.mode === 'dark'
+              ? 'radial-gradient(circle at 18% 12%, rgba(30,111,92,0.14) 0%, transparent 38%), linear-gradient(160deg, #0f2b2d 0%, #173b3f 100%)'
+              : theme.palette.background.default,
         })}
       >
         <Container maxWidth="xl">
           {isFiltering ? (
             <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-                {filteredStays.length === 0 ? 'No stays match your filters.' : `${filteredStays.length} stay${filteredStays.length === 1 ? '' : 's'}`}
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 2.5 }}
+              >
+                {filteredStays.length === 0
+                  ? 'No stays match your filters.'
+                  : `${filteredStays.length} stay${
+                      filteredStays.length === 1 ? '' : 's'
+                    }`}
               </Typography>
-              <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
-                {filteredStays.map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}
+              <ThumbnailGrid
+                columns={{
+                  xs: '1fr',
+                  sm: 'repeat(2,1fr)',
+                  md: 'repeat(3,1fr)',
+                  xl: 'repeat(4,1fr)',
+                }}
+              >
+                {filteredStays.map((stay) => (
+                  <StayThumbnailCard key={stay.id} stay={stay} />
+                ))}
               </ThumbnailGrid>
             </>
           ) : (
@@ -300,7 +443,9 @@ export default function StaysPage({ stays }) {
                 viewAll={featured.length > 4}
               />
 
-              {featured.length > 0 && deals.length > 0 && <Divider sx={{ my: 4 }} />}
+              {featured.length > 0 && deals.length > 0 && (
+                <Divider sx={{ my: 4 }} />
+              )}
 
               <Section
                 title="Best Deals"
@@ -310,16 +455,52 @@ export default function StaysPage({ stays }) {
               />
 
               <Box sx={{ mb: 5 }}>
-                <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>Explore by Destination</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+                <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>
+                  Explore by Destination
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2.5 }}
+                >
                   Find stays in Nepal's most iconic regions
                 </Typography>
-                <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3,1fr)', md: 'repeat(4,1fr)' } }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gap: 2,
+                    gridTemplateColumns: {
+                      xs: '1fr 1fr',
+                      sm: 'repeat(3,1fr)',
+                      md: 'repeat(4,1fr)',
+                    },
+                  }}
+                >
                   {[
-                    { label: 'Kathmandu Valley', emoji: '🏛️', count: kathmandu.length, search: 'Kathmandu' },
-                    { label: 'Mountain Escapes', emoji: '⛰️', count: mountain.length, search: 'Solukhumbu' },
-                    { label: 'Lakeside Pokhara', emoji: '🌊', count: lakeside.length, search: 'Pokhara' },
-                    { label: 'All Stays', emoji: '🗺️', count: staysData.length, search: '' },
+                    {
+                      label: 'Kathmandu Valley',
+                      emoji: '🏛️',
+                      count: kathmandu.length,
+                      search: 'Kathmandu',
+                    },
+                    {
+                      label: 'Mountain Escapes',
+                      emoji: '⛰️',
+                      count: mountain.length,
+                      search: 'Solukhumbu',
+                    },
+                    {
+                      label: 'Lakeside Pokhara',
+                      emoji: '🌊',
+                      count: lakeside.length,
+                      search: 'Pokhara',
+                    },
+                    {
+                      label: 'All Stays',
+                      emoji: '🗺️',
+                      count: staysData.length,
+                      search: '',
+                    },
                   ].map((dest) => (
                     <Box
                       key={dest.label}
@@ -335,12 +516,21 @@ export default function StaysPage({ stays }) {
                         border: `1px solid ${theme.palette.divider}`,
                         bgcolor: theme.palette.background.paper,
                         transition: 'transform 0.2s, box-shadow 0.2s',
-                        '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 12px 28px rgba(15, 43, 45, 0.14)' },
+                        '&:hover': {
+                          transform: 'translateY(-3px)',
+                          boxShadow: '0 12px 28px rgba(15, 43, 45, 0.14)',
+                        },
                       })}
                     >
-                      <Typography sx={{ fontSize: 32, lineHeight: 1, mb: 0.8 }}>{dest.emoji}</Typography>
-                      <Typography variant="subtitle2" fontWeight={700}>{dest.label}</Typography>
-                      <Typography variant="caption" color="text.secondary">{dest.count} stays</Typography>
+                      <Typography sx={{ fontSize: 32, lineHeight: 1, mb: 0.8 }}>
+                        {dest.emoji}
+                      </Typography>
+                      <Typography variant="subtitle2" fontWeight={700}>
+                        {dest.label}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {dest.count} stays
+                      </Typography>
                     </Box>
                   ))}
                 </Box>
@@ -350,9 +540,9 @@ export default function StaysPage({ stays }) {
                 emoji="🏙️"
                 headline="Ancient Cities, Modern Spirit"
                 subline="From Thamel's buzzing lanes to Bhaktapur's ancient squares — find your perfect city base"
-                bgFrom={themeColors.midTeal}
+                bgFrom={themeColors.deepTeal}
                 bgMid={themeColors.moss}
-                bgTo={themeColors.goldSun}
+                bgTo={themeColors.midTeal}
                 dark
               />
 
@@ -400,12 +590,28 @@ export default function StaysPage({ stays }) {
               />
 
               <Box id="all" sx={{ pt: 2 }}>
-                <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>All Stays</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  {staysData.length} stay{staysData.length === 1 ? '' : 's'} across Nepal
+                <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>
+                  All Stays
                 </Typography>
-                <ThumbnailGrid columns={{ xs: '1fr', sm: 'repeat(2,1fr)', md: 'repeat(3,1fr)', xl: 'repeat(4,1fr)' }}>
-                  {filteredStays.map((stay) => <StayThumbnailCard key={stay.id} stay={stay} />)}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 3 }}
+                >
+                  {staysData.length} stay{staysData.length === 1 ? '' : 's'}{' '}
+                  across Nepal
+                </Typography>
+                <ThumbnailGrid
+                  columns={{
+                    xs: '1fr',
+                    sm: 'repeat(2,1fr)',
+                    md: 'repeat(3,1fr)',
+                    xl: 'repeat(4,1fr)',
+                  }}
+                >
+                  {filteredStays.map((stay) => (
+                    <StayThumbnailCard key={stay.id} stay={stay} />
+                  ))}
                 </ThumbnailGrid>
               </Box>
             </>
@@ -417,8 +623,15 @@ export default function StaysPage({ stays }) {
 }
 
 export async function getServerSideProps(context) {
-  const proto = (context.req.headers['x-forwarded-proto'] || 'http').toString().split(',')[0].trim();
-  const host = (context.req.headers['x-forwarded-host'] || context.req.headers.host || '').toString();
+  const proto = (context.req.headers['x-forwarded-proto'] || 'http')
+    .toString()
+    .split(',')[0]
+    .trim();
+  const host = (
+    context.req.headers['x-forwarded-host'] ||
+    context.req.headers.host ||
+    ''
+  ).toString();
   const baseUrl = `${proto}://${host}`;
 
   try {
