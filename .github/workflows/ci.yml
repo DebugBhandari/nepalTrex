@@ -32,7 +32,9 @@ jobs:
 
       - run: npm install -g npm@11
 
-      - run: npx nx install
+      # Install workspace root dependencies
+      - run: cd ./app && npm install
+
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
       - run: npx nx record -- npx nx format:check  --base="remotes/origin/main"
       - run: npx nx run-many -t lint test build typecheck e2e-ci
