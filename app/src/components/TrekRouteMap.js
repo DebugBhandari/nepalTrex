@@ -27,7 +27,7 @@ function normalizeGeoJson(routeGeojson) {
     if (routeGeojson.type === 'RouteWaypoints' && Array.isArray(routeGeojson.waypoints)) {
       const coords = routeGeojson.waypoints
         .filter(([lat, lng]) => lat !== '' && lng !== '' && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng)))
-        .map(([lat, lng]) => [Number(lng), Number(lat)]); // GeoJSON is [lng, lat]
+        .map(([lat, lng]) => [Number(lng), Number(lat)]);
       if (coords.length < 2) return null;
       return {
         type: 'Feature',
@@ -40,7 +40,6 @@ function normalizeGeoJson(routeGeojson) {
       return routeGeojson;
     }
 
-    // Wrap geometry objects such as LineString into a Feature for consistent rendering.
     return {
       type: 'Feature',
       properties: {},
@@ -96,14 +95,14 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        subdomains="abcd"
+        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        subdomains='abcd'
         maxZoom={19}
       />
       <TrekRouteBounds routeGeojson={routeGeojson} />
       {routeGeojson && (
         <GeoJSON
-          key="route-layer"
+          key='route-layer'
           data={routeGeojson}
           style={{
             color: '#0f766e',
@@ -117,7 +116,7 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
         const isHovered = stay.id === hoveredStayId;
         return (
           <CircleMarker
-            key={`stay-${stay.id}`}
+            key={stay.id}
             center={[Number(stay.latitude), Number(stay.longitude)]}
             radius={isHovered ? 11 : 7}
             eventHandlers={{
@@ -134,7 +133,7 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
               weight: isHovered ? 3 : 2,
             }}
           >
-            <Tooltip direction="top" offset={[0, -10]} permanent={isHovered}>
+            <Tooltip direction='top' offset={[0, -10]} permanent={isHovered}>
               <strong>{stay.name}</strong>
               <br />
               <span style={{ fontSize: '0.75em', opacity: 0.8 }}>
@@ -148,12 +147,12 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
       })}
       {namedWaypoints.map(([lat, lng, name], i) => (
         <CircleMarker
-          key={`wp-${i}`}
+          key={name + '-' + i}
           center={[lat, lng]}
           radius={5}
           pathOptions={{ color: '#285A48', fillColor: '#408A71', fillOpacity: 1, weight: 2 }}
         >
-          <Tooltip direction="top" offset={[0, -8]}>
+          <Tooltip direction='top' offset={[0, -8]}>
             {name}
           </Tooltip>
         </CircleMarker>
