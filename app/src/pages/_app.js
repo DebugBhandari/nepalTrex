@@ -8,7 +8,6 @@ import AppIconButton from '../components/AppIconButton';
 import { createAppTheme } from '../lib/mui-theme';
 import { CartProvider } from '../contexts/CartContext';
 import './styles.css';
-import 'leaflet/dist/leaflet.css';
 
 function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
   const [mode, setMode] = useState('light');

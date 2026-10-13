@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import L from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
 
 const NEPAL_CENTER = [28.2, 84.1];
@@ -70,7 +69,7 @@ function TrekRouteBounds({ routeGeojson }) {
       return;
     }
 
-    const bounds = L.geoJSON(normalized).getBounds();
+    const bounds = GeoJSON(normalized).getBounds();
 
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [28, 28] });
@@ -96,10 +95,10 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
       scrollWheelZoom
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         subdomains="abcd"
-        maxZoom={20}
+        maxZoom={19}
       />
       <TrekRouteBounds routeGeojson={routeGeojson} />
       {routeGeojson && (
