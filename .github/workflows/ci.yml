@@ -36,7 +36,7 @@ jobs:
       - run: npm install --no-fund --no-audit
 
       # Install workspace dependencies using Nx (uses the generated lock file)
-      - run: npx nx install
+      - run: npm ci
 
       # Prepend any command with "nx record --" to record its logs to Nx Cloud
       - run: npx nx record -- npx nx format:check  --base="remotes/origin/main"
