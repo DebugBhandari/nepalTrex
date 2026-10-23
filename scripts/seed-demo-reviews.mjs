@@ -26,14 +26,19 @@ async function loadEnv() {
   }
 }
 
-const reviewSeeds = [
-  ['stay', 'Test Bandipur Hill Hotel', 5, 'The ridge view at sunrise was exceptional and the staff made our short stop feel genuinely welcoming.'],
-  ['stay', 'Test Chitwan Jungle Camp', 4, 'A peaceful base after a long travel day. The room was comfortable and dinner was thoughtfully prepared.'],
-  ['stay', 'Test Dhulikhel Ridge Hotel', 5, 'Beautifully calm setting with a very helpful team. We would happily return before another trek.'],
-  ['trek', 'Test Annapurna Base Camp Trek', 5, 'An unforgettable route with well-paced days, dramatic scenery, and a satisfying finish at base camp.'],
-  ['trek', 'Test Everest Base Camp Trek', 5, 'A demanding but incredibly rewarding journey. The acclimatisation days made the itinerary feel sensible.'],
-  ['trek', 'Test Langtang Valley Trek', 4, 'A beautiful valley trek with memorable village stops and a great balance of challenge and rest.'],
+const stayComments = [
+  'A comfortable and well-managed stay with friendly service, clean rooms, and a welcome rest after a long day on the trail.',
+  'The location was excellent for our itinerary. The team was helpful, meals were satisfying, and the atmosphere felt warm.',
+  'A dependable mountain stay with thoughtful hospitality. We appreciated the calm setting and practical trekking support.',
 ];
+
+const trekComments = [
+  'A memorable route with beautiful scenery, sensible pacing, and rewarding stops throughout the journey.',
+  'Well worth the effort. The trail experience was varied, scenic, and suited to a carefully planned trekking itinerary.',
+  'An enjoyable trek with great landscapes and a good balance of challenge, acclimatisation, and village hospitality.',
+];
+
+const ratings = [5, 4, 5, 4, 5, 4, 5];
 
 async function main() {
   await loadEnv();
@@ -57,30 +62,40 @@ async function main() {
       CREATE INDEX IF NOT EXISTS reviews_target_created_at_idx ON reviews(target_type, target_id, created_at DESC);
     `);
 
-    const usersResult = await client.query(`SELECT id FROM users ORDER BY created_at LIMIT 12`);
+    const usersResult = await client.query(`SELECT id FROM users ORDER BY created_at, id LIMIT 12`);
     const users = usersResult.rows.map((row) => row.id);
     if (users.length === 0) throw new Error('No users are available to author demo reviews');
 
-    let inserted = 0;
-    for (let index = 0; index < reviewSeeds.length; index += 1) {
-      const [targetType, name, rating, comment] = reviewSeeds[index];
-      const targetResult = await client.query(
-        targetType === 'stay' ? 'SELECT id FROM stays WHERE name = $1 LIMIT 1' : 'SELECT id FROM treks WHERE name = $1 LIMIT 1',
-        [name]
-      );
-      if (!targetResult.rows[0]) continue;
+    const targetResults = await Promise.all([
+      client.query(`SELECT id, name FROM stays ORDER BY name, id`),
+      client.query(`SELECT id, name FROM treks ORDER BY name, id`),
+    ]);
 
-      const result = await client.query(
-        `INSERT INTO reviews (target_type, target_id, reviewer_user_id, rating, comment)
-         VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (target_type, target_id, reviewer_user_id) DO NOTHING`,
-        [targetType, targetResult.rows[0].id, users[index % users.length], rating, comment]
-      );
-      inserted += result.rowCount;
+    let inserted = 0;
+    for (const [targetType, targets, comments] of [
+      ['stay', targetResults[0].rows, stayComments],
+      ['trek', targetResults[1].rows, trekComments],
+    ]) {
+      for (let index = 0; index < targets.length; index += 1) {
+        const target = targets[index];
+        const result = await client.query(
+          `INSERT INTO reviews (target_type, target_id, reviewer_user_id, rating, comment)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT (target_type, target_id, reviewer_user_id) DO NOTHING`,
+          [
+            targetType,
+            target.id,
+            users[index % users.length],
+            ratings[index % ratings.length],
+            comments[index % comments.length],
+          ]
+        );
+        inserted += result.rowCount;
+      }
     }
 
     await client.query('COMMIT');
-    console.log(`Demo reviews seeded successfully. Inserted ${inserted} new reviews.`);
+    console.log(`Demo reviews seeded successfully. Inserted ${inserted} new reviews for ${targetResults[0].rowCount} stays and ${targetResults[1].rowCount} treks.`);
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Failed to seed demo reviews:', error.message || error);

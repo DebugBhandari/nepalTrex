@@ -5,14 +5,12 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import TerrainRoundedIcon from '@mui/icons-material/TerrainRounded';
-import AppButton from './AppButton';
+import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { getTrekImage } from '../lib/treks';
 import { themeColors } from '../lib/theme';
 
-export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onToggleWishlist }) {
+export default function TrekThumbnailCard({ trek }) {
   return (
     <Box component={Link} href={`/treks/${trek.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block', borderRadius: 2, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
       <Box
@@ -48,16 +46,17 @@ export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onTogg
               position: 'absolute',
               top: 12,
               left: 12,
-              px: 1.25,
-              py: 0.5,
+              width: 30,
+              height: 30,
               borderRadius: 1,
-            bgcolor: '#00B4D8',
-            boxShadow: '0 4px 10px rgba(2, 62, 138, 0.18)',
+              bgcolor: '#00B4D8',
+              boxShadow: '0 4px 10px rgba(2, 62, 138, 0.18)',
+              display: 'grid',
+              placeItems: 'center',
             }}
+            title="Featured trek"
           >
-            <Typography variant="caption" sx={{ color: themeColors.ink, fontWeight: 700, lineHeight: 1 }}>
-              Featured
-            </Typography>
+            <WorkspacePremiumRoundedIcon sx={{ fontSize: 18, color: themeColors.ink }} />
           </Box>
         )}
 
@@ -74,13 +73,21 @@ export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onTogg
             border: '1px solid rgba(255, 255, 255, 0.2)',
             display: 'flex',
             alignItems: 'center',
-            gap: 0.5,
+            gap: 0.4,
           }}
         >
-          <TerrainRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />
-          <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
-            {trek.durationDays} days
-          </Typography>
+          {Number(trek.reviewCount || 0) > 0 ? (
+            <>
+              <StarRoundedIcon sx={{ fontSize: 14, color: themeColors.goldSun }} />
+              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                {Number(trek.avgRating).toFixed(1)} ({Number(trek.reviewCount)})
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+              No reviews
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -103,28 +110,12 @@ export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onTogg
         </Typography>
 
         <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
+          <Chip label={`${trek.durationDays} days`} size="small" variant="outlined" />
           <Chip label={trek.level} size="small" color="secondary" />
           <Chip label={trek.region || 'Other'} size="small" variant="outlined" />
           <Chip label={`${trek.nearbyStaysCount || 0} nearby stays`} size="small" variant="outlined" />
         </Stack>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            ❤️ {Number(wishlistCount || 0)} saved
-          </Typography>
-          <AppButton
-            variant={isSaved ? 'contained' : 'outlined'}
-            size="small"
-            startIcon={isSaved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onToggleWishlist(trek.slug);
-            }}
-          >
-            {isSaved ? 'Saved' : 'Wishlist'}
-          </AppButton>
-        </Box>
       </Box>
     </Box>
   );

@@ -108,14 +108,14 @@ async function handleGet(req, res) {
               MIN(CASE WHEN m.category = 'room' THEN m.price END)
             ) AS cheapest_room_price,
             COUNT(DISTINCT m.id)::int AS menu_count,
-            ROUND(AVG(sr.rating)::numeric, 1) AS avg_rating,
-            COUNT(DISTINCT sr.id)::int AS review_count
+            ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
+            COUNT(DISTINCT r.id)::int AS review_count
           FROM stays s
           LEFT JOIN menu_items m ON m.stay_id = s.id
-          LEFT JOIN stay_reviews sr ON sr.stay_id = s.id
+          LEFT JOIN reviews r ON r.target_type = 'stay' AND r.target_id = s.id
           ${whereClause}
           GROUP BY s.id
-          ORDER BY s.is_featured DESC, s.created_at DESC
+          ORDER BY s.is_featured DESC, COUNT(DISTINCT r.id) DESC, s.created_at DESC
           ${limitClause}
         `
       );

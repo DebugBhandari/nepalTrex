@@ -22,12 +22,15 @@ import {
 } from '@mui/material';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import PlaceIcon from '@mui/icons-material/Place';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
+import StayThumbnailCard from '../components/StayThumbnailCard';
 import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
 import { useCart } from '../hooks/useCart';
 
@@ -592,7 +595,47 @@ function StayDetailView({ stay }) {
 }
 
 function TrekDetailView({ trek }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [hoveredStayId, setHoveredStayId] = useState(null);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistError, setWishlistError] = useState('');
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setIsWishlisted(false);
+      return;
+    }
+
+    fetch('/api/users/wishlist')
+      .then((response) => response.ok ? response.json() : { slugs: [] })
+      .then((data) => setIsWishlisted((data.slugs || []).includes(router.query.slug)))
+      .catch(() => setIsWishlisted(false));
+  }, [router.query.slug, status]);
+
+  const toggleWishlist = async () => {
+    if (status !== 'authenticated') {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent(router.asPath)}`);
+      return;
+    }
+
+    setWishlistError('');
+    const nextSavedState = !isWishlisted;
+    setIsWishlisted(nextSavedState);
+    try {
+      const response = await fetch('/api/users/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: router.query.slug, action: nextSavedState ? 'add' : 'remove' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to update wishlist');
+      setIsWishlisted((data.slugs || []).includes(router.query.slug));
+    } catch (error) {
+      setIsWishlisted(!nextSavedState);
+      setWishlistError(error.message || 'Unable to update wishlist');
+    }
+  };
 
   return (
     <>
@@ -624,9 +667,22 @@ function TrekDetailView({ trek }) {
             />
             <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
               <Typography variant="overline" color="text.secondary">Guided route overview</Typography>
-              <Typography variant="h3" sx={{ mt: 0.4, mb: 1.5, fontSize: { xs: '2rem', md: '3rem' } }}>
-                {trek.name}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 1.5 }}>
+                <Typography variant="h3" sx={{ mt: 0.4, fontSize: { xs: '2rem', md: '3rem' } }}>
+                  {trek.name}
+                </Typography>
+                <AppButton
+                  variant={isWishlisted ? 'contained' : 'outlined'}
+                  size="small"
+                  startIcon={isWishlisted ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                  disabled={status === 'loading'}
+                  onClick={toggleWishlist}
+                  sx={{ mt: 0.5, flexShrink: 0 }}
+                >
+                  {isWishlisted ? 'Saved' : 'Wishlist'}
+                </AppButton>
+              </Box>
+              {wishlistError && <Alert severity="error" sx={{ mb: 1.5 }}>{wishlistError}</Alert>}
               <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
                 <Chip label={trek.region} color="secondary" />
                 <Chip label={trek.level} variant="outlined" />
@@ -699,54 +755,19 @@ function TrekDetailView({ trek }) {
                 }}
               >
                 {trek.nearbyStays.map((stay) => (
-                  <Card
+                  <Box
                     key={stay.id}
                     onMouseEnter={() => setHoveredStayId(stay.id)}
                     onMouseLeave={() => setHoveredStayId(null)}
                     sx={(theme) => ({
-                      cursor: 'pointer',
-                      overflow: 'hidden', borderRadius: 2,
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease, outline-color 0.2s ease',
                       outline: hoveredStayId === stay.id ? '2px solid' : '2px solid transparent',
                       outlineColor: hoveredStayId === stay.id ? theme.palette.primary.main : 'transparent',
-                      '&:hover': {
-                        transform: 'translateY(-3px)',
-                        boxShadow: '0 16px 40px rgba(18, 44, 33, 0.18)',
-                      },
+                      borderRadius: 2,
+                      transition: 'outline-color 0.2s ease',
                     })}
                   >
-                    <Link href={`/stays/${stay.slug}`}>
-                      <CardMedia
-                        component="img"
-                        height="210"
-                        image={stay.imageUrl || DEFAULT_STAY_IMAGE}
-                        alt={stay.name}
-                        sx={{ objectFit: 'cover', objectPosition: 'center' }}
-                      />
-                    </Link>
-                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                      <Link href={`/stays/${stay.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <Typography
-                          variant="h6"
-                          sx={{ mb: 1, fontSize: '1.08rem', letterSpacing: '-0.018em', '&:hover': { color: 'primary.main' } }}
-                        >
-                          {stay.name}
-                        </Typography>
-                      </Link>
-                      <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 0.5, mb: 0.8 }}>
-                        <Chip label={stay.stayType} size="small" color="secondary" />
-                        <Chip
-                          icon={<PlaceIcon />}
-                          label={`${stay.distanceKm.toFixed(1)} km`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {stay.location}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                    <StayThumbnailCard stay={stay} />
+                  </Box>
                 ))}
               </Box>
             )}
@@ -788,18 +809,18 @@ export async function getServerSideProps(context) {
 
     const [stayRows, reviews] = await Promise.all([query(
       `
-        SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone, s.latitude, s.longitude,
-               COALESCE(
-                 json_agg(
-                   json_build_object(
-                     'id', m.id, 'category', m.category, 'name', m.name, 'description', m.description,
-                     'price', m.price, 'imageUrl', m.image_url, 'available', m.available
-                   ) ORDER BY m.sort_order, m.created_at
-                 ) FILTER (WHERE m.id IS NOT NULL),
-                 '[]'::json
-               ) AS menu_items
+        SELECT
+          s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone,
+          s.price_per_night, s.is_featured, s.discount_percent, s.latitude, s.longitude,
+          COALESCE(
+            MIN(CASE WHEN m.category = 'room' AND m.available = true THEN m.price END),
+            MIN(CASE WHEN m.category = 'room' THEN m.price END)
+          ) AS cheapest_room_price,
+          ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
+          COUNT(DISTINCT r.id)::int AS review_count
         FROM stays s
         LEFT JOIN menu_items m ON m.stay_id = s.id
+        LEFT JOIN reviews r ON r.target_type = 'stay' AND r.target_id = s.id
         WHERE s.latitude IS NOT NULL AND s.longitude IS NOT NULL
         GROUP BY s.id
       `
@@ -816,7 +837,11 @@ export async function getServerSideProps(context) {
           location: stay.location,
           description: stay.description,
           imageUrl: stay.image_url || DEFAULT_STAY_IMAGE,
-          menuItems: Array.isArray(stay.menu_items) ? stay.menu_items : [],
+          pricePerNight: stay.cheapest_room_price ? Number(stay.cheapest_room_price) : null,
+          isFeatured: Boolean(stay.is_featured),
+          discountPercent: Number(stay.discount_percent || 0),
+          avgRating: stay.avg_rating ? Number(stay.avg_rating).toFixed(1) : null,
+          reviewCount: Number(stay.review_count || 0),
           contactPhone: stay.contact_phone || '',
           latitude: stay.latitude,
           longitude: stay.longitude,

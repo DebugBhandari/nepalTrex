@@ -1,7 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import {
   Alert,
   Box,
@@ -59,17 +58,8 @@ function maxAltitude(trek) {
 }
 
 export default function HomePage({ allTreks, featuredStays = [], dataSource, dataError }) {
-  const { data: session, status } = useSession();
   const [treks, setTreks] = useState(allTreks || []);
   const [landingStays, setLandingStays] = useState(featuredStays || []);
-  const [wishlist, setWishlist] = useState([]);
-  const [wishlistLoginRequired, setWishlistLoginRequired] = useState(false);
-  const [wishlistCountsBySlug, setWishlistCountsBySlug] = useState(() =>
-    (allTreks || []).reduce((acc, trek) => {
-      acc[trek.slug] = Number(trek.wishlistCount || 0);
-      return acc;
-    }, {})
-  );
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
   const [selectedDuration, setSelectedDuration] = useState('all');
@@ -98,12 +88,6 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
 
         setTreks(nextTreks);
         setLandingStays(nextStays);
-        setWishlistCountsBySlug(
-          nextTreks.reduce((acc, trek) => {
-            acc[trek.slug] = Number(trek.wishlistCount || 0);
-            return acc;
-          }, {})
-        );
       } catch {
         // Keep SSR data if client fetch fails
       }
@@ -115,51 +99,6 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
       active = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (status === 'authenticated') {
-      fetch('/api/users/wishlist')
-        .then((r) => r.json())
-        .then((data) => setWishlist(data.slugs || []))
-        .catch(() => setWishlist([]));
-    } else {
-      setWishlist([]);
-    }
-  }, [status]);
-
-  const wishlistSet = useMemo(() => new Set(wishlist), [wishlist]);
-
-  const toggleWishlist = (slug) => {
-    if (status !== 'authenticated') {
-      setWishlistLoginRequired(true);
-      return;
-    }
-
-    const isInList = wishlistSet.has(slug);
-    setWishlist((prev) => (isInList ? prev.filter((s) => s !== slug) : [...prev, slug]));
-    setWishlistCountsBySlug((prev) => ({
-      ...prev,
-      [slug]: Math.max(0, Number(prev[slug] || 0) + (isInList ? -1 : 1)),
-    }));
-
-    fetch('/api/users/wishlist', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug, action: isInList ? 'remove' : 'add' }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.slugs) setWishlist(data.slugs);
-        if (typeof data.wishlistCount === 'number' && typeof data.slug === 'string') {
-          setWishlistCountsBySlug((prev) => ({
-            ...prev,
-            [data.slug]: data.wishlistCount,
-          }));
-        }
-      })
-      .catch(() => {});
-  };
 
   const visibleTreks = treks;
 
@@ -383,20 +322,6 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
         })}
       >
         <Container maxWidth="lg" sx={{ pt: 6 }}>
-          {wishlistLoginRequired && (
-            <Alert
-              severity="info"
-              sx={{ mb: 2 }}
-              action={
-                <AppButton component={Link} href="/auth/signin" variant="contained" size="small">
-                  Login
-                </AppButton>
-              }
-            >
-              You need to be logged in to add treks to your wishlist.
-            </Alert>
-          )}
-
           {dataSource === 'fallback' && (
             <Alert severity="warning" sx={{ mb: 2 }}>
               Showing fallback trek data because database routes could not be loaded.
@@ -468,7 +393,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                 }}
               >
                 {landingStays.map((stay) => (
-                  <StayThumbnailCard key={stay.id} stay={stay} showMenuCount={false} />
+                  <StayThumbnailCard key={stay.id} stay={stay} />
                 ))}
               </ThumbnailGrid>
 
@@ -630,9 +555,6 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                     <TrekThumbnailCard
                       key={trek.slug}
                       trek={trek}
-                      isSaved={wishlistSet.has(trek.slug)}
-                      wishlistCount={wishlistCountsBySlug[trek.slug] ?? trek.wishlistCount ?? 0}
-                      onToggleWishlist={toggleWishlist}
                     />
                   ))}
                 </ThumbnailGrid>

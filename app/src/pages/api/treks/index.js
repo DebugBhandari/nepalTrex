@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     const trekRows = await query(
       `
-        SELECT name, duration_days, level, region, description, route_geojson, is_featured, elevation_min_m, elevation_max_m
+        SELECT name, duration_days, level, region, description, route_geojson, is_featured, elevation_min_m, elevation_max_m, avg_rating, review_count
         FROM treks
         ORDER BY name ASC
       `
@@ -57,6 +57,8 @@ export default async function handler(req, res) {
       isFeatured: row.is_featured,
       elevationMinM: row.elevation_min_m || null,
       elevationMaxM: row.elevation_max_m || null,
+      avgRating: row.avg_rating === null ? null : Number(row.avg_rating),
+      reviewCount: Number(row.review_count || 0),
     })).map((trek) => {
       const nearbyStaysCount = stayCoordinates.filter((stay) => {
         const distanceKm = minDistanceToRouteKm(trek.routeWaypoints, stay.lat, stay.lng);
@@ -74,6 +76,8 @@ export default async function handler(req, res) {
         isFeatured: trek.isFeatured,
         elevationMinM: trek.elevationMinM,
         elevationMaxM: trek.elevationMaxM,
+        avgRating: trek.avgRating,
+        reviewCount: trek.reviewCount,
         nearbyStaysCount,
         wishlistCount: Number(wishlistCountBySlug[trek.slug] || 0),
       };

@@ -136,37 +136,34 @@ export default function SiteHeader() {
         <Box sx={{ flexGrow: 1 }} />
 
         {/* Cart */}
-        {isHydrated && (
-          <IconButton
-            color="inherit"
-            component={Link}
-            href="/stays/checkout"
-            aria-label="Open cart"
-            sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
-          >
-            <Badge badgeContent={getCartTotals().totalItems} color="error" max={99}>
-              <ShoppingCartIcon sx={{ fontSize: 24 }} />
-            </Badge>
-          </IconButton>
-        )}
+        {status === 'authenticated' && (
+          <>
+            {isHydrated && (
+              <IconButton
+                color="inherit"
+                component={Link}
+                href="/stays/checkout"
+                aria-label="Open cart"
+                sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
+              >
+                <Badge badgeContent={getCartTotals().totalItems} color="error" max={99}>
+                  <ShoppingCartIcon sx={{ fontSize: 24 }} />
+                </Badge>
+              </IconButton>
+            )}
 
-        {/* Wishlist */}
-        <IconButton
-          color="inherit"
-          onClick={(event) => {
-            if (status !== 'authenticated') {
-              router.push('/auth/signin');
-              return;
-            }
-            setWishlistAnchor(event.currentTarget);
-          }}
-          aria-label="Open wishlist"
-          sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
-        >
-          <Badge badgeContent={wishlistTreks.length} color="error" max={99}>
-            <FavoriteIcon sx={{ fontSize: 24, color: wishlistTreks.length > 0 ? '#ef4444' : 'inherit' }} />
-          </Badge>
-        </IconButton>
+            <IconButton
+              color="inherit"
+              onClick={(event) => setWishlistAnchor(event.currentTarget)}
+              aria-label="Open wishlist"
+              sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
+            >
+              <Badge badgeContent={wishlistTreks.length} color="error" max={99}>
+                <FavoriteIcon sx={{ fontSize: 24, color: wishlistTreks.length > 0 ? '#ef4444' : 'inherit' }} />
+              </Badge>
+            </IconButton>
+          </>
+        )}
 
         {status === 'authenticated' && (
           <>
@@ -257,7 +254,7 @@ export default function SiteHeader() {
         )}
 
         {/* Wishlist popover */}
-        <Popover
+        {status === 'authenticated' && <Popover
           open={Boolean(wishlistAnchor)}
           anchorEl={wishlistAnchor}
           onClose={() => setWishlistAnchor(null)}
@@ -299,7 +296,7 @@ export default function SiteHeader() {
               ))}
             </List>
           )}
-        </Popover>
+        </Popover>}
 
         {/* User menu */}
         {status === 'authenticated' ? (
@@ -369,7 +366,7 @@ export default function SiteHeader() {
           </>
         ) : (
           <AppButton component={Link} href="/auth/signin" startIcon={<LoginIcon />} variant="outlined" size="small">
-            Sign in
+            Login
           </AppButton>
         )}
       </Toolbar>

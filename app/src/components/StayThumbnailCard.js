@@ -7,7 +7,6 @@ import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { themeColors } from '../lib/theme';
 
@@ -21,7 +20,7 @@ function discountedPrice(stay) {
   return stay.pricePerNight;
 }
 
-export default function StayThumbnailCard({ stay, showMenuCount = true }) {
+export default function StayThumbnailCard({ stay }) {
   const finalPrice = discountedPrice(stay);
 
   return (
@@ -50,7 +49,7 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
           <Box
             sx={{
               position: 'absolute',
-              top: 12,
+              top: 44,
               left: 12,
               px: 1.25,
               py: 0.5,
@@ -73,7 +72,7 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
           <Box
             sx={{
               position: 'absolute',
-              top: 12,
+              top: 44,
               left: 12,
               px: 1.25,
               py: 0.5,
@@ -91,7 +90,7 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
           sx={{
             position: 'absolute',
             top: 12,
-            right: 12,
+            left: 12,
             px: 1.25,
             py: 0.5,
             borderRadius: 1,
@@ -109,6 +108,36 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
           <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, textTransform: 'capitalize', lineHeight: 1 }}>
             {stay.stayType}
           </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 12,
+            right: 12,
+            px: 1.25,
+            py: 0.5,
+            borderRadius: 1,
+            bgcolor: 'rgba(3, 4, 94, 0.78)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.4,
+          }}
+        >
+          {Number(stay.reviewCount || 0) > 0 ? (
+            <>
+              <StarRoundedIcon sx={{ fontSize: 14, color: themeColors.goldSun }} />
+              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                {Number(stay.avgRating).toFixed(1)} ({Number(stay.reviewCount)})
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+              No reviews
+            </Typography>
+          )}
         </Box>
       </Box>
 
@@ -130,28 +159,12 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
           >
             {stay.name}
           </Typography>
-          {stay.avgRating && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, flexShrink: 0 }}>
-              <StarRoundedIcon sx={{ fontSize: 15, color: themeColors.goldSun }} />
-              <Typography variant="body2" fontWeight={700}>{stay.avgRating}</Typography>
-              <Typography variant="caption" color="text.secondary">({stay.reviewCount})</Typography>
-            </Box>
-          )}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.4 }}>
           <LocationOnOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
           <Typography variant="body2" color="text.secondary" noWrap>{stay.location}</Typography>
         </Box>
-
-        {showMenuCount && stay.menuCount > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 0.4 }}>
-            <MenuBookOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', flexShrink: 0 }} />
-            <Typography variant="body2" color="text.secondary">
-              {stay.menuCount} menu item{stay.menuCount === 1 ? '' : 's'}
-            </Typography>
-          </Box>
-        )}
 
         {finalPrice && (
           <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.8, mt: 0.5, flexWrap: 'wrap' }}>

@@ -60,12 +60,20 @@ CREATE TABLE IF NOT EXISTS treks (
   description TEXT,
   route_geojson JSONB,
   is_featured BOOLEAN NOT NULL DEFAULT true,
+  avg_rating NUMERIC(3, 1),
+  review_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE treks
   ADD COLUMN IF NOT EXISTS route_geojson JSONB;
+
+ALTER TABLE treks
+  ADD COLUMN IF NOT EXISTS avg_rating NUMERIC(3, 1);
+
+ALTER TABLE treks
+  ADD COLUMN IF NOT EXISTS review_count INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS stays (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -152,6 +160,59 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 CREATE INDEX IF NOT EXISTS reviews_target_created_at_idx
   ON reviews(target_type, target_id, created_at DESC);
+
+CREATE OR REPLACE FUNCTION refresh_trek_review_summary()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  trek_id UUID;
+BEGIN
+  trek_id := CASE WHEN TG_OP = 'DELETE' THEN OLD.target_id ELSE NEW.target_id END;
+
+  IF (TG_OP = 'DELETE' AND OLD.target_type <> 'trek')
+    OR (TG_OP <> 'DELETE' AND NEW.target_type <> 'trek') THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
+  UPDATE treks
+  SET
+    avg_rating = summary.avg_rating,
+    review_count = summary.review_count,
+    updated_at = NOW()
+  FROM (
+    SELECT
+      ROUND(AVG(rating)::numeric, 1) AS avg_rating,
+      COUNT(*)::int AS review_count
+    FROM reviews
+    WHERE target_type = 'trek' AND target_id = trek_id
+  ) AS summary
+  WHERE treks.id = trek_id;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+DROP TRIGGER IF EXISTS reviews_refresh_trek_review_summary ON reviews;
+CREATE TRIGGER reviews_refresh_trek_review_summary
+AFTER INSERT OR UPDATE OF rating OR DELETE ON reviews
+FOR EACH ROW
+EXECUTE FUNCTION refresh_trek_review_summary();
+
+UPDATE treks t
+SET
+  avg_rating = summary.avg_rating,
+  review_count = summary.review_count
+FROM (
+  SELECT
+    t.id,
+    ROUND(AVG(r.rating)::numeric, 1) AS avg_rating,
+    COUNT(r.id)::int AS review_count
+  FROM treks t
+  LEFT JOIN reviews r ON r.target_type = 'trek' AND r.target_id = t.id
+  GROUP BY t.id
+) AS summary
+WHERE t.id = summary.id;
 
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
