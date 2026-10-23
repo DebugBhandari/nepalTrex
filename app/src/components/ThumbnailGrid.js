@@ -14,6 +14,7 @@ export default function ThumbnailGrid({ children, columns = DEFAULT_COLUMNS, gap
         display: 'grid',
         gap,
         gridTemplateColumns: columns,
+        alignItems: 'start',
         ...sx,
       }}
     >

@@ -14,16 +14,18 @@ import { themeColors } from '../lib/theme';
 
 export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onToggleWishlist }) {
   return (
-    <Box component={Link} href={`/treks/${trek.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+    <Box component={Link} href={`/treks/${trek.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block', borderRadius: 5, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
       <Box
         sx={{
           position: 'relative',
           paddingTop: '66.67%',
-          borderRadius: '16px',
+          borderRadius: '18px',
           overflow: 'hidden',
           mb: 1.5,
           '& img': { transition: 'transform 0.35s ease' },
-          '&:hover img': { transform: 'scale(1.04)' },
+          boxShadow: '0 10px 24px rgba(18, 44, 33, 0.14)',
+          '&:hover img': { transform: 'scale(1.055)' },
+          '&::after': { content: '""', position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(7, 21, 16, 0.04) 34%, rgba(7, 21, 16, 0.28) 100%)', pointerEvents: 'none' },
         }}
       >
         <Box
@@ -49,7 +51,8 @@ export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onTogg
               px: 1.25,
               py: 0.5,
               borderRadius: 999,
-              bgcolor: themeColors.goldSun,
+            bgcolor: '#e8bd5b',
+            boxShadow: '0 4px 10px rgba(31, 41, 34, 0.15)',
             }}
           >
             <Typography variant="caption" sx={{ color: themeColors.ink, fontWeight: 700, lineHeight: 1 }}>
@@ -66,9 +69,9 @@ export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onTogg
             px: 1.25,
             py: 0.5,
             borderRadius: 999,
-            bgcolor: 'rgba(15,43,45,0.78)',
-            backdropFilter: 'blur(4px)',
-            border: '1px solid rgba(240, 180, 41, 0.28)',
+            bgcolor: 'rgba(16, 35, 27, 0.78)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             display: 'flex',
             alignItems: 'center',
             gap: 0.5,
@@ -92,7 +95,8 @@ export default function TrekThumbnailCard({ trek, isSaved, wishlistCount, onTogg
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             mb: 0.8,
-            '&:hover': { textDecoration: 'underline' },
+            letterSpacing: '-0.018em',
+            '&:hover': { color: 'primary.main' },
           }}
         >
           {trek.name}

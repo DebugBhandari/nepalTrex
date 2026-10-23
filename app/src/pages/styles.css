@@ -1,37 +1,35 @@
 :root {
-  --bg-deep: #ffffff;
-  --bg-mid: #f2fbf9;
-  --sun: #0f766e;
+  --bg-deep: #f5f4ee;
+  --bg-mid: #edf1e9;
+  --sun: #246b52;
   --snow: #ffffff;
-  --ink: #0b1f2a;
-  --moss: #0f766e;
+  --ink: #17251f;
+  --moss: #246b52;
   --on-primary: #ffffff;
   --card: #ffffff;
-  --page-bg: linear-gradient(160deg, #ffffff 0%, #f2fbf9 100%);
-  --text-primary: #0b1f2a;
-  --text-muted: rgba(11, 31, 42, 0.72);
-  --outline: rgba(11, 31, 42, 0.2);
-  --soft-bg: rgba(15, 118, 110, 0.08);
-  --hero-bg: linear-gradient(135deg, rgba(15, 118, 110, 0.14), rgba(64, 138, 113, 0.14));
-  --section-bg: rgba(255, 255, 255, 0.92);
-  --panel-border: rgba(11, 31, 42, 0.14);
+  --page-bg: radial-gradient(circle at 8% -10%, rgba(123, 166, 139, 0.2), transparent 28%), radial-gradient(circle at 90% 2%, rgba(104, 155, 178, 0.15), transparent 23%), linear-gradient(160deg, #f8f7f1 0%, #f0f2eb 100%);
+  --text-primary: #17251f;
+  --text-muted: rgba(47, 66, 57, 0.76);
+  --outline: rgba(23, 37, 31, 0.16);
+  --soft-bg: rgba(36, 107, 82, 0.08);
+  --hero-bg: linear-gradient(135deg, rgba(218, 232, 218, 0.9), rgba(234, 240, 232, 0.78));
+  --section-bg: rgba(255, 255, 255, 0.84);
+  --panel-border: rgba(23, 37, 31, 0.12);
 }
 
 body[data-theme='dark'] {
-  --bg-deep: #0b1220;
-  --bg-mid: #131e31;
-  --snow: #e8f0f7;
-  --card: #131e31;
-  --page-bg: radial-gradient(circle at 15% 10%, rgba(64, 138, 113, 0.26) 0%, transparent 35%),
-    radial-gradient(circle at 80% -10%, rgba(15, 118, 110, 0.26) 0%, transparent 30%),
-    linear-gradient(155deg, var(--bg-deep) 0%, var(--bg-mid) 58%, #0a1426 100%);
-  --text-primary: #e8f0f7;
-  --text-muted: rgba(232, 240, 247, 0.78);
-  --outline: rgba(232, 240, 247, 0.28);
-  --soft-bg: rgba(232, 240, 247, 0.08);
-  --hero-bg: linear-gradient(135deg, rgba(64, 138, 113, 0.32), rgba(15, 118, 110, 0.28));
-  --section-bg: rgba(19, 30, 49, 0.9);
-  --panel-border: rgba(232, 240, 247, 0.18);
+  --bg-deep: #10211c;
+  --bg-mid: #172d26;
+  --snow: #f4f6ed;
+  --card: #172d26;
+  --page-bg: radial-gradient(circle at 12% 5%, rgba(93, 142, 115, 0.24) 0%, transparent 30%), radial-gradient(circle at 88% -8%, rgba(79, 132, 156, 0.2) 0%, transparent 28%), linear-gradient(155deg, #10211c 0%, #172d26 58%, #0c1915 100%);
+  --text-primary: #f4f6ed;
+  --text-muted: rgba(222, 233, 223, 0.74);
+  --outline: rgba(225, 237, 227, 0.18);
+  --soft-bg: rgba(225, 237, 227, 0.08);
+  --hero-bg: linear-gradient(135deg, rgba(58, 101, 77, 0.48), rgba(31, 61, 51, 0.56));
+  --section-bg: rgba(23, 45, 38, 0.84);
+  --panel-border: rgba(225, 237, 227, 0.14);
 }
 
 * {
@@ -47,7 +45,7 @@ body {
 
 body {
   color: var(--text-primary);
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
   background: var(--page-bg);
   position: relative;
   overflow-x: hidden;
@@ -62,8 +60,8 @@ body::after {
   aspect-ratio: 1 / 1;
   background: url('/brand/banner-mountains.svg') no-repeat center;
   background-size: contain;
-  opacity: 0.14;
-  filter: saturate(1.05);
+  opacity: 0.1;
+  filter: saturate(0.8);
   pointer-events: none;
   z-index: 0;
 }

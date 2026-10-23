@@ -129,7 +129,7 @@ export default function SiteHeader() {
         <Box
           component={Link}
           href="/"
-          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, minWidth: 0, textDecoration: 'none' }}
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, minWidth: 0, textDecoration: 'none', mr: { xs: 0.5, sm: 1.25 } }}
         >
           <NepalTrexLogo width={120} />
         </Box>
@@ -142,7 +142,7 @@ export default function SiteHeader() {
             component={Link}
             href="/stays/checkout"
             aria-label="Open cart"
-            sx={{ mr: 0.5, width: 42, height: 42 }}
+            sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 3, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
           >
             <Badge badgeContent={getCartTotals().totalItems} color="error" max={99}>
               <ShoppingCartIcon sx={{ fontSize: 24 }} />
@@ -161,7 +161,7 @@ export default function SiteHeader() {
             setWishlistAnchor(event.currentTarget);
           }}
           aria-label="Open wishlist"
-          sx={{ mr: 0.5, width: 42, height: 42 }}
+          sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 3, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
         >
           <Badge badgeContent={wishlistTreks.length} color="error" max={99}>
             <FavoriteIcon sx={{ fontSize: 24, color: wishlistTreks.length > 0 ? '#ef4444' : 'inherit' }} />
@@ -174,7 +174,7 @@ export default function SiteHeader() {
               color="inherit"
               onClick={(event) => setOrdersAnchor(event.currentTarget)}
               aria-label="Open notifications"
-              sx={{ mr: 0.5, width: 42, height: 42 }}
+              sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 3, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
             >
               <Badge badgeContent={notificationCount} color="error" max={99}>
                 <NotificationsNoneIcon sx={{ fontSize: 24 }} />
@@ -310,7 +310,7 @@ export default function SiteHeader() {
               sx={(theme) => ({
                 border: '1px solid',
                 borderColor: theme.palette.divider,
-                borderRadius: 999,
+                borderRadius: 3,
                 p: 0.25,
                 width: 42,
                 height: 42,

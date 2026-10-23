@@ -4,16 +4,16 @@ export default function AppIconButton({ sx, tone = 'surface', ...props }) {
   return (
     <IconButton
       sx={(theme) => ({
-        borderRadius: 2,
+        borderRadius: 3,
         border: '1px solid',
         borderColor: theme.palette.divider,
         transition: 'all 0.2s ease',
         ...(tone === 'primary'
           ? {
-              background: 'linear-gradient(135deg, #0f766e 0%, #285A48 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               color: '#ffffff',
               '&:hover': {
-                background: 'linear-gradient(135deg, #128779 0%, #2f6a55 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 74%)`,
               },
             }
           : {

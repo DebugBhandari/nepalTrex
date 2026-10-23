@@ -4,25 +4,29 @@ export default function AppButton({ sx, variant = 'contained', ...props }) {
   return (
     <Button
       variant={variant}
-      sx={{
+      sx={(theme) => ({
         borderRadius: 999,
-        px: 2,
+        px: 2.15,
         py: 0.9,
+        minHeight: 40,
         textTransform: 'none',
         fontWeight: 700,
+        transition: 'transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease',
         ...(variant === 'contained'
           ? {
-              background: 'linear-gradient(135deg, #0f766e 0%, #285A48 100%)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               color: '#ffffff',
               '&:hover': {
-                background: 'linear-gradient(135deg, #128779 0%, #2f6a55 100%)',
+                transform: 'translateY(-1px)',
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 74%)`,
               },
             }
           : {
-              borderColor: 'rgba(148, 163, 184, 0.55)',
+              borderColor: theme.palette.divider,
+              '&:hover': { transform: 'translateY(-1px)' },
             }),
-        ...sx,
-      }}
+        ...(typeof sx === 'function' ? sx(theme) : sx),
+      })}
       {...props}
     />
   );

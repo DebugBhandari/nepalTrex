@@ -106,12 +106,16 @@ function StayDetailView({ stay }) {
 
       <SiteHeader />
 
-      {/* Hero image */}
       <Box
         sx={{
           position: 'relative',
-          height: { xs: 260, sm: 360, md: 460 },
+          maxWidth: 1440,
+          mx: 'auto',
+          mt: { xs: 1.5, md: 2.5 },
+          height: { xs: 300, sm: 420, md: 520 },
           overflow: 'hidden',
+          borderRadius: { xs: 0, sm: 5 },
+          boxShadow: '0 22px 54px rgba(13, 35, 25, 0.2)',
         }}
       >
         <Box
@@ -124,14 +128,14 @@ function StayDetailView({ stay }) {
         <Box
           sx={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.2) 55%, rgba(0,0,0,0.05) 100%)',
+            background: 'linear-gradient(to top, rgba(6,18,12,0.82) 0%, rgba(6,18,12,0.26) 58%, rgba(6,18,12,0.04) 100%)',
           }}
         />
         {/* Text on hero */}
         <Box
           sx={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            px: { xs: 2, md: 6 }, pb: { xs: 3, md: 4 },
+            maxWidth: 1240, mx: 'auto', px: { xs: 2.5, md: 5 }, pb: { xs: 3, md: 4.5 },
           }}
         >
           {/* Badges */}
@@ -139,7 +143,7 @@ function StayDetailView({ stay }) {
             <Box
               sx={{
                 px: 1.4, py: 0.4, borderRadius: 999,
-                bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)',
+                bgcolor: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255,255,255,0.25)',
               }}
             >
@@ -148,15 +152,15 @@ function StayDetailView({ stay }) {
               </Typography>
             </Box>
             {stay.isFeatured && (
-              <Box sx={{ px: 1.4, py: 0.4, borderRadius: 999, bgcolor: 'primary.main' }}>
-                <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700 }}>Featured</Typography>
+              <Box sx={{ px: 1.4, py: 0.4, borderRadius: 999, bgcolor: '#e8bd5b' }}>
+                <Typography variant="caption" sx={{ color: '#173024', fontWeight: 800 }}>Featured</Typography>
               </Box>
             )}
             {stay.discountPercent > 0 && (
               <Box
                 sx={{
                   px: 1.4, py: 0.4, borderRadius: 999,
-                  bgcolor: '#dc2626', display: 'flex', alignItems: 'center', gap: 0.5,
+                  bgcolor: '#b94d42', display: 'flex', alignItems: 'center', gap: 0.5,
                 }}
               >
                 <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />
@@ -170,8 +174,9 @@ function StayDetailView({ stay }) {
           <Typography
             variant="h3"
             sx={{
-              color: '#fff', fontWeight: 900, lineHeight: 1.15,
-              fontSize: { xs: '1.75rem', sm: '2.25rem', md: '2.8rem' },
+              color: '#fff', fontWeight: 700, lineHeight: 1.1,
+              fontSize: { xs: '2rem', sm: '2.7rem', md: '3.4rem' },
+              fontFamily: 'Georgia, "Times New Roman", serif', letterSpacing: '-0.045em',
               textShadow: '0 2px 12px rgba(0,0,0,0.5)',
               mb: 1,
             }}
@@ -205,18 +210,19 @@ function StayDetailView({ stay }) {
       <Box
         sx={(theme) => ({
           minHeight: '60vh',
-          py: { xs: 3, md: 5 },
+          py: { xs: 3.5, md: 6 },
           background: theme.palette.mode === 'dark'
             ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.2) 0%, transparent 38%), linear-gradient(160deg, #1f2937 0%, #1e293b 100%)'
             : theme.palette.background.default,
         })}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="xl">
           {/* Quick stats row */}
           <Box
             sx={(theme) => ({
               display: 'flex', gap: { xs: 2, md: 4 }, flexWrap: 'wrap',
-              alignItems: 'center', pb: 2.5, mb: 3.5,
+              alignItems: 'center', p: { xs: 2, md: 2.5 }, mb: 3.5, borderRadius: 4,
+              bgcolor: 'background.paper', boxShadow: '0 8px 24px rgba(23, 37, 31, 0.06)',
               borderBottom: `1px solid ${theme.palette.divider}`,
             })}
           >
@@ -252,6 +258,7 @@ function StayDetailView({ stay }) {
             )}
           </Box>
 
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 330px' }, gap: { xs: 4, lg: 7 }, alignItems: 'start' }}>
           <Box sx={{ minWidth: 0 }}>
             {ownerAlert && (
               <Alert severity="error" sx={{ mb: 2 }} onClose={() => setOwnerAlert(false)}>
@@ -282,7 +289,7 @@ function StayDetailView({ stay }) {
               <Divider sx={{ mb: 4 }} />
 
               {/* Room Options */}
-              <Box sx={{ mb: 4 }}>
+              <Box id="room-options" sx={{ mb: 4, scrollMarginTop: 96 }}>
                 <Typography variant="h5" fontWeight={800} sx={{ mb: 2 }}>Room Options</Typography>
                 {groupedMenu.rooms.length === 0 ? (
                   <Typography color="text.secondary">No room options listed yet.</Typography>
@@ -294,7 +301,7 @@ function StayDetailView({ stay }) {
                         <Card
                           key={`room-${index}`}
                           sx={(theme) => ({
-                            display: 'flex', flexDirection: { xs: 'column', sm: 'row' },
+                            display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, borderRadius: 4,
                             overflow: 'hidden', border: `1px solid ${theme.palette.divider}`,
                             opacity: isUnavailable ? 0.62 : 1,
                           })}
@@ -304,7 +311,7 @@ function StayDetailView({ stay }) {
                             component="img"
                             image={item.imageUrl || DEFAULT_MENU_IMAGE}
                             alt={item.name}
-                            sx={{ width: { xs: '100%', sm: 160 }, height: { xs: 180, sm: 140 }, objectFit: 'cover', flexShrink: 0, filter: isUnavailable ? 'grayscale(0.9) blur(1px)' : 'none' }}
+                            sx={{ width: { xs: '100%', sm: 210 }, height: { xs: 210, sm: 168 }, objectFit: 'cover', flexShrink: 0, filter: isUnavailable ? 'grayscale(0.9) blur(1px)' : 'none' }}
                           />
                           <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2 }}>
                             <Box>
@@ -347,7 +354,7 @@ function StayDetailView({ stay }) {
                     {groupedMenu.foods.map((item, index) => (
                       <Card
                         key={`food-${index}`}
-                        sx={(theme) => ({ border: `1px solid ${theme.palette.divider}`, overflow: 'hidden' })}
+                          sx={(theme) => ({ border: `1px solid ${theme.palette.divider}`, overflow: 'hidden', borderRadius: 4 })}
                         elevation={0}
                       >
                         <CardMedia
@@ -396,7 +403,7 @@ function StayDetailView({ stay }) {
                         <Box
                           key={i}
                           sx={(theme) => ({
-                            p: 2.5, borderRadius: 3,
+                             p: 2.5, borderRadius: 4,
                             border: `1px solid ${theme.palette.divider}`,
                             bgcolor: theme.palette.background.paper,
                           })}
@@ -433,6 +440,23 @@ function StayDetailView({ stay }) {
                 </>
               )}
           </Box>
+          <Paper sx={{ display: { xs: 'none', lg: 'block' }, position: 'sticky', top: 88, p: 3, borderRadius: 4 }}>
+            <Typography variant="overline" color="text.secondary">Plan your stay</Typography>
+            {finalPrice ? (
+              <>
+                <Typography variant="h5" sx={{ mt: 0.4 }}>From NPR {finalPrice.toLocaleString()}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>/ night, room only</Typography>
+              </>
+            ) : (
+              <Typography variant="h6" sx={{ mt: 0.4 }}>Choose a room below</Typography>
+            )}
+            <Divider sx={{ my: 2.25 }} />
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65, mb: 2.25 }}>
+              Select a room or meal below. Your order is sent directly to the host for confirmation.
+            </Typography>
+            <AppButton fullWidth onClick={() => document.getElementById('room-options')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View rooms</AppButton>
+          </Paper>
+          </Box>
         </Container>
       </Box>
     </>
@@ -454,27 +478,28 @@ function TrekDetailView({ trek }) {
       <Box
         sx={(theme) => ({
           minHeight: '100vh',
-          py: 5,
+          py: { xs: 2.5, md: 4.5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(76,133,102,0.28) 0%, transparent 38%), linear-gradient(160deg, #10211c 0%, #172d26 100%)'
               : theme.palette.background.default,
         })}
       >
-        <Container maxWidth="lg">
-          <Card sx={{ mb: 3 }}>
+        <Container maxWidth="xl">
+          <Card sx={{ mb: 4, overflow: 'hidden', borderRadius: { xs: 0, sm: 5 }, boxShadow: '0 22px 54px rgba(13, 35, 25, 0.18)' }}>
             <CardMedia
               component="img"
-              height="360"
+              height="460"
               image={getTrekImage(trek.name)}
               alt={trek.name}
-              sx={{ objectFit: 'cover', objectPosition: 'center' }}
+              sx={{ objectFit: 'cover', objectPosition: 'center', height: { xs: 300, sm: 390, md: 460 } }}
             />
-            <CardContent>
-              <Typography variant="h3" sx={{ mb: 1 }}>
+            <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+              <Typography variant="overline" color="text.secondary">Guided route overview</Typography>
+              <Typography variant="h3" sx={{ mt: 0.4, mb: 1.5, fontSize: { xs: '2rem', md: '3rem' } }}>
                 {trek.name}
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
+              <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
                 <Chip label={trek.region} color="secondary" />
                 <Chip label={trek.level} variant="outlined" />
                 <Chip label={`${trek.durationDays} days`} variant="outlined" />
@@ -482,20 +507,34 @@ function TrekDetailView({ trek }) {
                   <Chip label={`${trek.elevationMinM.toLocaleString()}m - ${trek.elevationMaxM.toLocaleString()}m`} variant="outlined" />
                 )}
               </Stack>
-              <Typography color="text.secondary">
+              <Typography color="text.secondary" sx={{ maxWidth: 820, lineHeight: 1.75, fontSize: { md: '1.05rem' } }}>
                 {trek.description || 'Detailed trek description is coming soon.'}
               </Typography>
             </CardContent>
           </Card>
 
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h5" sx={{ mb: 0.8 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' }, gap: 1.5, mb: 4 }}>
+            {[
+              ['Duration', `${trek.durationDays} days`],
+              ['Difficulty', trek.level],
+              ['Elevation', trek.elevationMinM && trek.elevationMaxM ? `${trek.elevationMinM.toLocaleString()}–${trek.elevationMaxM.toLocaleString()}m` : 'Not listed'],
+            ].map(([label, value]) => (
+              <Paper key={label} sx={{ p: 2.25, borderRadius: 4, boxShadow: 'none' }}>
+                <Typography variant="overline" color="text.secondary">{label}</Typography>
+                <Typography variant="h6" sx={{ mt: 0.25, textTransform: label === 'Difficulty' ? 'capitalize' : 'none' }}>{value}</Typography>
+              </Paper>
+            ))}
+          </Box>
+
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 4 }}>
+            <Typography variant="overline" color="text.secondary">Interactive trail map</Typography>
+            <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
               Route Map
             </Typography>
-            <Typography color="text.secondary" sx={{ mb: 1.2 }}>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
               Hover over a nearby stay card below to highlight it on the map.
             </Typography>
-            <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+            <Box sx={(theme) => ({ borderRadius: 4, overflow: 'hidden', border: `1px solid ${theme.palette.divider}`, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' })}>
               <TrekRouteMap
                 selectedTrek={{ name: trek.name, routeGeojson: trek.routeGeojson }}
                 nearbyStays={trek.nearbyStays}
@@ -504,8 +543,9 @@ function TrekDetailView({ trek }) {
             </Box>
           </Paper>
 
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h5" sx={{ mb: 0.8 }}>
+          <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 4 }}>
+            <Typography variant="overline" color="text.secondary">Rest along the route</Typography>
+            <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
               Nearby Stays ({trek.nearbyStays.length} within {NEARBY_THRESHOLD_KM} km)
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 1.5 }}>
@@ -518,7 +558,7 @@ function TrekDetailView({ trek }) {
               <Box
                 sx={{
                   display: 'grid',
-                  gap: 2,
+                  gap: 2.5,
                   gridTemplateColumns: {
                     xs: '1fr',
                     sm: 'repeat(2, minmax(0, 1fr))',
@@ -533,29 +573,30 @@ function TrekDetailView({ trek }) {
                     onMouseLeave={() => setHoveredStayId(null)}
                     sx={(theme) => ({
                       cursor: 'pointer',
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      overflow: 'hidden', borderRadius: 4,
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease, outline-color 0.2s ease',
                       outline: hoveredStayId === stay.id ? '2px solid' : '2px solid transparent',
                       outlineColor: hoveredStayId === stay.id ? theme.palette.primary.main : 'transparent',
                       '&:hover': {
                         transform: 'translateY(-3px)',
-                        boxShadow: '0 16px 40px rgba(0,0,0,0.18)',
+                        boxShadow: '0 16px 40px rgba(18, 44, 33, 0.18)',
                       },
                     })}
                   >
                     <Link href={`/stays/${stay.slug}`}>
                       <CardMedia
                         component="img"
-                        height="180"
+                        height="210"
                         image={stay.imageUrl || DEFAULT_STAY_IMAGE}
                         alt={stay.name}
                         sx={{ objectFit: 'cover', objectPosition: 'center' }}
                       />
                     </Link>
-                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                       <Link href={`/stays/${stay.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <Typography
                           variant="h6"
-                          sx={{ mb: 0.8, fontSize: '1rem', '&:hover': { textDecoration: 'underline' } }}
+                          sx={{ mb: 1, fontSize: '1.08rem', letterSpacing: '-0.018em', '&:hover': { color: 'primary.main' } }}
                         >
                           {stay.name}
                         </Typography>
