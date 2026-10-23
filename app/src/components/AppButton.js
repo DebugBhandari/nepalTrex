@@ -5,7 +5,7 @@ export default function AppButton({ sx, variant = 'contained', ...props }) {
     <Button
       variant={variant}
       sx={(theme) => ({
-        borderRadius: 999,
+        borderRadius: 1.25,
         px: 2.15,
         py: 0.9,
         minHeight: 40,

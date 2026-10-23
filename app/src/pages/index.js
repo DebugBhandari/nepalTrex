@@ -312,7 +312,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   <SearchRoundedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                 </InputAdornment>
               ),
-              sx: { borderRadius: 999, bgcolor: 'background.paper', px: 1 },
+              sx: { borderRadius: 2, bgcolor: 'background.paper', px: 1 },
             }}
           />
         </Box>
@@ -410,7 +410,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                 background: gradients.landing,
                 py: { xs: 5, md: 8 },
                 textAlign: 'center',
-                borderRadius: 4,
+                borderRadius: 2,
                 px: 2,
                 mb: 5,
               }}

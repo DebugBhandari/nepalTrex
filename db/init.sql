@@ -151,6 +151,21 @@ CREATE TABLE IF NOT EXISTS stay_reviews (
 
 CREATE INDEX IF NOT EXISTS stay_reviews_stay_id_idx ON stay_reviews(stay_id);
 
+CREATE TABLE IF NOT EXISTS reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_type TEXT NOT NULL CHECK (target_type IN ('stay', 'trek')),
+  target_id UUID NOT NULL,
+  reviewer_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT NOT NULL CHECK (char_length(trim(comment)) BETWEEN 3 AND 1200),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT reviews_one_per_user_target UNIQUE (target_type, target_id, reviewer_user_id)
+);
+
+CREATE INDEX IF NOT EXISTS reviews_target_created_at_idx
+  ON reviews(target_type, target_id, created_at DESC);
+
 INSERT INTO users (username, email, display_name, password_hash, provider)
 VALUES (
   'admin',

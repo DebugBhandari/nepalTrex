@@ -167,7 +167,7 @@ export default function SignUpPage() {
                     <LinearProgress
                       variant="determinate"
                       value={(passwordStrength / 5) * 100}
-                      sx={{ height: 8, borderRadius: 4 }}
+                      sx={{ height: 8, borderRadius: 1 }}
                     />
                   )}
                   <TextField

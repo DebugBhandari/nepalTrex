@@ -32,7 +32,7 @@ export function createAppTheme(mode = 'light') {
       divider: palette.border,
     },
     shape: {
-      borderRadius: 16,
+      borderRadius: 10,
     },
     typography: {
       fontFamily: '"Space Grotesk", "Segoe UI", Arial, sans-serif',
@@ -87,7 +87,7 @@ export function createAppTheme(mode = 'light') {
         },
         styleOverrides: {
           root: {
-            borderRadius: 999,
+            borderRadius: 9,
             paddingInline: 18,
             minHeight: 40,
           },
@@ -135,7 +135,7 @@ export function createAppTheme(mode = 'light') {
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 20,
+            borderRadius: 12,
             backgroundColor: palette.paper,
             border: `1px solid ${palette.border}`,
             boxShadow: isDark ? '0 15px 36px rgba(1, 11, 7, 0.26)' : '0 14px 34px rgba(32, 51, 42, 0.08)',
@@ -145,7 +145,7 @@ export function createAppTheme(mode = 'light') {
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 999,
+            borderRadius: 7,
             borderColor: palette.border,
             fontWeight: 650,
             backgroundColor: alpha(palette.primary, 0.07),
@@ -169,7 +169,7 @@ export function createAppTheme(mode = 'light') {
             borderColor: palette.border,
           },
           root: {
-            borderRadius: 12,
+            borderRadius: 8,
             backgroundColor: alpha(palette.raised, 0.76),
             transition: 'background-color 160ms ease, box-shadow 160ms ease',
             '&:hover': {
@@ -207,12 +207,12 @@ export function createAppTheme(mode = 'light') {
       },
       MuiMenu: {
         styleOverrides: {
-          paper: { borderRadius: 16, marginTop: 8, minWidth: 180 },
+          paper: { borderRadius: 10, marginTop: 8, minWidth: 180 },
         },
       },
       MuiMenuItem: {
         styleOverrides: {
-          root: { borderRadius: 9, margin: '3px 6px', minHeight: 40 },
+          root: { borderRadius: 6, margin: '3px 6px', minHeight: 40 },
         },
       },
       MuiTabs: {

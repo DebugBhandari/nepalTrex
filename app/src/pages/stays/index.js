@@ -36,7 +36,7 @@ function HeroStrip({
   return (
     <Box
       sx={{
-        borderRadius: 4,
+        borderRadius: 2,
         overflow: 'hidden',
         my: 5,
         background: `linear-gradient(120deg, ${bgFrom} 0%, ${bgMid} 55%, ${bgTo} 100%)`,
@@ -278,7 +278,7 @@ export default function StaysPage({ stays }) {
                   />
                 </InputAdornment>
               ),
-              sx: { borderRadius: 999, bgcolor: 'background.paper', px: 1 },
+              sx: { borderRadius: 2, bgcolor: 'background.paper', px: 1 },
             }}
           />
         </Box>
@@ -510,7 +510,7 @@ export default function StaysPage({ stays }) {
                       }}
                       sx={(theme) => ({
                         p: 2,
-                        borderRadius: 3,
+                        borderRadius: 1.5,
                         cursor: 'pointer',
                         textAlign: 'center',
                         border: `1px solid ${theme.palette.divider}`,

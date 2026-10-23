@@ -14,10 +14,14 @@ import {
   Chip,
   Container,
   Divider,
+  IconButton,
   Paper,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import PlaceIcon from '@mui/icons-material/Place';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
@@ -33,6 +37,35 @@ const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 const NEARBY_THRESHOLD_KM = 35;
 
+function serializeReview(row) {
+  return {
+    id: row.id,
+    reviewerUserId: row.reviewer_user_id,
+    reviewerName: row.reviewer_name,
+    reviewerInitials: row.reviewer_initials,
+    rating: Number(row.rating),
+    comment: row.comment,
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : null,
+  };
+}
+
+async function getReviews(targetType, targetId) {
+  const result = await query(
+    `
+      SELECT r.id, r.reviewer_user_id, r.rating, r.comment, r.created_at, r.updated_at,
+        COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1), 'NepalTrex guest') AS reviewer_name,
+        UPPER(LEFT(COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1), 'NT'), 1)) AS reviewer_initials
+      FROM reviews r
+      JOIN users u ON u.id = r.reviewer_user_id
+      WHERE r.target_type = $1 AND r.target_id = $2
+      ORDER BY r.created_at DESC
+    `,
+    [targetType, targetId]
+  );
+  return result.rows.map(serializeReview);
+}
+
 function StarRow({ rating, count }) {
   const stars = [1, 2, 3, 4, 5];
   return (
@@ -47,6 +80,157 @@ function StarRow({ rating, count }) {
         <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
           {Number(rating).toFixed(1)} ({count} review{count === 1 ? '' : 's'})
         </Typography>
+      )}
+    </Box>
+  );
+}
+
+function averageRating(reviews) {
+  if (!reviews.length) return null;
+  return reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviews.length;
+}
+
+function ReviewForm({ initialReview, onCancel, onSaved, targetId, targetType }) {
+  const [rating, setRating] = useState(initialReview?.rating || 5);
+  const [comment, setComment] = useState(initialReview?.comment || '');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      const response = await fetch(initialReview ? `/api/reviews/${initialReview.id}` : '/api/reviews', {
+        method: initialReview ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(initialReview ? { rating, comment } : { targetType, targetId, rating, comment }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to save your review');
+      onSaved(data.review);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Paper component="form" onSubmit={submit} variant="outlined" sx={{ p: 2.5, borderRadius: 2, mb: 2.5 }}>
+      <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1.5 }}>
+        {initialReview ? 'Edit your review' : 'Share your experience'}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 1.5 }} aria-label={`Rating: ${rating} out of 5`}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <IconButton key={star} type="button" size="small" onClick={() => setRating(star)} aria-label={`Set rating to ${star} stars`}>
+            <StarRoundedIcon sx={{ color: star <= rating ? '#f59e0b' : 'text.disabled' }} />
+          </IconButton>
+        ))}
+      </Box>
+      <TextField
+        label="Your feedback"
+        value={comment}
+        onChange={(event) => setComment(event.target.value)}
+        multiline
+        minRows={3}
+        fullWidth
+        required
+        inputProps={{ minLength: 3, maxLength: 1200 }}
+        helperText={`${comment.length}/1200`}
+      />
+      {error && <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert>}
+      <Stack direction="row" spacing={1} sx={{ mt: 1.75 }}>
+        <AppButton type="submit" disabled={saving}>{saving ? 'Saving…' : initialReview ? 'Save changes' : 'Publish review'}</AppButton>
+        <AppButton type="button" variant="outlined" onClick={onCancel} disabled={saving}>Cancel</AppButton>
+      </Stack>
+    </Paper>
+  );
+}
+
+function ReviewsSection({ initialReviews, targetId, targetType, title = 'Guest Reviews' }) {
+  const { status, data: session } = useSession();
+  const [reviews, setReviews] = useState(initialReviews || []);
+  const [formReview, setFormReview] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState('');
+  const rating = averageRating(reviews);
+  const currentUserId = session?.user?.id;
+
+  const saveReview = (savedReview) => {
+    setReviews((current) => {
+      const exists = current.some((review) => review.id === savedReview.id);
+      return exists ? current.map((review) => review.id === savedReview.id ? savedReview : review) : [savedReview, ...current];
+    });
+    setShowForm(false);
+    setFormReview(null);
+  };
+
+  const deleteReview = async (reviewId) => {
+    if (!window.confirm('Delete your review? This cannot be undone.')) return;
+    setError('');
+    const response = await fetch(`/api/reviews/${reviewId}`, { method: 'DELETE' });
+    const data = await response.json();
+    if (!response.ok) {
+      setError(data.error || 'Unable to delete your review');
+      return;
+    }
+    setReviews((current) => current.filter((review) => review.id !== reviewId));
+  };
+
+  const ownReview = reviews.find((review) => review.reviewerUserId === currentUserId);
+
+  return (
+    <Box>
+      <Divider sx={{ mb: 4 }} />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, mb: 2 }}>
+        <Box>
+          <Typography variant="h5" fontWeight={800}>{title}</Typography>
+          {rating ? <StarRow rating={rating} count={reviews.length} /> : <Typography variant="body2" color="text.secondary">No reviews yet — be the first to share feedback.</Typography>}
+        </Box>
+        {status === 'authenticated' && !ownReview && !showForm && (
+          <AppButton onClick={() => { setFormReview(null); setShowForm(true); }}>Add review</AppButton>
+        )}
+      </Box>
+      {status === 'unauthenticated' && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Sign in to leave a review.</Typography>
+      )}
+      {showForm && (
+        <ReviewForm
+          initialReview={formReview}
+          targetId={targetId}
+          targetType={targetType}
+          onSaved={saveReview}
+          onCancel={() => { setShowForm(false); setFormReview(null); }}
+        />
+      )}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {reviews.length > 0 && (
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)' } }}>
+          {reviews.map((review) => {
+            const isOwner = review.reviewerUserId === currentUserId;
+            return (
+              <Box key={review.id} sx={(theme) => ({ p: 2.5, borderRadius: 2, border: `1px solid ${theme.palette.divider}`, bgcolor: theme.palette.background.paper })}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 1.5 }}>
+                  <Avatar sx={(theme) => ({ width: 44, height: 44, fontWeight: 700, bgcolor: theme.palette.primary.main, fontSize: '1rem' })}>{review.reviewerInitials}</Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2" fontWeight={700}>{review.reviewerName}</Typography>
+                    <Box sx={{ display: 'flex', gap: 0.3, mt: 0.2 }}>
+                      {[1, 2, 3, 4, 5].map((star) => <StarRoundedIcon key={star} sx={{ fontSize: 14, color: star <= review.rating ? '#f59e0b' : 'text.disabled' }} />)}
+                    </Box>
+                  </Box>
+                  {isOwner && (
+                    <Stack direction="row" spacing={0.25}>
+                      <IconButton size="small" aria-label="Edit your review" onClick={() => { setFormReview(review); setShowForm(true); }}><EditOutlinedIcon fontSize="small" /></IconButton>
+                      <IconButton size="small" aria-label="Delete your review" color="error" onClick={() => deleteReview(review.id)}><DeleteOutlineRoundedIcon fontSize="small" /></IconButton>
+                    </Stack>
+                  )}
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>&ldquo;{review.comment}&rdquo;</Typography>
+              </Box>
+            );
+          })}
+        </Box>
       )}
     </Box>
   );
@@ -114,7 +298,7 @@ function StayDetailView({ stay }) {
           mt: { xs: 1.5, md: 2.5 },
           height: { xs: 300, sm: 420, md: 520 },
           overflow: 'hidden',
-          borderRadius: { xs: 0, sm: 5 },
+          borderRadius: { xs: 0, sm: 2 },
           boxShadow: '0 22px 54px rgba(13, 35, 25, 0.2)',
         }}
       >
@@ -142,7 +326,7 @@ function StayDetailView({ stay }) {
           <Box sx={{ display: 'flex', gap: 1, mb: 1.2, flexWrap: 'wrap' }}>
             <Box
               sx={{
-                px: 1.4, py: 0.4, borderRadius: 999,
+                px: 1.4, py: 0.4, borderRadius: 1,
                 bgcolor: 'rgba(255,255,255,0.16)', backdropFilter: 'blur(10px)',
                 border: '1px solid rgba(255,255,255,0.25)',
               }}
@@ -152,14 +336,14 @@ function StayDetailView({ stay }) {
               </Typography>
             </Box>
             {stay.isFeatured && (
-              <Box sx={{ px: 1.4, py: 0.4, borderRadius: 999, bgcolor: '#e8bd5b' }}>
+              <Box sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#e8bd5b' }}>
                 <Typography variant="caption" sx={{ color: '#173024', fontWeight: 800 }}>Featured</Typography>
               </Box>
             )}
             {stay.discountPercent > 0 && (
               <Box
                 sx={{
-                  px: 1.4, py: 0.4, borderRadius: 999,
+                  px: 1.4, py: 0.4, borderRadius: 1,
                   bgcolor: '#b94d42', display: 'flex', alignItems: 'center', gap: 0.5,
                 }}
               >
@@ -221,7 +405,7 @@ function StayDetailView({ stay }) {
           <Box
             sx={(theme) => ({
               display: 'flex', gap: { xs: 2, md: 4 }, flexWrap: 'wrap',
-              alignItems: 'center', p: { xs: 2, md: 2.5 }, mb: 3.5, borderRadius: 4,
+              alignItems: 'center', p: { xs: 2, md: 2.5 }, mb: 3.5, borderRadius: 2,
               bgcolor: 'background.paper', boxShadow: '0 8px 24px rgba(23, 37, 31, 0.06)',
               borderBottom: `1px solid ${theme.palette.divider}`,
             })}
@@ -301,7 +485,7 @@ function StayDetailView({ stay }) {
                         <Card
                           key={`room-${index}`}
                           sx={(theme) => ({
-                            display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, borderRadius: 4,
+                            display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, borderRadius: 2,
                             overflow: 'hidden', border: `1px solid ${theme.palette.divider}`,
                             opacity: isUnavailable ? 0.62 : 1,
                           })}
@@ -354,7 +538,7 @@ function StayDetailView({ stay }) {
                     {groupedMenu.foods.map((item, index) => (
                       <Card
                         key={`food-${index}`}
-                          sx={(theme) => ({ border: `1px solid ${theme.palette.divider}`, overflow: 'hidden', borderRadius: 4 })}
+                          sx={(theme) => ({ border: `1px solid ${theme.palette.divider}`, overflow: 'hidden', borderRadius: 2 })}
                         elevation={0}
                       >
                         <CardMedia
@@ -367,80 +551,24 @@ function StayDetailView({ stay }) {
                         <CardContent sx={{ p: 1.8 }}>
                           <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 0.4 }}>{item.name}</Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 1.2 }}>{item.description}</Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="body2" fontWeight={700}>NPR {Number(item.price).toLocaleString()}</Typography>
-                            <AppButton variant="outlined" size="small" onClick={() => handleAddToCart(item)}>Add</AppButton>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                            <Typography variant="body1" fontWeight={700} color="primary.main">
+                              NPR {Number(item.price).toLocaleString()}
+                            </Typography>
+                            <AppButton variant="outlined" size="small" onClick={() => handleAddToCart(item)}>
+                              Add to order
+                            </AppButton>
                           </Box>
                         </CardContent>
                       </Card>
                     ))}
-                  </Box>
-                )}
-              </Box>
+                    </Box>
+                  )}
+                </Box>
 
-              {/* Reviews */}
-              {reviews.length > 0 && (
-                <>
-                  <Divider sx={{ mb: 4 }} />
-                  <Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                      <Typography variant="h5" fontWeight={800}>Guest Reviews</Typography>
-                      {stay.avgRating && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <StarRoundedIcon sx={{ fontSize: 20, color: '#f59e0b' }} />
-                          <Typography variant="h6" fontWeight={700}>{Number(stay.avgRating).toFixed(1)}</Typography>
-                          <Typography variant="body2" color="text.secondary">/ 5</Typography>
-                        </Box>
-                      )}
-                    </Box>
-                    <Box
-                      sx={{
-                        display: 'grid', gap: 2,
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2,1fr)' },
-                      }}
-                    >
-                      {reviews.map((review, i) => (
-                        <Box
-                          key={i}
-                          sx={(theme) => ({
-                             p: 2.5, borderRadius: 4,
-                            border: `1px solid ${theme.palette.divider}`,
-                            bgcolor: theme.palette.background.paper,
-                          })}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                            <Avatar
-                              sx={(theme) => ({
-                                width: 44, height: 44, fontWeight: 700,
-                                bgcolor: theme.palette.primary.main,
-                                fontSize: '1rem',
-                              })}
-                            >
-                              {review.reviewerInitials}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="subtitle2" fontWeight={700}>{review.reviewerName}</Typography>
-                              <Box sx={{ display: 'flex', gap: 0.3, mt: 0.2 }}>
-                                {[1,2,3,4,5].map((s) => (
-                                  <StarRoundedIcon
-                                    key={s}
-                                    sx={{ fontSize: 14, color: s <= review.rating ? '#f59e0b' : 'text.disabled' }}
-                                  />
-                                ))}
-                              </Box>
-                            </Box>
-                          </Box>
-                          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
-                            &ldquo;{review.comment}&rdquo;
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-                </>
-              )}
+                <ReviewsSection initialReviews={reviews} targetId={stay.id} targetType="stay" />
           </Box>
-          <Paper sx={{ display: { xs: 'none', lg: 'block' }, position: 'sticky', top: 88, p: 3, borderRadius: 4 }}>
+          <Paper sx={{ display: { xs: 'none', lg: 'block' }, position: 'sticky', top: 88, p: 3, borderRadius: 2 }}>
             <Typography variant="overline" color="text.secondary">Plan your stay</Typography>
             {finalPrice ? (
               <>
@@ -486,7 +614,7 @@ function TrekDetailView({ trek }) {
         })}
       >
         <Container maxWidth="xl">
-          <Card sx={{ mb: 4, overflow: 'hidden', borderRadius: { xs: 0, sm: 5 }, boxShadow: '0 22px 54px rgba(13, 35, 25, 0.18)' }}>
+          <Card sx={{ mb: 4, overflow: 'hidden', borderRadius: { xs: 0, sm: 2 }, boxShadow: '0 22px 54px rgba(13, 35, 25, 0.18)' }}>
             <CardMedia
               component="img"
               height="460"
@@ -519,14 +647,14 @@ function TrekDetailView({ trek }) {
               ['Difficulty', trek.level],
               ['Elevation', trek.elevationMinM && trek.elevationMaxM ? `${trek.elevationMinM.toLocaleString()}–${trek.elevationMaxM.toLocaleString()}m` : 'Not listed'],
             ].map(([label, value]) => (
-              <Paper key={label} sx={{ p: 2.25, borderRadius: 4, boxShadow: 'none' }}>
+              <Paper key={label} sx={{ p: 2.25, borderRadius: 2, boxShadow: 'none' }}>
                 <Typography variant="overline" color="text.secondary">{label}</Typography>
                 <Typography variant="h6" sx={{ mt: 0.25, textTransform: label === 'Difficulty' ? 'capitalize' : 'none' }}>{value}</Typography>
               </Paper>
             ))}
           </Box>
 
-          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 4 }}>
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
             <Typography variant="overline" color="text.secondary">Interactive trail map</Typography>
             <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
               Route Map
@@ -534,7 +662,7 @@ function TrekDetailView({ trek }) {
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               Hover over a nearby stay card below to highlight it on the map.
             </Typography>
-            <Box sx={(theme) => ({ borderRadius: 4, overflow: 'hidden', border: `1px solid ${theme.palette.divider}`, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' })}>
+            <Box sx={(theme) => ({ borderRadius: 2, overflow: 'hidden', border: `1px solid ${theme.palette.divider}`, boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)' })}>
               <TrekRouteMap
                 selectedTrek={{ name: trek.name, routeGeojson: trek.routeGeojson }}
                 nearbyStays={trek.nearbyStays}
@@ -543,7 +671,11 @@ function TrekDetailView({ trek }) {
             </Box>
           </Paper>
 
-          <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 4 }}>
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
+            <ReviewsSection initialReviews={trek.reviews || []} targetId={trek.id} targetType="trek" title="Trekker Reviews" />
+          </Paper>
+
+          <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
             <Typography variant="overline" color="text.secondary">Rest along the route</Typography>
             <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
               Nearby Stays ({trek.nearbyStays.length} within {NEARBY_THRESHOLD_KM} km)
@@ -573,7 +705,7 @@ function TrekDetailView({ trek }) {
                     onMouseLeave={() => setHoveredStayId(null)}
                     sx={(theme) => ({
                       cursor: 'pointer',
-                      overflow: 'hidden', borderRadius: 4,
+                      overflow: 'hidden', borderRadius: 2,
                       transition: 'transform 0.2s ease, box-shadow 0.2s ease, outline-color 0.2s ease',
                       outline: hoveredStayId === stay.id ? '2px solid' : '2px solid transparent',
                       outlineColor: hoveredStayId === stay.id ? theme.palette.primary.main : 'transparent',
@@ -654,7 +786,7 @@ export async function getServerSideProps(context) {
     const row = trekResult.rows[0];
     const routeWaypoints = parseRouteWaypoints(row.route_geojson);
 
-    const stayRows = await query(
+    const [stayRows, reviews] = await Promise.all([query(
       `
         SELECT s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone, s.latitude, s.longitude,
                COALESCE(
@@ -671,7 +803,7 @@ export async function getServerSideProps(context) {
         WHERE s.latitude IS NOT NULL AND s.longitude IS NOT NULL
         GROUP BY s.id
       `
-    );
+    ), getReviews('trek', row.id)]);
 
     const nearbyStays = stayRows.rows
       .map((stay) => {
@@ -708,6 +840,7 @@ export async function getServerSideProps(context) {
           elevationMinM: row.elevation_min_m || null,
           elevationMaxM: row.elevation_max_m || null,
           nearbyStays,
+          reviews,
         },
       },
     };
@@ -726,20 +859,9 @@ export async function getServerSideProps(context) {
             )
           ) FILTER (WHERE m.id IS NOT NULL),
           '[]'::jsonb
-        ) AS menu_items,
-        COALESCE(
-          jsonb_agg(
-            DISTINCT jsonb_build_object(
-              'reviewerName', r.reviewer_name, 'reviewerInitials', r.reviewer_initials,
-              'rating', r.rating, 'comment', r.comment
-            )
-          ) FILTER (WHERE r.id IS NOT NULL),
-          '[]'::jsonb
-        ) AS reviews,
-        ROUND(AVG(r.rating)::numeric, 1) AS avg_rating
+        ) AS menu_items
       FROM stays s
       LEFT JOIN menu_items m ON m.stay_id = s.id
-      LEFT JOIN stay_reviews r ON r.stay_id = s.id
       WHERE s.slug = $1
       GROUP BY s.id
       LIMIT 1
@@ -752,6 +874,7 @@ export async function getServerSideProps(context) {
   }
 
   const row = stayResult.rows[0];
+  const reviews = await getReviews('stay', row.id);
 
   return {
     props: {
@@ -770,8 +893,8 @@ export async function getServerSideProps(context) {
         pricePerNight: row.price_per_night ? Number(row.price_per_night) : null,
         isFeatured: Boolean(row.is_featured),
         discountPercent: Number(row.discount_percent || 0),
-        avgRating: row.avg_rating ? Number(row.avg_rating).toFixed(1) : null,
-        reviews: Array.isArray(row.reviews) ? row.reviews : [],
+        avgRating: averageRating(reviews),
+        reviews,
       },
     },
   };

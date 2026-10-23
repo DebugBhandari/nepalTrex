@@ -4,7 +4,7 @@ export default function AppIconButton({ sx, tone = 'surface', ...props }) {
   return (
     <IconButton
       sx={(theme) => ({
-        borderRadius: 3,
+        borderRadius: 1.5,
         border: '1px solid',
         borderColor: theme.palette.divider,
         transition: 'all 0.2s ease',

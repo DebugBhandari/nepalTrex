@@ -137,7 +137,7 @@ a {
 
 .menu-cta {
   padding: 0.55rem 0.9rem;
-  border-radius: 999px;
+  border-radius: 8px;
   border: 1px solid var(--outline);
   font-size: 0.9rem;
 }
@@ -157,7 +157,7 @@ a {
   border: 1px solid var(--outline);
   background: var(--soft-bg);
   color: var(--text-primary);
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 0.4rem 0.8rem;
   cursor: pointer;
   font: inherit;
@@ -176,7 +176,7 @@ a {
 .hero {
   margin-top: 2rem;
   padding: 2.7rem 2rem;
-  border-radius: 26px;
+  border-radius: 14px;
   background: var(--hero-bg);
   border: 1px solid var(--panel-border);
   animation: rise-in 550ms ease-out;
@@ -214,7 +214,7 @@ a {
 .btn {
   display: inline-block;
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
 }
 
@@ -230,7 +230,7 @@ a {
 .section {
   margin-top: 1.7rem;
   padding: 1.7rem;
-  border-radius: 20px;
+  border-radius: 12px;
   background: var(--section-bg);
   border: 1px solid var(--panel-border);
 }
@@ -257,7 +257,7 @@ a {
 
 .trek-card {
   padding: 1rem;
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--card);
   color: var(--ink);
   transition: transform 220ms ease, box-shadow 220ms ease;
@@ -284,7 +284,7 @@ a {
 .trek-route-label {
   background: rgba(11, 31, 42, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
+  border-radius: 6px;
   color: #f8fafc;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.78rem;
@@ -314,14 +314,14 @@ a {
   background: rgba(15, 118, 110, 0.18);
   border: 1px solid rgba(15, 118, 110, 0.45);
   color: var(--text-primary);
-  border-radius: 999px;
+  border-radius: 8px;
   padding: 0.45rem 0.75rem;
   font-size: 0.9rem;
 }
 
 .map-wrap {
   margin-top: 1rem;
-  border-radius: 14px;
+  border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--panel-border);
   min-height: 320px;
@@ -344,7 +344,7 @@ a {
 .map-links a {
   background: var(--soft-bg);
   border: 1px solid var(--panel-border);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0.55rem 0.72rem;
   font-size: 0.86rem;
 }

@@ -25,12 +25,12 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
   const finalPrice = discountedPrice(stay);
 
   return (
-    <Box component={Link} href={`/stays/${stay.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block', borderRadius: 5, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
+    <Box component={Link} href={`/stays/${stay.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block', borderRadius: 2, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
       <Box
         sx={{
           position: 'relative',
           paddingTop: '66.67%',
-          borderRadius: '18px',
+          borderRadius: '12px',
           overflow: 'hidden',
           mb: 1.5,
           '& img': { transition: 'transform 0.35s ease' },
@@ -54,7 +54,7 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
               left: 12,
               px: 1.25,
               py: 0.5,
-              borderRadius: 999,
+              borderRadius: 1,
             bgcolor: '#e8bd5b',
             boxShadow: '0 4px 10px rgba(31, 41, 34, 0.15)',
               display: 'flex',
@@ -77,7 +77,7 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
               left: 12,
               px: 1.25,
               py: 0.5,
-              borderRadius: 999,
+              borderRadius: 1,
               bgcolor: 'primary.main',
             }}
           >
@@ -94,7 +94,7 @@ export default function StayThumbnailCard({ stay, showMenuCount = true }) {
             right: 12,
             px: 1.25,
             py: 0.5,
-            borderRadius: 999,
+            borderRadius: 1,
             bgcolor: 'rgba(16, 35, 27, 0.78)',
             backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
