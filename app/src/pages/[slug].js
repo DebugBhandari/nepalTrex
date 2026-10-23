@@ -54,7 +54,7 @@ function serializeReview(row) {
   };
 }
 
-async function getReviews(targetType, targetId) {
+async function getReviews(targetType, targetId, limit = null) {
   const result = await query(
     `
       SELECT r.id, r.reviewer_user_id, r.rating, r.comment, r.created_at, r.updated_at,
@@ -64,10 +64,27 @@ async function getReviews(targetType, targetId) {
       JOIN users u ON u.id = r.reviewer_user_id
       WHERE r.target_type = $1 AND r.target_id = $2
       ORDER BY r.created_at DESC
+      LIMIT $3
+    `,
+    [targetType, targetId, limit]
+  );
+  return result.rows.map(serializeReview);
+}
+
+async function getReviewSummary(targetType, targetId) {
+  const result = await query(
+    `
+      SELECT COUNT(*)::int AS review_count, ROUND(AVG(rating)::numeric, 1) AS avg_rating
+      FROM reviews
+      WHERE target_type = $1 AND target_id = $2
     `,
     [targetType, targetId]
   );
-  return result.rows.map(serializeReview);
+  const row = result.rows[0];
+  return {
+    reviewCount: Number(row?.review_count || 0),
+    avgRating: row?.avg_rating === null || row?.avg_rating === undefined ? null : Number(row.avg_rating),
+  };
 }
 
 function StarRow({ rating, count }) {
@@ -152,20 +169,32 @@ function ReviewForm({ initialReview, onCancel, onSaved, targetId, targetType }) 
   );
 }
 
-function ReviewsSection({ initialReviews, targetId, targetType, title = 'Guest Reviews' }) {
+function ReviewsSection({ initialReviews, initialReviewCount, initialRating, targetId, targetType, reviewsPageHref, title = 'Guest Reviews' }) {
   const { status, data: session } = useSession();
   const [reviews, setReviews] = useState(initialReviews || []);
+  const [reviewCount, setReviewCount] = useState(initialReviewCount || 0);
+  const [rating, setRating] = useState(initialRating || null);
   const [formReview, setFormReview] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState('');
-  const rating = averageRating(reviews);
   const currentUserId = session?.user?.id;
 
   const saveReview = (savedReview) => {
+    const previousReview = reviews.find((review) => review.id === savedReview.id);
     setReviews((current) => {
       const exists = current.some((review) => review.id === savedReview.id);
-      return exists ? current.map((review) => review.id === savedReview.id ? savedReview : review) : [savedReview, ...current];
+      if (exists) return current.map((review) => review.id === savedReview.id ? savedReview : review);
+      return [savedReview, ...current].slice(0, 4);
     });
+    if (previousReview) {
+      setRating((currentRating) => {
+        if (!reviewCount || currentRating === null) return averageRating(reviews.map((review) => review.id === savedReview.id ? savedReview : review));
+        return ((currentRating * reviewCount) - previousReview.rating + savedReview.rating) / reviewCount;
+      });
+    } else {
+      setRating((currentRating) => currentRating === null ? savedReview.rating : ((currentRating * reviewCount) + savedReview.rating) / (reviewCount + 1));
+      setReviewCount((count) => count + 1);
+    }
     setShowForm(false);
     setFormReview(null);
   };
@@ -179,7 +208,15 @@ function ReviewsSection({ initialReviews, targetId, targetType, title = 'Guest R
       setError(data.error || 'Unable to delete your review');
       return;
     }
+    const deletedReview = reviews.find((review) => review.id === reviewId);
     setReviews((current) => current.filter((review) => review.id !== reviewId));
+    if (deletedReview) {
+      setRating((currentRating) => {
+        if (reviewCount <= 1 || currentRating === null) return null;
+        return ((currentRating * reviewCount) - deletedReview.rating) / (reviewCount - 1);
+      });
+    }
+    setReviewCount((count) => Math.max(0, count - 1));
   };
 
   const ownReview = reviews.find((review) => review.reviewerUserId === currentUserId);
@@ -190,7 +227,7 @@ function ReviewsSection({ initialReviews, targetId, targetType, title = 'Guest R
       <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: { xs: 'flex-start', sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' }, mb: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight={800}>{title}</Typography>
-          {rating ? <StarRow rating={rating} count={reviews.length} /> : <Typography variant="body2" color="text.secondary">No reviews yet — be the first to share feedback.</Typography>}
+          {rating ? <StarRow rating={rating} count={reviewCount} /> : <Typography variant="body2" color="text.secondary">No reviews yet — be the first to share feedback.</Typography>}
         </Box>
         {status === 'authenticated' && !ownReview && !showForm && (
           <AppButton onClick={() => { setFormReview(null); setShowForm(true); }}>Add review</AppButton>
@@ -234,6 +271,13 @@ function ReviewsSection({ initialReviews, targetId, targetType, title = 'Guest R
               </Box>
             );
           })}
+        </Box>
+      )}
+      {reviewsPageHref && reviewCount > 0 && (
+        <Box sx={{ mt: 2.5, textAlign: 'center' }}>
+          <AppButton component={Link} href={reviewsPageHref} variant="outlined">
+            View all reviews
+          </AppButton>
         </Box>
       )}
     </Box>
@@ -570,7 +614,14 @@ function StayDetailView({ stay }) {
                   )}
                 </Box>
 
-                <ReviewsSection initialReviews={reviews} targetId={stay.id} targetType="stay" />
+              <ReviewsSection
+                initialReviews={reviews}
+                initialReviewCount={stay.reviewCount}
+                initialRating={stay.avgRating}
+                targetId={stay.id}
+                targetType="stay"
+                reviewsPageHref={`/reviews/stay/${stay.slug}`}
+              />
           </Box>
           <Paper sx={{ display: { xs: 'none', lg: 'block' }, position: 'sticky', top: 88, p: 3, borderRadius: 2 }}>
             <Typography variant="overline" color="text.secondary">Plan your stay</Typography>
@@ -731,7 +782,15 @@ function TrekDetailView({ trek }) {
           </Paper>
 
           <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
-            <ReviewsSection initialReviews={trek.reviews || []} targetId={trek.id} targetType="trek" title="Trekker Reviews" />
+            <ReviewsSection
+              initialReviews={trek.reviews || []}
+              initialReviewCount={trek.reviewCount}
+              initialRating={trek.avgRating}
+              targetId={trek.id}
+              targetType="trek"
+              reviewsPageHref={`/reviews/trek/${trek.slug}`}
+              title="Trekker Reviews"
+            />
           </Paper>
 
           <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
@@ -810,7 +869,7 @@ export async function getServerSideProps(context) {
     const row = trekResult.rows[0];
     const routeWaypoints = parseRouteWaypoints(row.route_geojson);
 
-    const [stayRows, reviews] = await Promise.all([query(
+    const [stayRows, reviews, reviewSummary] = await Promise.all([query(
       `
         SELECT
           s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone,
@@ -827,7 +886,7 @@ export async function getServerSideProps(context) {
         WHERE s.latitude IS NOT NULL AND s.longitude IS NOT NULL
         GROUP BY s.id
       `
-    ), getReviews('trek', row.id)]);
+    ), getReviews('trek', row.id, 4), getReviewSummary('trek', row.id)]);
 
     const nearbyStays = stayRows.rows
       .map((stay) => {
@@ -860,6 +919,7 @@ export async function getServerSideProps(context) {
         trek: {
           id: row.id,
           name: row.name,
+          slug,
           durationDays: row.duration_days,
           level: row.level,
           region: row.region,
@@ -869,6 +929,8 @@ export async function getServerSideProps(context) {
           elevationMaxM: row.elevation_max_m || null,
           nearbyStays,
           reviews,
+          reviewCount: reviewSummary.reviewCount,
+          avgRating: reviewSummary.avgRating,
         },
       },
     };
@@ -902,7 +964,10 @@ export async function getServerSideProps(context) {
   }
 
   const row = stayResult.rows[0];
-  const reviews = await getReviews('stay', row.id);
+  const [reviews, reviewSummary] = await Promise.all([
+    getReviews('stay', row.id, 4),
+    getReviewSummary('stay', row.id),
+  ]);
 
   return {
     props: {
@@ -921,7 +986,8 @@ export async function getServerSideProps(context) {
         pricePerNight: row.price_per_night ? Number(row.price_per_night) : null,
         isFeatured: Boolean(row.is_featured),
         discountPercent: Number(row.discount_percent || 0),
-        avgRating: averageRating(reviews),
+        avgRating: reviewSummary.avgRating,
+        reviewCount: reviewSummary.reviewCount,
         reviews,
       },
     },
