@@ -145,6 +145,7 @@ jobs:
             cd "$APP_DIR"
             npm ci
             cd app
+            rm -rf .next
             npx next build
 
             if ! command -v npx >/dev/null 2>&1; then

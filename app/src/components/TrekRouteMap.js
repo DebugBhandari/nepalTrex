@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { geoJSON } from 'leaflet';
 import { useRouter } from 'next/router';
 import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
 
@@ -68,7 +69,7 @@ function TrekRouteBounds({ routeGeojson }) {
       return;
     }
 
-    const bounds = GeoJSON(normalized).getBounds();
+    const bounds = geoJSON(normalized).getBounds();
 
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [28, 28] });
