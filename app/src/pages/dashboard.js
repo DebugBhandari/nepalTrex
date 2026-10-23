@@ -12,6 +12,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import {
   Alert,
   AppBar,
@@ -454,11 +455,13 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
     );
   };
 
-  const handleSaveTrek = async (trekId) => {
+  const handleSaveTrek = async (trekId, updates = {}) => {
     const trek = items.find((item) => item.id === trekId);
     if (!trek) {
       return;
     }
+
+    const updatedTrek = { ...trek, ...updates };
 
     setSavingById((prev) => ({ ...prev, [trekId]: true }));
     setTrekMessage('');
@@ -470,15 +473,15 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: trek.name,
-          durationDays: Number(trek.durationDays),
-          level: trek.level,
-          region: trek.region,
-          description: trek.description || '',
-          isFeatured: Boolean(trek.isFeatured),
-          routeGeojson: waypointsToRouteGeojson(trek.waypoints),
-          elevationMinM: trek.elevationMinM ? Number(trek.elevationMinM) : null,
-          elevationMaxM: trek.elevationMaxM ? Number(trek.elevationMaxM) : null,
+          name: updatedTrek.name,
+          durationDays: Number(updatedTrek.durationDays),
+          level: updatedTrek.level,
+          region: updatedTrek.region,
+          description: updatedTrek.description || '',
+          isFeatured: Boolean(updatedTrek.isFeatured),
+          routeGeojson: waypointsToRouteGeojson(updatedTrek.waypoints),
+          elevationMinM: updatedTrek.elevationMinM ? Number(updatedTrek.elevationMinM) : null,
+          elevationMaxM: updatedTrek.elevationMaxM ? Number(updatedTrek.elevationMaxM) : null,
         }),
       });
 
@@ -509,7 +512,11 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
       );
 
       setEditingById((prev) => ({ ...prev, [trekId]: false }));
-      setTrekMessage(`Updated trek details for ${payload.trek.name}.`);
+      setTrekMessage(
+        updates.isFeatured === undefined
+          ? `Updated trek details for ${payload.trek.name}.`
+          : `${payload.trek.name} is now ${payload.trek.is_featured ? 'featured' : 'not featured'}.`
+      );
     } catch (error) {
       setTrekMessage(error.message || 'Failed to update trek');
     } finally {
@@ -936,12 +943,10 @@ return (
                         {!isEditing ? (
                           /* ── Collapsed summary ── */
                           <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
+                            direction="column"
                             spacing={1.5}
-                            justifyContent="space-between"
-                            alignItems={{ sm: 'center' }}
                           >
-                            <Box sx={{ flex: 1 }}>
+                            <Box>
                               <Typography variant="subtitle1" fontWeight={600}>
                                 {trek.name}
                               </Typography>
@@ -962,9 +967,6 @@ return (
                                 {trek.elevationMaxM && (
                                   <Chip size="small" variant="outlined" label={`↑ ${trek.elevationMaxM.toLocaleString()}m`} />
                                 )}
-                                {trek.isFeatured && (
-                                  <Chip size="small" color="warning" label="Featured" />
-                                )}
                                 <Chip
                                   size="small"
                                   variant="outlined"
@@ -977,15 +979,42 @@ return (
                               </Stack>
                             </Box>
                             {canManage && (
-                              <AppButton
-                                variant="outlined"
-                                onClick={() =>
-                                  setEditingById((prev) => ({ ...prev, [trek.id]: true }))
-                                }
-                                sx={{ height: 40, minHeight: 40 }}
-                              >
-                                Edit
-                              </AppButton>
+                              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
+                                <AppButton
+                                  variant={trek.isFeatured ? 'contained' : 'outlined'}
+                                  startIcon={<WorkspacePremiumRoundedIcon />}
+                                  onClick={() => handleSaveTrek(trek.id, { isFeatured: !trek.isFeatured })}
+                                  disabled={isSaving}
+                                  aria-pressed={Boolean(trek.isFeatured)}
+                                  sx={(theme) => trek.isFeatured ? {
+                                    height: 40,
+                                    minHeight: 40,
+                                    background: theme.palette.primary.dark,
+                                    color: theme.palette.primary.contrastText,
+                                    boxShadow: `0 6px 16px ${theme.palette.primary.dark}55`,
+                                    '&:hover': { background: theme.palette.primary.dark },
+                                  } : {
+                                    height: 40,
+                                    minHeight: 40,
+                                    borderColor: theme.palette.primary.dark,
+                                    color: theme.palette.primary.dark,
+                                    '&:hover': {
+                                      borderColor: theme.palette.primary.dark,
+                                      backgroundColor: `${theme.palette.primary.dark}14`,
+                                    },
+                                  }}
+                                >
+                                  {isSaving ? 'Saving...' : trek.isFeatured ? 'Featured' : 'Feature Trek'}
+                                </AppButton>
+                                <AppButton
+                                  variant="outlined"
+                                  onClick={() => setEditingById((prev) => ({ ...prev, [trek.id]: true }))}
+                                  disabled={isSaving}
+                                  sx={{ height: 40, minHeight: 40 }}
+                                >
+                                  Edit Trek
+                                </AppButton>
+                              </Stack>
                             )}
                           </Stack>
                         ) : (
@@ -1326,15 +1355,49 @@ return (
                                 {stay.pricePerNight && (
                                   <Chip size="small" variant="outlined" label={`NPR ${Number(stay.pricePerNight).toLocaleString()}/night`} />
                                 )}
-                                <Chip
-                                  size="small"
-                                  color="secondary"
-                                  component={Link}
-                                  href={`/user/${ownerHandle}`}
-                                  clickable
-                                  label={`Owner: ${ownerLabel}`}
-                                />
                               </Stack>
+                              <Box
+                                component={Link}
+                                href={`/user/${ownerHandle}`}
+                                sx={(theme) => ({
+                                  mt: 1.25,
+                                  px: 1.25,
+                                  py: 0.9,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.9,
+                                  width: 'fit-content',
+                                  maxWidth: '100%',
+                                  textDecoration: 'none',
+                                  color: 'inherit',
+                                  borderRadius: 1.25,
+                                  border: '1px solid',
+                                  borderColor: 'primary.main',
+                                  backgroundColor: theme.palette.mode === 'dark'
+                                    ? 'rgba(0, 180, 216, 0.16)'
+                                    : 'rgba(0, 119, 182, 0.1)',
+                                  '&:hover': {
+                                    backgroundColor: theme.palette.mode === 'dark'
+                                      ? 'rgba(0, 180, 216, 0.24)'
+                                      : 'rgba(0, 119, 182, 0.16)',
+                                  },
+                                })}
+                              >
+                                <PersonIcon color="primary" />
+                                <Box sx={{ minWidth: 0 }}>
+                                  <Typography variant="overline" sx={{ display: 'block', lineHeight: 1.1, color: 'text.secondary' }}>
+                                    Stay owner
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight={800} noWrap>
+                                    {ownerLabel}
+                                  </Typography>
+                                  {stay.ownerEmail && stay.ownerEmail !== ownerLabel && (
+                                    <Typography variant="caption" color="text.secondary" noWrap>
+                                      {stay.ownerEmail}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
                             </Box>
                             <AppButton
                               variant="outlined"
@@ -1940,8 +2003,13 @@ export async function getServerSideProps(context) {
   return {
     props: {
       user: {
-        ...session.user,
+        id: session.user?.id || null,
+        email: session.user?.email || null,
+        name: session.user?.name || '',
+        image: session.user?.image || null,
         role: session.user?.role || 'user',
+        isBanned: Boolean(session.user?.isBanned),
+        scopes: Array.isArray(session.user?.scopes) ? session.user.scopes : tokenScopes,
       },
       treks,
       stays,

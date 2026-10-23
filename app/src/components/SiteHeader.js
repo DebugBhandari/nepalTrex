@@ -77,7 +77,7 @@ export default function SiteHeader() {
     if (status === 'loading') return;
     if (status === 'authenticated') {
       fetch('/api/users/wishlist')
-        .then((r) => r.json())
+        .then((response) => (response.ok ? response.json() : { treks: [] }))
         .then((data) => setWishlistTreks(data.treks || []))
         .catch(() => setWishlistTreks([]));
     } else {
@@ -101,6 +101,8 @@ export default function SiteHeader() {
         if (purchasesRes.ok && active) {
           const data = await purchasesRes.json();
           setMyPurchases(data.orders || []);
+        } else if (active) {
+          setMyPurchases([]);
         }
 
         if (isAdmin) {
@@ -108,6 +110,8 @@ export default function SiteHeader() {
           if (ordersRes.ok && active) {
             const data = await ordersRes.json();
             setAssignedOrders(data.orders || []);
+          } else if (active) {
+            setAssignedOrders([]);
           }
         }
       } catch {

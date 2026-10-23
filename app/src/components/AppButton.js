@@ -1,4 +1,5 @@
 import Button from '@mui/material/Button';
+import { themeColors } from '../lib/theme';
 
 export default function AppButton({ sx, variant = 'contained', ...props }) {
   return (
@@ -14,11 +15,13 @@ export default function AppButton({ sx, variant = 'contained', ...props }) {
         transition: 'transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease',
         ...(variant === 'contained'
           ? {
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              background: themeColors.accent,
               color: '#ffffff',
+              boxShadow: `0 8px 18px ${themeColors.accent}40`,
               '&:hover': {
                 transform: 'translateY(-1px)',
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 74%)`,
+                background: themeColors.deepTeal,
+                boxShadow: `0 11px 22px ${themeColors.accent}55`,
               },
             }
           : {

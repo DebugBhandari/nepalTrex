@@ -1,4 +1,5 @@
 import { alpha, createTheme } from '@mui/material/styles';
+import { themeColors } from './theme';
 
 export function createAppTheme(mode = 'light') {
   const isDark = mode === 'dark';
@@ -92,12 +93,12 @@ export function createAppTheme(mode = 'light') {
             minHeight: 40,
           },
           containedPrimary: {
-            background: `linear-gradient(135deg, ${palette.primary} 0%, ${palette.primaryDeep} 100%)`,
+            background: themeColors.accent,
             color: '#ffffff',
-            boxShadow: `0 8px 18px ${alpha(palette.primaryDeep, isDark ? 0.24 : 0.2)}`,
+            boxShadow: `0 8px 18px ${alpha(themeColors.accent, isDark ? 0.32 : 0.24)}`,
             '&:hover': {
-              background: `linear-gradient(135deg, ${palette.primary} 0%, ${palette.primaryDeep} 72%)`,
-              boxShadow: `0 11px 22px ${alpha(palette.primaryDeep, isDark ? 0.32 : 0.27)}`,
+              background: themeColors.deepTeal,
+              boxShadow: `0 11px 22px ${alpha(themeColors.accent, isDark ? 0.4 : 0.32)}`,
             },
           },
           outlined: {
