@@ -1,33 +1,33 @@
 // NepalTrex Theme Colors & Design System
 export const themeColors = {
-  // Primary Colors (from landing page)
-  deepTeal: '#0f2b2d',
-  midTeal: '#173b3f',
-  goldSun: '#f0b429',
-  snow: '#f8f4eb',
-  ink: '#102023',
-  moss: '#1e6f5c',
-  card: '#fffdf8',
+  // Coolors palette: https://coolors.co/03045e-023e8a-0077b6-0096c7-00b4d8-48cae4-90e0ef-ade8f4-caf0f8
+  deepTeal: '#03045E',
+  midTeal: '#023E8A',
+  goldSun: '#00B4D8',
+  snow: '#CAF0F8',
+  ink: '#03045E',
+  moss: '#0077B6',
+  card: '#FFFFFF',
 
   // Semantic Colors
-  primary: '#f0b429', // Golden Sun - primary CTA
-  secondary: '#1e6f5c', // Moss green - secondary
-  dark: '#0f2b2d', // Deep Teal - dark backgrounds
-  light: '#f8f4eb', // Snow - light text
-  accent: '#173b3f', // Mid Teal - accents
+  primary: '#0077B6',
+  secondary: '#0096C7',
+  dark: '#03045E',
+  light: '#CAF0F8',
+  accent: '#023E8A',
 
   // Functional Colors
-  success: '#1e6f5c', // Using moss green
-  warning: '#f0b429', // Using golden sun
-  error: '#d97706', // Warning orange
-  info: '#0ea5e9', // Cyan for info
+  success: '#0077B6',
+  warning: '#00B4D8',
+  error: '#023E8A',
+  info: '#0096C7',
 };
 
 // Gradients
 export const gradients = {
-  landing: 'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)',
+  landing: 'radial-gradient(circle at 14% 8%, #00B4D8 0%, transparent 34%), radial-gradient(circle at 88% -8%, #48CAE4 0%, transparent 30%), linear-gradient(150deg, #03045E 0%, #023E8A 46%, #0077B6 100%)',
   authCard: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.midTeal} 100%)`,
-  heroSection: 'linear-gradient(135deg, rgba(5, 24, 28, 0.74), rgba(30, 111, 92, 0.5))',
+  heroSection: 'linear-gradient(135deg, rgba(3, 4, 94, 0.8), rgba(0, 119, 182, 0.58))',
 };
 
 // Typography Scales

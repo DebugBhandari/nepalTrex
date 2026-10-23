@@ -203,7 +203,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
           py: 4,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(72,202,228,0.3) 0%, transparent 32%), linear-gradient(160deg, #03045E 0%, #023E8A 46%, #0077B6 100%)'
               : theme.palette.background.default,
         })}
       >

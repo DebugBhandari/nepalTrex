@@ -106,7 +106,7 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
           key="route-layer"
           data={routeGeojson}
           style={{
-            color: '#0f766e',
+            color: '#0077B6',
             weight: 5,
             opacity: 0.9,
           }}
@@ -128,8 +128,8 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
               },
             }}
             pathOptions={{
-              color: isHovered ? '#92400e' : '#1e40af',
-              fillColor: isHovered ? '#f59e0b' : '#3b82f6',
+              color: isHovered ? '#023E8A' : '#0096C7',
+              fillColor: isHovered ? '#00B4D8' : '#48CAE4',
               fillOpacity: 0.92,
               weight: isHovered ? 3 : 2,
             }}
@@ -151,7 +151,7 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
           key={`wp-${i}`}
           center={[lat, lng]}
           radius={5}
-          pathOptions={{ color: '#285A48', fillColor: '#408A71', fillOpacity: 1, weight: 2 }}
+          pathOptions={{ color: '#023E8A', fillColor: '#90E0EF', fillOpacity: 1, weight: 2 }}
         >
           <Tooltip direction="top" offset={[0, -8]}>
             {name}

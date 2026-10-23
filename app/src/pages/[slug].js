@@ -73,7 +73,7 @@ function StarRow({ rating, count }) {
       {stars.map((s) => (
         <StarRoundedIcon
           key={s}
-          sx={{ fontSize: 18, color: s <= Math.round(Number(rating)) ? '#f59e0b' : 'text.disabled' }}
+          sx={{ fontSize: 18, color: s <= Math.round(Number(rating)) ? '#00B4D8' : 'text.disabled' }}
         />
       ))}
       {count > 0 && (
@@ -124,7 +124,7 @@ function ReviewForm({ initialReview, onCancel, onSaved, targetId, targetType }) 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4, mb: 1.5 }} aria-label={`Rating: ${rating} out of 5`}>
         {[1, 2, 3, 4, 5].map((star) => (
           <IconButton key={star} type="button" size="small" onClick={() => setRating(star)} aria-label={`Set rating to ${star} stars`}>
-            <StarRoundedIcon sx={{ color: star <= rating ? '#f59e0b' : 'text.disabled' }} />
+            <StarRoundedIcon sx={{ color: star <= rating ? '#00B4D8' : 'text.disabled' }} />
           </IconButton>
         ))}
       </Box>
@@ -216,7 +216,7 @@ function ReviewsSection({ initialReviews, targetId, targetType, title = 'Guest R
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle2" fontWeight={700}>{review.reviewerName}</Typography>
                     <Box sx={{ display: 'flex', gap: 0.3, mt: 0.2 }}>
-                      {[1, 2, 3, 4, 5].map((star) => <StarRoundedIcon key={star} sx={{ fontSize: 14, color: star <= review.rating ? '#f59e0b' : 'text.disabled' }} />)}
+                      {[1, 2, 3, 4, 5].map((star) => <StarRoundedIcon key={star} sx={{ fontSize: 14, color: star <= review.rating ? '#00B4D8' : 'text.disabled' }} />)}
                     </Box>
                   </Box>
                   {isOwner && (
@@ -299,7 +299,7 @@ function StayDetailView({ stay }) {
           height: { xs: 300, sm: 420, md: 520 },
           overflow: 'hidden',
           borderRadius: { xs: 0, sm: 2 },
-          boxShadow: '0 22px 54px rgba(13, 35, 25, 0.2)',
+          boxShadow: '0 22px 54px rgba(2, 62, 138, 0.24)',
         }}
       >
         <Box
@@ -312,7 +312,7 @@ function StayDetailView({ stay }) {
         <Box
           sx={{
             position: 'absolute', inset: 0,
-            background: 'linear-gradient(to top, rgba(6,18,12,0.82) 0%, rgba(6,18,12,0.26) 58%, rgba(6,18,12,0.04) 100%)',
+            background: 'linear-gradient(to top, rgba(3,4,94,0.86) 0%, rgba(3,4,94,0.3) 58%, rgba(3,4,94,0.04) 100%)',
           }}
         />
         {/* Text on hero */}
@@ -336,15 +336,15 @@ function StayDetailView({ stay }) {
               </Typography>
             </Box>
             {stay.isFeatured && (
-              <Box sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#e8bd5b' }}>
-                <Typography variant="caption" sx={{ color: '#173024', fontWeight: 800 }}>Featured</Typography>
+              <Box sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#00B4D8' }}>
+                <Typography variant="caption" sx={{ color: '#03045E', fontWeight: 800 }}>Featured</Typography>
               </Box>
             )}
             {stay.discountPercent > 0 && (
               <Box
                 sx={{
                   px: 1.4, py: 0.4, borderRadius: 1,
-                  bgcolor: '#b94d42', display: 'flex', alignItems: 'center', gap: 0.5,
+                  bgcolor: '#0096C7', display: 'flex', alignItems: 'center', gap: 0.5,
                 }}
               >
                 <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />
@@ -377,7 +377,7 @@ function StayDetailView({ stay }) {
             </Box>
             {stay.avgRating && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                <StarRoundedIcon sx={{ fontSize: 16, color: '#f59e0b' }} />
+                <StarRoundedIcon sx={{ fontSize: 16, color: '#00B4D8' }} />
                 <Typography variant="body2" sx={{ color: '#fff', fontWeight: 700 }}>
                   {Number(stay.avgRating).toFixed(1)}
                 </Typography>
@@ -396,7 +396,7 @@ function StayDetailView({ stay }) {
           minHeight: '60vh',
           py: { xs: 3.5, md: 6 },
           background: theme.palette.mode === 'dark'
-            ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.2) 0%, transparent 38%), linear-gradient(160deg, #1f2937 0%, #1e293b 100%)'
+            ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.24) 0%, transparent 38%), linear-gradient(160deg, #03045E 0%, #023E8A 100%)'
             : theme.palette.background.default,
         })}
       >
@@ -406,7 +406,7 @@ function StayDetailView({ stay }) {
             sx={(theme) => ({
               display: 'flex', gap: { xs: 2, md: 4 }, flexWrap: 'wrap',
               alignItems: 'center', p: { xs: 2, md: 2.5 }, mb: 3.5, borderRadius: 2,
-              bgcolor: 'background.paper', boxShadow: '0 8px 24px rgba(23, 37, 31, 0.06)',
+              bgcolor: 'background.paper', boxShadow: '0 8px 24px rgba(2, 62, 138, 0.1)',
               borderBottom: `1px solid ${theme.palette.divider}`,
             })}
           >
@@ -609,12 +609,12 @@ function TrekDetailView({ trek }) {
           py: { xs: 2.5, md: 4.5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(76,133,102,0.28) 0%, transparent 38%), linear-gradient(160deg, #10211c 0%, #172d26 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.28) 0%, transparent 38%), linear-gradient(160deg, #03045E 0%, #023E8A 100%)'
               : theme.palette.background.default,
         })}
       >
         <Container maxWidth="xl">
-          <Card sx={{ mb: 4, overflow: 'hidden', borderRadius: { xs: 0, sm: 2 }, boxShadow: '0 22px 54px rgba(13, 35, 25, 0.18)' }}>
+          <Card sx={{ mb: 4, overflow: 'hidden', borderRadius: { xs: 0, sm: 2 }, boxShadow: '0 22px 54px rgba(2, 62, 138, 0.22)' }}>
             <CardMedia
               component="img"
               height="460"

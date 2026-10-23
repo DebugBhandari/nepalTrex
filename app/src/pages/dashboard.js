@@ -739,8 +739,8 @@ return (
             p: { xs: 2, md: 3 },
             background:
               theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                : 'linear-gradient(145deg, #ffffff 0%, #f2fbf9 100%)',
+                ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
+                : 'linear-gradient(145deg, #FFFFFF 0%, #CAF0F8 100%)',
             boxShadow: '0 18px 36px rgba(15, 23, 42, 0.14)',
           })}
         >
@@ -914,7 +914,7 @@ return (
                         gridColumn: isEditing ? '1 / -1' : 'auto',
                         background:
                           theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                            ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
                             : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
                         color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                         border: '1px solid',
@@ -1286,7 +1286,7 @@ return (
                         gridColumn: isEditing ? '1 / -1' : 'auto',
                         background:
                           theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                            ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
                             : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
                         color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                         border: '1px solid',
@@ -1650,7 +1650,7 @@ return (
                       sx={(theme) => ({
                         background:
                           theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                            ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
                             : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
                         color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                       })}
@@ -1756,10 +1756,10 @@ return (
                                 px: 1.8,
                                 fontSize: '0.82rem',
                                 lineHeight: 1.15,
-                                background: '#0f766e',
+                                background: '#0077B6',
                                 color: '#ffffff',
                                 '&:hover': {
-                                  background: '#0b5f58',
+                                  background: '#023E8A',
                                 },
                                 '&.Mui-disabled': {
                                   background: '#94a3b8',
@@ -1777,8 +1777,8 @@ return (
                                 height: 36,
                                 minHeight: 36,
                                 px: 1.8,
-                                color: entry.isBanned ? '#0f766e' : '#b45309',
-                                borderColor: entry.isBanned ? 'rgba(15, 118, 110, 0.45)' : 'rgba(180, 83, 9, 0.45)',
+                                color: entry.isBanned ? '#0077B6' : '#023E8A',
+                                borderColor: entry.isBanned ? 'rgba(0, 119, 182, 0.45)' : 'rgba(2, 62, 138, 0.45)',
                               }}
                             >
                               {isUpdatingBan ? 'Saving...' : entry.isBanned ? 'Unban' : 'Ban'}

@@ -62,7 +62,7 @@ function HeroStrip({
           variant="h4"
           fontWeight={900}
           sx={{
-            color: dark ? '#1e293b' : '#fff',
+            color: dark ? '#03045E' : '#fff',
             textShadow: dark ? 'none' : '0 2px 14px rgba(0,0,0,0.3)',
             fontSize: { xs: '1.5rem', md: '2rem' },
             mb: 0.5,
@@ -364,7 +364,7 @@ export default function StaysPage({ stays }) {
             </Typography>
             <Typography
               variant="h6"
-              sx={{ color: 'rgba(248, 244, 235, 0.82)' }}
+              sx={{ color: 'rgba(202, 240, 248, 0.86)' }}
             >
               {staysData.length} unique stays — teahouses, heritage inns, jungle
               camps and city boutiques
@@ -403,7 +403,7 @@ export default function StaysPage({ stays }) {
           py: { xs: 3, md: 5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(30,111,92,0.14) 0%, transparent 38%), linear-gradient(160deg, #0f2b2d 0%, #173b3f 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.2) 0%, transparent 38%), linear-gradient(160deg, #03045E 0%, #023E8A 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -543,7 +543,6 @@ export default function StaysPage({ stays }) {
                 bgFrom={themeColors.deepTeal}
                 bgMid={themeColors.moss}
                 bgTo={themeColors.midTeal}
-                dark
               />
 
               <Section

@@ -1,35 +1,35 @@
 :root {
-  --bg-deep: #f5f4ee;
-  --bg-mid: #edf1e9;
-  --sun: #246b52;
+  --bg-deep: #caf0f8;
+  --bg-mid: #ade8f4;
+  --sun: #0077b6;
   --snow: #ffffff;
-  --ink: #17251f;
-  --moss: #246b52;
+  --ink: #03045e;
+  --moss: #0096c7;
   --on-primary: #ffffff;
   --card: #ffffff;
-  --page-bg: radial-gradient(circle at 8% -10%, rgba(123, 166, 139, 0.2), transparent 28%), radial-gradient(circle at 90% 2%, rgba(104, 155, 178, 0.15), transparent 23%), linear-gradient(160deg, #f8f7f1 0%, #f0f2eb 100%);
-  --text-primary: #17251f;
-  --text-muted: rgba(47, 66, 57, 0.76);
-  --outline: rgba(23, 37, 31, 0.16);
-  --soft-bg: rgba(36, 107, 82, 0.08);
-  --hero-bg: linear-gradient(135deg, rgba(218, 232, 218, 0.9), rgba(234, 240, 232, 0.78));
+  --page-bg: radial-gradient(circle at 8% -10%, rgba(72, 202, 228, 0.38), transparent 30%), radial-gradient(circle at 90% 2%, rgba(0, 180, 216, 0.22), transparent 25%), linear-gradient(160deg, #caf0f8 0%, #ade8f4 100%);
+  --text-primary: #03045e;
+  --text-muted: rgba(2, 62, 138, 0.8);
+  --outline: rgba(2, 62, 138, 0.22);
+  --soft-bg: rgba(0, 119, 182, 0.1);
+  --hero-bg: linear-gradient(135deg, rgba(144, 224, 239, 0.9), rgba(202, 240, 248, 0.86));
   --section-bg: rgba(255, 255, 255, 0.84);
-  --panel-border: rgba(23, 37, 31, 0.12);
+  --panel-border: rgba(2, 62, 138, 0.16);
 }
 
 body[data-theme='dark'] {
-  --bg-deep: #10211c;
-  --bg-mid: #172d26;
-  --snow: #f4f6ed;
-  --card: #172d26;
-  --page-bg: radial-gradient(circle at 12% 5%, rgba(93, 142, 115, 0.24) 0%, transparent 30%), radial-gradient(circle at 88% -8%, rgba(79, 132, 156, 0.2) 0%, transparent 28%), linear-gradient(155deg, #10211c 0%, #172d26 58%, #0c1915 100%);
-  --text-primary: #f4f6ed;
-  --text-muted: rgba(222, 233, 223, 0.74);
-  --outline: rgba(225, 237, 227, 0.18);
-  --soft-bg: rgba(225, 237, 227, 0.08);
-  --hero-bg: linear-gradient(135deg, rgba(58, 101, 77, 0.48), rgba(31, 61, 51, 0.56));
-  --section-bg: rgba(23, 45, 38, 0.84);
-  --panel-border: rgba(225, 237, 227, 0.14);
+  --bg-deep: #03045e;
+  --bg-mid: #023e8a;
+  --snow: #caf0f8;
+  --card: #023e8a;
+  --page-bg: radial-gradient(circle at 12% 5%, rgba(0, 180, 216, 0.28) 0%, transparent 30%), radial-gradient(circle at 88% -8%, rgba(72, 202, 228, 0.2) 0%, transparent 28%), linear-gradient(155deg, #03045e 0%, #023e8a 58%, #0077b6 100%);
+  --text-primary: #caf0f8;
+  --text-muted: rgba(173, 232, 244, 0.82);
+  --outline: rgba(144, 224, 239, 0.28);
+  --soft-bg: rgba(72, 202, 228, 0.14);
+  --hero-bg: linear-gradient(135deg, rgba(0, 119, 182, 0.62), rgba(2, 62, 138, 0.72));
+  --section-bg: rgba(2, 62, 138, 0.84);
+  --panel-border: rgba(144, 224, 239, 0.22);
 }
 
 * {
@@ -88,7 +88,7 @@ a {
   pointer-events: none;
   background-image: linear-gradient(
       35deg,
-      rgba(15, 118, 110, 0.07) 25%,
+      rgba(0, 180, 216, 0.1) 25%,
       transparent 25%
     ),
     linear-gradient(-35deg, rgba(255, 255, 255, 0.04) 20%, transparent 20%);
@@ -311,8 +311,8 @@ a {
 }
 
 .region-pills span {
-  background: rgba(15, 118, 110, 0.18);
-  border: 1px solid rgba(15, 118, 110, 0.45);
+  background: rgba(0, 180, 216, 0.16);
+  border: 1px solid rgba(0, 119, 182, 0.4);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 0.45rem 0.75rem;
@@ -350,21 +350,21 @@ a {
 }
 
 .map-links a:hover {
-  background: rgba(15, 118, 110, 0.2);
+  background: rgba(0, 180, 216, 0.2);
 }
 
 .callout {
   background: linear-gradient(
     120deg,
-    rgba(15, 118, 110, 0.2),
-    rgba(30, 111, 92, 0.46)
+    rgba(0, 180, 216, 0.2),
+    rgba(0, 119, 182, 0.46)
   );
 }
 
-[style*='background: #0f766e'],
-[style*='background-color: #0f766e'],
-[style*='background:#0f766e'],
-[style*='background-color:#0f766e'] {
+[style*='background: #0077b6'],
+[style*='background-color: #0077b6'],
+[style*='background:#0077b6'],
+[style*='background-color:#0077b6'] {
   color: #ffffff;
 }
 

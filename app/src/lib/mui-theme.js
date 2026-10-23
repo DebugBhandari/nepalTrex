@@ -3,8 +3,8 @@ import { alpha, createTheme } from '@mui/material/styles';
 export function createAppTheme(mode = 'light') {
   const isDark = mode === 'dark';
   const palette = isDark
-    ? { primary: '#9bc9af', primaryDeep: '#477d67', secondary: '#a9c8d8', bg: '#10211c', paper: '#172d26', raised: '#1d3830', text: '#f4f6ed', textMuted: '#b9c7bd', border: 'rgba(225, 237, 227, 0.14)' }
-    : { primary: '#246b52', primaryDeep: '#164535', secondary: '#3c7185', bg: '#f5f4ee', paper: '#ffffff', raised: '#fbfaf5', text: '#17251f', textMuted: '#61716a', border: 'rgba(23, 37, 31, 0.12)' };
+    ? { primary: '#48CAE4', primaryDeep: '#0096C7', secondary: '#90E0EF', bg: '#03045E', paper: '#023E8A', raised: '#0077B6', text: '#CAF0F8', textMuted: '#ADE8F4', border: 'rgba(144, 224, 239, 0.24)' }
+    : { primary: '#0077B6', primaryDeep: '#023E8A', secondary: '#0096C7', bg: '#CAF0F8', paper: '#FFFFFF', raised: '#ADE8F4', text: '#03045E', textMuted: '#023E8A', border: 'rgba(2, 62, 138, 0.18)' };
 
   return createTheme({
     palette: {
@@ -12,14 +12,14 @@ export function createAppTheme(mode = 'light') {
       primary: {
         main: palette.primary,
         dark: palette.primaryDeep,
-        light: '#c9e3d4',
+        light: '#90E0EF',
         contrastText: '#ffffff',
       },
       secondary: {
         main: palette.secondary,
-        dark: '#285668',
-        light: '#cfe4ee',
-        contrastText: '#ffffff',
+        dark: '#0077B6',
+        light: '#48CAE4',
+        contrastText: '#03045E',
       },
       background: {
         default: palette.bg,
@@ -128,7 +128,7 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: palette.paper,
             color: palette.text,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 12px 30px rgba(1, 11, 7, 0.2)' : '0 10px 28px rgba(32, 51, 42, 0.06)',
+            boxShadow: isDark ? '0 12px 30px rgba(0, 4, 94, 0.28)' : '0 10px 28px rgba(2, 62, 138, 0.1)',
           },
         },
       },
@@ -138,7 +138,7 @@ export function createAppTheme(mode = 'light') {
             borderRadius: 12,
             backgroundColor: palette.paper,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 15px 36px rgba(1, 11, 7, 0.26)' : '0 14px 34px rgba(32, 51, 42, 0.08)',
+            boxShadow: isDark ? '0 15px 36px rgba(0, 4, 94, 0.34)' : '0 14px 34px rgba(2, 62, 138, 0.12)',
           },
         },
       },

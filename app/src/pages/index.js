@@ -376,7 +376,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
         sx={(theme) => ({
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(64,138,113,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(110,142,173,0.34) 0%, transparent 32%), linear-gradient(160deg, #1f2937 0%, #334155 46%, #1e293b 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(72,202,228,0.3) 0%, transparent 32%), linear-gradient(160deg, #03045E 0%, #023E8A 46%, #0077B6 100%)'
               : theme.palette.background.default,
           minHeight: '100vh',
           pb: 6,
@@ -422,7 +422,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               >
                 Plan your Himalayan trek with confidence
               </Typography>
-              <Typography variant="h6" sx={{ color: 'rgba(248, 244, 235, 0.82)', maxWidth: 760, mx: 'auto' }}>
+              <Typography variant="h6" sx={{ color: 'rgba(202, 240, 248, 0.86)', maxWidth: 760, mx: 'auto' }}>
                 Discover routes by region, shortlist favorites, and open complete trek pages with route maps and nearby stays.
               </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2.5, justifyContent: 'center' }}>
@@ -504,7 +504,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   mb: 2.5,
                   background:
                     theme.palette.mode === 'dark'
-                      ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
+                      ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
                       : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
                 })}
               >
@@ -652,8 +652,8 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               p: { xs: 2.4, md: 3.2 },
               background:
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(130deg, rgba(15,118,110,0.25), rgba(19,30,49,0.95) 55%, rgba(11,18,32,0.95))'
-                  : 'linear-gradient(130deg, rgba(15,118,110,0.12), rgba(255,255,255,0.98) 52%, rgba(242,251,249,0.98))',
+                  ? 'linear-gradient(130deg, rgba(0,180,216,0.3), rgba(2,62,138,0.96) 55%, rgba(3,4,94,0.96))'
+                  : 'linear-gradient(130deg, rgba(0,180,216,0.14), rgba(255,255,255,0.98) 52%, rgba(202,240,248,0.98))',
               border: '1px solid',
               borderColor: 'divider',
             })}

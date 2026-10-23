@@ -437,7 +437,7 @@ export default function AdminPage({ user, initialStays }) {
       <SiteHeader />
 
       <Container maxWidth="lg" sx={{ py: 3 }}>
-        <Paper sx={(theme) => ({ p: { xs: 2, md: 3 }, background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)' : 'linear-gradient(145deg, #ffffff 0%, #f2fbf9 100%)' })}>
+        <Paper sx={(theme) => ({ p: { xs: 2, md: 3 }, background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)' : 'linear-gradient(145deg, #FFFFFF 0%, #CAF0F8 100%)' })}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ mb: 2.5 }}>
             <Box>
               <Typography variant="h4">Manage Your Hotels and Homestays</Typography>
@@ -600,7 +600,7 @@ export default function AdminPage({ user, initialStays }) {
                   : stayOrders;
 
               return (
-                <Card key={stay.id} sx={(theme) => ({ background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)' : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(242,251,249,0.98) 100%)', color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary, border: '1px solid', borderColor: 'divider', boxShadow: '0 8px 24px rgba(15,23,42,0.1)' })}>
+                <Card key={stay.id} sx={(theme) => ({ background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)' : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(202,240,248,0.98) 100%)', color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary, border: '1px solid', borderColor: 'divider', boxShadow: '0 8px 24px rgba(2,62,138,0.12)' })}>
 
                   <CardMedia component="img" height="220" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} sx={{ objectFit: 'cover' }} />
 
