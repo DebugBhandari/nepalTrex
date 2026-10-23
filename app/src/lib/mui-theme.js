@@ -208,12 +208,58 @@ export function createAppTheme(mode = 'light') {
       },
       MuiMenu: {
         styleOverrides: {
-          paper: { borderRadius: 10, marginTop: 8, minWidth: 180 },
+          paper: {
+            borderRadius: 10,
+            marginTop: 8,
+            minWidth: 180,
+            backgroundColor: palette.paper,
+            backgroundImage: `linear-gradient(145deg, ${alpha(palette.primary, isDark ? 0.16 : 0.08)}, transparent 58%)`,
+            border: `1px solid ${palette.border}`,
+            boxShadow: isDark ? '0 18px 38px rgba(0, 4, 94, 0.48)' : '0 18px 38px rgba(2, 62, 138, 0.18)',
+            overflow: 'hidden',
+          },
         },
       },
       MuiMenuItem: {
         styleOverrides: {
-          root: { borderRadius: 6, margin: '3px 6px', minHeight: 40 },
+          root: {
+            borderRadius: 6,
+            margin: '3px 6px',
+            minHeight: 40,
+            color: palette.text,
+            transition: 'background-color 160ms ease, color 160ms ease, transform 160ms ease',
+            '& .MuiSvgIcon-root': {
+              color: palette.primary,
+            },
+            '&:hover': {
+              backgroundColor: alpha(palette.primary, isDark ? 0.24 : 0.12),
+              color: palette.primary,
+              transform: 'translateX(2px)',
+            },
+            '&.Mui-selected, &.Mui-selected:hover': {
+              backgroundColor: alpha(palette.primary, isDark ? 0.34 : 0.18),
+              color: palette.primary,
+            },
+          },
+        },
+      },
+      MuiPopover: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: palette.paper,
+            backgroundImage: `linear-gradient(145deg, ${alpha(palette.primary, isDark ? 0.16 : 0.08)}, transparent 58%)`,
+            border: `1px solid ${palette.border}`,
+            boxShadow: isDark ? '0 18px 38px rgba(0, 4, 94, 0.48)' : '0 18px 38px rgba(2, 62, 138, 0.18)',
+          },
+        },
+      },
+      MuiListItem: {
+        styleOverrides: {
+          root: {
+            '&.MuiButtonBase-root:hover': {
+              backgroundColor: alpha(palette.primary, isDark ? 0.24 : 0.1),
+            },
+          },
         },
       },
       MuiTabs: {
