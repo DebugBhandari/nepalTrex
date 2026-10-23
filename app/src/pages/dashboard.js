@@ -40,6 +40,7 @@ import {
   Tabs,
   TextField,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { authOptions } from '../lib/auth-options';
@@ -48,10 +49,10 @@ import AppButton from '../components/AppButton';
 import AppIconButton from '../components/AppIconButton';
 import NepalTrexLogo from '../components/NepalTrexLogo';
 import SiteHeader from '../components/SiteHeader';
-import { getTrekImage, slugifyTrekName } from '../lib/treks';
+import { getDifficultyLabel, getTrekImage, slugifyTrekName } from '../lib/treks';
 
 const ROLE_OPTIONS = ['user', 'admin', 'superUser'];
-const LEVEL_OPTIONS = ['easy', 'moderate', 'challenging'];
+const LEVEL_OPTIONS = ['Diff+', 'Diff++', 'Diff+++'];
 const DASHBOARD_TAB_STORAGE_KEY = 'nepaltrex-dashboard-active-tab';
 const USERS_PER_PAGE = 10;
 const STAYS_PER_PAGE = 8;
@@ -950,11 +951,13 @@ return (
                                 sx={{ mt: 0.8, flexWrap: 'wrap', gap: 0.5 }}
                               >
                                 <Chip size="small" label={trek.region} />
-                                <Chip
-                                  size="small"
-                                  label={trek.level}
-                                  sx={{ textTransform: 'capitalize' }}
-                                />
+                                <Tooltip title={getDifficultyLabel(trek.level)}>
+                                  <Chip
+                                    size="small"
+                                    label={trek.level}
+                                    sx={{ textTransform: 'capitalize' }}
+                                  />
+                                </Tooltip>
                                 <Chip size="small" label={`${trek.durationDays} days`} />
                                 {trek.elevationMaxM && (
                                   <Chip size="small" variant="outlined" label={`↑ ${trek.elevationMaxM.toLocaleString()}m`} />

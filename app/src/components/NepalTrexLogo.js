@@ -1,5 +1,28 @@
+import { useTheme } from '@mui/material/styles';
+
 export function NepalTrexLogo({ className = '', width = 300 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const height = width * 0.45;
+  const colors = isDark
+    ? {
+      far: '#90E0EF',
+      farAlt: '#ADE8F4',
+      mid: '#48CAE4',
+      midDeep: '#00B4D8',
+      flagBlue: '#90E0EF',
+      flagRed: '#EF476F',
+      cutout: '#023E8A',
+    }
+    : {
+      far: '#7B92B8',
+      farAlt: '#8FA3C4',
+      mid: '#5B7FA8',
+      midDeep: '#4A6FA5',
+      flagBlue: '#003893',
+      flagRed: '#DC143C',
+      cutout: '#DC143C',
+    };
 
   return (
     <svg
@@ -23,28 +46,28 @@ export function NepalTrexLogo({ className = '', width = 300 }) {
       {/* Himalayan Mountain Range with mask applied */}
       <g id="himalayan-mountains" mask="url(#text-mask)">
         {/* Background Mountains - Lighter shades */}
-        <path d="M0 110 L40 50 L80 110 Z" fill="#7B92B8" opacity="0.5" />
-        <path d="M60 110 L100 40 L140 110 Z" fill="#8FA3C4" opacity="0.4" />
-        <path d="M160 110 L200 45 L240 110 Z" fill="#7B92B8" opacity="0.5" />
-        <path d="M220 110 L260 55 L300 110 Z" fill="#8FA3C4" opacity="0.4" />
+        <path d="M0 110 L40 50 L80 110 Z" fill={colors.far} opacity="0.5" />
+        <path d="M60 110 L100 40 L140 110 Z" fill={colors.farAlt} opacity="0.4" />
+        <path d="M160 110 L200 45 L240 110 Z" fill={colors.far} opacity="0.5" />
+        <path d="M220 110 L260 55 L300 110 Z" fill={colors.farAlt} opacity="0.4" />
 
         {/* Middle Layer Mountains */}
-        <path d="M20 110 L70 25 L120 110 Z" fill="#5B7FA8" opacity="0.7" />
-        <path d="M100 110 L150 20 L200 110 Z" fill="#4A6FA5" opacity="0.8" />
-        <path d="M180 110 L230 30 L280 110 Z" fill="#6B8AB0" opacity="0.6" />
+        <path d="M20 110 L70 25 L120 110 Z" fill={colors.mid} opacity="0.7" />
+        <path d="M100 110 L150 20 L200 110 Z" fill={colors.midDeep} opacity="0.8" />
+        <path d="M180 110 L230 30 L280 110 Z" fill={colors.mid} opacity="0.6" />
 
         {/* Main Flag Mountains - Foreground */}
         {/* LEFT: Moon Mountain (Upper Triangle) */}
-        <path d="M50 110 L95 15 L140 110 Z" fill="#003893" />
-        <path d="M55 110 L95 23 L135 110 Z" fill="#DC143C" />
+        <path d="M50 110 L95 15 L140 110 Z" fill={colors.flagBlue} />
+        <path d="M55 110 L95 23 L135 110 Z" fill={colors.flagRed} />
 
         {/* White Moon Crescent */}
         <circle cx="95" cy="55" r="8" fill="#FFFFFF" />
-        <circle cx="97.5" cy="55" r="7" fill="#DC143C" />
+        <circle cx="97.5" cy="55" r="7" fill={colors.cutout} />
 
         {/* RIGHT: Sun Mountain (Lower Triangle) */}
-        <path d="M160 110 L205 15 L250 110 Z" fill="#003893" />
-        <path d="M165 110 L205 23 L245 110 Z" fill="#DC143C" />
+        <path d="M160 110 L205 15 L250 110 Z" fill={colors.flagBlue} />
+        <path d="M165 110 L205 23 L245 110 Z" fill={colors.flagRed} />
 
         {/* White Sun */}
         <g id="sun">

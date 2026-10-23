@@ -1,7 +1,7 @@
 export type Trek = {
   name: string;
   durationDays: number;
-  level: 'easy' | 'moderate' | 'challenging';
+  level: 'Diff+' | 'Diff++' | 'Diff+++';
   region: string;
 };
 
@@ -18,19 +18,19 @@ export const FEATURED_TREKS: Trek[] = [
   {
     name: 'Everest Base Camp',
     durationDays: 14,
-    level: 'moderate',
+    level: 'Diff++',
     region: 'Khumbu Region',
   },
   {
     name: 'Annapurna Circuit',
     durationDays: 16,
-    level: 'challenging',
+    level: 'Diff+++',
     region: 'Annapurna Region',
   },
   {
     name: 'Langtang Valley',
     durationDays: 10,
-    level: 'easy',
+    level: 'Diff+',
     region: 'Langtang Region',
   },
 ];

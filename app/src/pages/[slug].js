@@ -18,6 +18,7 @@ import {
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
@@ -31,7 +32,7 @@ import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
 import StayThumbnailCard from '../components/StayThumbnailCard';
-import { getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
+import { getDifficultyLabel, getTrekImage, minDistanceToRouteKm, parseRouteWaypoints } from '../lib/treks';
 import { useCart } from '../hooks/useCart';
 
 const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), { ssr: false });
@@ -685,7 +686,9 @@ function TrekDetailView({ trek }) {
               {wishlistError && <Alert severity="error" sx={{ mb: 1.5 }}>{wishlistError}</Alert>}
               <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
                 <Chip label={trek.region} color="secondary" />
-                <Chip label={trek.level} variant="outlined" />
+                <Tooltip title={getDifficultyLabel(trek.level)}>
+                  <Chip label={trek.level} variant="outlined" />
+                </Tooltip>
                 <Chip label={`${trek.durationDays} days`} variant="outlined" />
                 {trek.elevationMinM && trek.elevationMaxM && (
                   <Chip label={`${trek.elevationMinM.toLocaleString()}m - ${trek.elevationMaxM.toLocaleString()}m`} variant="outlined" />

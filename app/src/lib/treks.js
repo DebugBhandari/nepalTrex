@@ -68,6 +68,16 @@ export function getTrekImage(name = '') {
   return minioImageUrlFor(imagePath);
 }
 
+export function getDifficultyLabel(level = '') {
+  const labels = {
+    'diff+': 'Easy',
+    'diff++': 'Moderate',
+    'diff+++': 'Challenging',
+  };
+
+  return labels[level.trim().toLowerCase()] || level;
+}
+
 export function parseRouteWaypoints(routeGeojson) {
   if (!routeGeojson) return [];
 

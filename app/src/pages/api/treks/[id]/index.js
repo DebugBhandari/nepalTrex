@@ -3,12 +3,9 @@ import { authOptions } from '../../../../lib/auth-options';
 import { query } from '../../../../lib/db';
 
 const ALLOWED_LEVELS = new Set([
-  'easy',
-  'moderate',
-  'challenging',
-  'easy to moderate',
-  'moderate to challenging',
-  'very challenging',
+  'diff+',
+  'diff++',
+  'diff+++',
 ]);
 
 export default async function handler(req, res) {
@@ -91,7 +88,7 @@ export default async function handler(req, res) {
       [
         name.trim(),
         parsedDuration,
-        level,
+        level.trim(),
         region.trim(),
         description.trim(),
         isFeatured,

@@ -75,6 +75,17 @@ ALTER TABLE treks
 ALTER TABLE treks
   ADD COLUMN IF NOT EXISTS review_count INTEGER NOT NULL DEFAULT 0;
 
+UPDATE treks
+SET
+  level = CASE
+    WHEN LOWER(TRIM(level)) LIKE 'easy%' THEN 'Diff+'
+    WHEN LOWER(TRIM(level)) LIKE 'moderate%' THEN 'Diff++'
+    WHEN LOWER(TRIM(level)) LIKE '%challenging%' THEN 'Diff+++'
+    ELSE level
+  END,
+  updated_at = NOW()
+WHERE LOWER(TRIM(level)) NOT IN ('diff+', 'diff++', 'diff+++');
+
 CREATE TABLE IF NOT EXISTS stays (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

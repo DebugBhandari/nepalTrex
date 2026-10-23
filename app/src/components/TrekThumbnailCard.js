@@ -3,11 +3,12 @@ import {
   Box,
   Chip,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
-import { getTrekImage } from '../lib/treks';
+import { getDifficultyLabel, getTrekImage } from '../lib/treks';
 import { themeColors } from '../lib/theme';
 
 export default function TrekThumbnailCard({ trek }) {
@@ -111,7 +112,9 @@ export default function TrekThumbnailCard({ trek }) {
 
         <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
           <Chip label={`${trek.durationDays} days`} size="small" variant="outlined" />
-          <Chip label={trek.level} size="small" color="secondary" />
+          <Tooltip title={getDifficultyLabel(trek.level)}>
+            <Chip label={trek.level} size="small" color="secondary" />
+          </Tooltip>
           <Chip label={trek.region || 'Other'} size="small" variant="outlined" />
           <Chip label={`${trek.nearbyStaysCount || 0} nearby stays`} size="small" variant="outlined" />
         </Stack>
