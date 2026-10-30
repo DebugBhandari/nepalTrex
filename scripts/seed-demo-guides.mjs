@@ -76,6 +76,8 @@ async function main() {
     await client.query('BEGIN');
     const hash = await bcrypt.hash(password, 10);
     const reviewerIds = await Promise.all(customers.map(([email, username, name]) => upsertUser(client, { email, username, name, hash })));
+    const trekRows = await client.query('SELECT id, name FROM treks');
+    const trekIdByName = new Map(trekRows.rows.map((trek) => [trek.name.toLowerCase(), trek.id]));
 
     for (const [guideIndex, guide] of guides.entries()) {
       const userId = await upsertUser(client, { ...guide, hash });
@@ -93,14 +95,15 @@ async function main() {
       const profileId = profile.rows[0].id;
 
       for (const [slug, title, trek, days, price] of guide.packages) {
+        const trekId = trekIdByName.get(trek.toLowerCase()) || null;
         await client.query(
-          `INSERT INTO guide_packages (guide_profile_id, slug, title, trek_name, region, summary, duration_days, group_size_min, group_size_max, price_amount, price_unit, currency, image_url, inclusions, exclusions)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 1, 8, $8, 'package', 'NPR', $9, $10, $11)
+          `INSERT INTO guide_packages (guide_profile_id, trek_id, slug, title, trek_name, region, summary, duration_days, group_size_min, group_size_max, price_amount, price_unit, currency, image_url, inclusions, exclusions)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1, 8, $9, 'package', 'NPR', $10, $11, $12)
            ON CONFLICT (guide_profile_id, slug) DO UPDATE SET
-             title = EXCLUDED.title, trek_name = EXCLUDED.trek_name, region = EXCLUDED.region, summary = EXCLUDED.summary,
+             trek_id = EXCLUDED.trek_id, title = EXCLUDED.title, trek_name = EXCLUDED.trek_name, region = EXCLUDED.region, summary = EXCLUDED.summary,
              duration_days = EXCLUDED.duration_days, price_amount = EXCLUDED.price_amount, image_url = EXCLUDED.image_url,
              inclusions = EXCLUDED.inclusions, exclusions = EXCLUDED.exclusions, is_active = true, updated_at = NOW()`,
-          [profileId, slug, title, trek, guide.region, `A guided ${days}-day ${trek} itinerary with local logistics, permit support, flexible pacing, and personalised mountain guidance.`, days, price, `https://placehold.co/1200x700?text=${encodeURIComponent(title)}`, ['Licensed guide service', 'Permit coordination', 'First-aid kit', 'Pre-trek planning call'], ['International flights', 'Travel insurance', 'Personal snacks']]
+          [profileId, trekId, slug, title, trek, guide.region, `A guided ${days}-day ${trek} itinerary with local logistics, permit support, flexible pacing, and personalised mountain guidance.`, days, price, `https://placehold.co/1200x700?text=${encodeURIComponent(title)}`, ['Licensed guide service', 'Permit coordination', 'First-aid kit', 'Pre-trek planning call'], ['International flights', 'Travel insurance', 'Personal snacks']]
         );
       }
 

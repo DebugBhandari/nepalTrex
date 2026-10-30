@@ -148,6 +148,58 @@ CREATE TABLE IF NOT EXISTS reviews (
 CREATE INDEX IF NOT EXISTS reviews_target_created_at_idx
   ON reviews(target_type, target_id, created_at DESC);
 
+CREATE TABLE IF NOT EXISTS guide_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  slug TEXT NOT NULL UNIQUE,
+  headline TEXT NOT NULL,
+  bio TEXT NOT NULL,
+  home_region TEXT NOT NULL,
+  languages TEXT[] NOT NULL DEFAULT '{}',
+  years_experience INTEGER NOT NULL DEFAULT 0 CHECK (years_experience >= 0),
+  license_number TEXT,
+  license_document_url TEXT,
+  citizenship_document_url TEXT,
+  profile_image_url TEXT,
+  approval_status TEXT NOT NULL DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected', 'suspended')),
+  moderation_note TEXT,
+  approved_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS guide_packages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guide_profile_id UUID NOT NULL REFERENCES guide_profiles(id) ON DELETE CASCADE,
+  trek_id UUID REFERENCES treks(id) ON DELETE SET NULL,
+  slug TEXT NOT NULL,
+  title TEXT NOT NULL,
+  trek_name TEXT NOT NULL,
+  region TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  duration_days INTEGER NOT NULL CHECK (duration_days > 0),
+  group_size_min INTEGER NOT NULL DEFAULT 1 CHECK (group_size_min > 0),
+  group_size_max INTEGER NOT NULL DEFAULT 1 CHECK (group_size_max >= group_size_min),
+  price_amount NUMERIC(10,2) NOT NULL CHECK (price_amount >= 0),
+  price_unit TEXT NOT NULL DEFAULT 'package' CHECK (price_unit IN ('package', 'per_day', 'per_person')),
+  currency TEXT NOT NULL DEFAULT 'NPR',
+  image_url TEXT,
+  inclusions TEXT[] NOT NULL DEFAULT '{}',
+  exclusions TEXT[] NOT NULL DEFAULT '{}',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT guide_packages_profile_slug_key UNIQUE (guide_profile_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS guide_packages_trek_id_active_idx
+  ON guide_packages(trek_id)
+  WHERE is_active = true;
+
+ALTER TABLE reviews DROP CONSTRAINT IF EXISTS reviews_target_type_check;
+ALTER TABLE reviews ADD CONSTRAINT reviews_target_type_check CHECK (target_type IN ('stay', 'trek', 'guide'));
+
 CREATE OR REPLACE FUNCTION refresh_trek_review_summary()
 RETURNS TRIGGER
 LANGUAGE plpgsql

@@ -213,6 +213,7 @@ ALTER TABLE guide_profiles ADD COLUMN IF NOT EXISTS citizenship_document_url TEX
 CREATE TABLE IF NOT EXISTS guide_packages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   guide_profile_id UUID NOT NULL REFERENCES guide_profiles(id) ON DELETE CASCADE,
+  trek_id UUID REFERENCES treks(id) ON DELETE SET NULL,
   slug TEXT NOT NULL,
   title TEXT NOT NULL,
   trek_name TEXT NOT NULL,
@@ -232,6 +233,20 @@ CREATE TABLE IF NOT EXISTS guide_packages (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT guide_packages_profile_slug_key UNIQUE (guide_profile_id, slug)
 );
+
+ALTER TABLE guide_packages
+  ADD COLUMN IF NOT EXISTS trek_id UUID REFERENCES treks(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS guide_packages_trek_id_active_idx
+  ON guide_packages(trek_id)
+  WHERE is_active = true;
+
+UPDATE guide_packages gp
+SET trek_id = t.id,
+    updated_at = NOW()
+FROM treks t
+WHERE gp.trek_id IS NULL
+  AND lower(trim(gp.trek_name)) = lower(trim(t.name));
 
 CREATE TABLE IF NOT EXISTS guide_bookings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

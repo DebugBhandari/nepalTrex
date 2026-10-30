@@ -1891,6 +1891,24 @@ function TrekDetailView({ trek }) {
             </Box>
           </Paper>
 
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
+            <Typography variant="overline" color="text.secondary">
+              Local expertise
+            </Typography>
+            <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
+              Guides who know {trek.region} terrain
+            </Typography>
+            {trek.guidePackages.length === 0 ? (
+              <Typography color="text.secondary">
+                No approved guides with {trek.region} terrain expertise are available yet.
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
+                {trek.guidePackages.map((pkg) => <Card key={pkg.id} variant="outlined"><CardContent><Stack direction="row" spacing={1.25} alignItems="center"><Avatar src={pkg.guideImageUrl || undefined}>{pkg.guideName?.slice(0, 1)}</Avatar><Box><Typography fontWeight={700}>{pkg.guideName}</Typography><Typography variant="body2" color="text.secondary">{pkg.homeRegion} · {pkg.yearsExperience} years of local experience</Typography></Box></Stack>{pkg.title ? <><Typography variant="h6" sx={{ mt: 1.5 }}>{pkg.title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{pkg.durationDays} days · NPR {pkg.priceAmount.toLocaleString()} {pkg.priceUnit.replace('_', ' ')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{pkg.summary}</Typography></> : <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Experienced in this terrain. Contact the guide for a tailored itinerary.</Typography>}<AppButton component={Link} href={`/guides/${pkg.guideSlug}`} size="small" sx={{ mt: 1.5 }}>View guide</AppButton></CardContent></Card>)}
+              </Box>
+            )}
+          </Paper>
+
           {status === 'authenticated' && (
             <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
               <Typography variant="overline" color="text.secondary">
@@ -2032,7 +2050,7 @@ export async function getServerSideProps(context) {
     const row = trekResult.rows[0];
     const routeWaypoints = parseRouteWaypoints(row.route_geojson);
 
-    const [stayRows, reviews, reviewSummary] = await Promise.all([
+    const [stayRows, reviews, reviewSummary, guidePackageRows] = await Promise.all([
       query(
         `
         SELECT
@@ -2053,6 +2071,7 @@ export async function getServerSideProps(context) {
       ),
       getReviews('trek', row.id, 4),
       getReviewSummary('trek', row.id),
+      query(`SELECT DISTINCT ON (gp.id) gp.id AS guide_id, p.id, p.title, p.summary, p.duration_days, p.price_amount, p.price_unit, gp.slug AS guide_slug, gp.home_region, gp.years_experience, gp.profile_image_url, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name FROM guide_profiles gp JOIN users u ON u.id=gp.user_id LEFT JOIN guide_packages p ON p.guide_profile_id=gp.id AND p.is_active=true WHERE gp.approval_status='approved' AND (lower(trim(gp.home_region))=lower(trim($2)) OR EXISTS (SELECT 1 FROM guide_packages terrain_package WHERE terrain_package.guide_profile_id=gp.id AND terrain_package.is_active=true AND lower(trim(terrain_package.region))=lower(trim($2)))) ORDER BY gp.id, CASE WHEN p.trek_id=$1 THEN 0 WHEN lower(trim(p.region))=lower(trim($2)) THEN 1 ELSE 2 END, p.created_at DESC`, [row.id, row.region]),
     ]);
 
     const nearbyStays = stayRows.rows
@@ -2110,6 +2129,7 @@ export async function getServerSideProps(context) {
           reviews,
           reviewCount: reviewSummary.reviewCount,
           avgRating: reviewSummary.avgRating,
+          guidePackages: guidePackageRows.rows.map((pkg) => ({ id: pkg.id, title: pkg.title, summary: pkg.summary, durationDays: pkg.duration_days, priceAmount: Number(pkg.price_amount), priceUnit: pkg.price_unit, guideSlug: pkg.guide_slug, guideName: pkg.guide_name, homeRegion: pkg.home_region, yearsExperience: pkg.years_experience, guideImageUrl: pkg.profile_image_url || '' })),
         },
       },
     };
