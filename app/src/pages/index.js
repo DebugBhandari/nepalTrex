@@ -372,6 +372,9 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   <AppButton component={Link} href="/stays" variant="outlined" size="large" startIcon={<HotelRoundedIcon />} sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}>
                     Find a stay
                   </AppButton>
+                  <AppButton component={Link} href="/guides" variant="outlined" size="large" startIcon={<SearchRoundedIcon />} sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                    Find guides
+                  </AppButton>
                 </Stack>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 3 }} sx={{ mt: 4, color: 'rgba(255,255,255,0.88)' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}><TerrainRoundedIcon fontSize="small" /><Typography variant="body2">Route maps and trail context</Typography></Box>

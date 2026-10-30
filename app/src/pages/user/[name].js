@@ -52,7 +52,7 @@ function formatDate(value) {
     : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function UserProfilePage({ profile, wishlistItems, initialReservations, guideBookings }) {
+export default function UserProfilePage({ profile, wishlistItems, initialReservations, guideBookings, guideApprovalStatus }) {
   const { data: session } = useSession();
   const [statusMessage, setStatusMessage] = useState('');
   const [saving, setSaving] = useState(false);
@@ -66,6 +66,11 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
   const effectiveImage = imageUrl || (ownProfile && profile.provider === 'google' ? session?.user?.image || '' : '');
+  const guideAction = guideApprovalStatus === 'approved'
+    ? { href: '/guides/manage', label: 'Guide workspace' }
+    : guideApprovalStatus
+      ? { href: '/guides/apply', label: 'Guide application' }
+      : { href: '/guides/apply', label: 'Apply as a guide' };
   const activeReservations = useMemo(
     () => (initialReservations || []).filter((reservation) => ['pending', 'confirmed'].includes(reservation.status)),
     [initialReservations]
@@ -137,6 +142,11 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                     {profile.provider === 'google' && <Typography variant="caption" color="text.secondary">Your Google image is used until you upload a replacement.</Typography>}
                   </Stack>
                   <AppButton onClick={saveProfile} disabled={saving} sx={{ alignSelf: 'flex-start' }}>{saving ? 'Saving…' : 'Save profile'}</AppButton>
+                  {profile.role === 'user' && (
+                    <AppButton component={Link} href={guideAction.href} variant="outlined" sx={{ alignSelf: 'flex-start' }}>
+                      {guideAction.label}
+                    </AppButton>
+                  )}
                 </Stack>
               )}
             </CardContent>
@@ -205,7 +215,7 @@ export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
   const handle = normalizeHandle(context.params?.name);
   const profileResult = await query(
-    `SELECT id, username, display_name, email, role, provider, profile_image_url FROM users WHERE trim(both '-' from regexp_replace(lower(COALESCE(username, '')), '[^a-z0-9]+', '-', 'g')) = $1 OR trim(both '-' from regexp_replace(lower(COALESCE(display_name, '')), '[^a-z0-9]+', '-', 'g')) = $1 LIMIT 1`,
+    `SELECT u.id, u.username, u.display_name, u.email, u.role, u.provider, u.profile_image_url, gp.approval_status AS guide_approval_status FROM users u LEFT JOIN guide_profiles gp ON gp.user_id = u.id WHERE trim(both '-' from regexp_replace(lower(COALESCE(u.username, '')), '[^a-z0-9]+', '-', 'g')) = $1 OR trim(both '-' from regexp_replace(lower(COALESCE(u.display_name, '')), '[^a-z0-9]+', '-', 'g')) = $1 LIMIT 1`,
     [handle]
   );
   const row = profileResult.rows[0];
@@ -228,6 +238,7 @@ export async function getServerSideProps(context) {
   return {
     props: {
       profile: { id: row.id, username: row.username || '', name: row.display_name || row.username || '', email: row.email || '', role: row.role || 'user', provider: row.provider || 'credentials', imageUrl: row.profile_image_url || '', handle },
+      guideApprovalStatus: row.guide_approval_status || '',
       wishlistItems: wishlistResult.rows.map((item) => ({ slug: item.trek_slug, name: item.name || item.trek_slug, durationDays: item.duration_days || null, level: item.level || '', region: item.region || '' })),
       initialReservations: reservationsResult.rows.map((reservation) => ({ id: reservation.id, stayName: reservation.stay_name, stayLocation: reservation.stay_location || '', checkInDate: reservation.check_in_date, checkOutDate: reservation.check_out_date, nights: Math.max(1, Math.round((new Date(reservation.check_out_date) - new Date(reservation.check_in_date)) / 86400000)), guestCount: Number(reservation.guest_count), status: reservation.status, guestNotes: reservation.guest_notes || '', hostNote: reservation.host_note || '', contactPhone: reservation.customer_phone || '', createdAt: reservation.created_at, totalPrice: Number(reservation.total_price), items: Array.isArray(reservation.items) ? reservation.items.map((item) => ({ roomName: item.roomName, units: Number(item.units) })) : [], events: Array.isArray(reservation.events) ? reservation.events : [] })),
       guideBookings: guideBookingsResult.rows.map((booking) => ({ id: booking.id, packageTitle: booking.package_title, guideName: booking.guide_name, startDate: booking.start_date, travelerCount: Number(booking.traveler_count), status: booking.status })),

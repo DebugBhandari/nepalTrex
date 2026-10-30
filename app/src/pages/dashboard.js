@@ -1886,7 +1886,43 @@ return (
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Approve verified guide applications before profiles and packages can appear publicly.</Typography>
               {guidesMessage && <Alert severity={guidesMessage === 'Guide status updated.' ? 'success' : 'error'} sx={{ mb: 2 }}>{guidesMessage}</Alert>}
               <AppButton variant="outlined" onClick={fetchGuides} disabled={guidesLoading} sx={{ mb: 2 }}>{guidesLoading ? 'Refreshing…' : 'Refresh applications'}</AppButton>
-              <Stack spacing={1.5}>{guides.map((guide) => <Card key={guide.id} variant="outlined"><CardContent><Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}><Box><Typography fontWeight={800}>{guide.guide_name}</Typography><Typography variant="body2" color="text.secondary">{guide.home_region} · {guide.years_experience} years · {guide.license_number || 'No license number provided'}</Typography><Typography variant="body2" sx={{ mt: .75 }}>{guide.headline}</Typography><Stack direction="row" spacing={1} sx={{ mt: 1 }}><AppButton size="small" variant="outlined" disabled={!guide.license_document_url} component={guide.license_document_url ? 'a' : 'button'} href={guide.license_document_url || undefined} target="_blank" rel="noreferrer">License evidence</AppButton><AppButton size="small" variant="outlined" disabled={!guide.citizenship_document_url} component={guide.citizenship_document_url ? 'a' : 'button'} href={guide.citizenship_document_url || undefined} target="_blank" rel="noreferrer">Citizenship evidence</AppButton></Stack><Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}> {guide.package_count} active packages · Status: {guide.approval_status}</Typography></Box><Stack direction="row" spacing={1} alignItems="center"><AppButton size="small" disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton></Stack></Stack></CardContent></Card>)}</Stack>
+              <Stack spacing={1.5}>
+                {guides.map((guide) => (
+                  <Card key={guide.id} variant="outlined">
+                    <CardContent>
+                      <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+                        <Box>
+                          <Typography fontWeight={800}>{guide.guide_name}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {guide.home_region} · {guide.years_experience} years · {guide.license_number || 'No license number provided'}
+                          </Typography>
+                          <Typography variant="body2" sx={{ mt: 0.75 }}>{guide.headline}</Typography>
+                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                            {guide.license_document_url ? (
+                              <AppButton size="small" variant="outlined" component="a" href={guide.license_document_url} target="_blank" rel="noreferrer">License evidence</AppButton>
+                            ) : (
+                              <AppButton size="small" variant="outlined" disabled>License evidence unavailable</AppButton>
+                            )}
+                            {guide.citizenship_document_url ? (
+                              <AppButton size="small" variant="outlined" component="a" href={guide.citizenship_document_url} target="_blank" rel="noreferrer">Citizenship evidence</AppButton>
+                            ) : (
+                              <AppButton size="small" variant="outlined" disabled>Citizenship evidence unavailable</AppButton>
+                            )}
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                            {guide.package_count} active packages · Status: {guide.approval_status}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <AppButton size="small" disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton>
+                          <AppButton size="small" variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton>
+                          <AppButton size="small" variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton>
+                        </Stack>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
               {!guidesLoading && guides.length === 0 && <Typography color="text.secondary">No guide applications found.</Typography>}
             </Box>
           )}
