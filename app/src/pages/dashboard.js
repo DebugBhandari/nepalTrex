@@ -387,19 +387,20 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
     }
   }, [activeTab, canManage, users.length, usersLoading, fetchUsers]);
 
-  const fetchGuides = async () => {
+  const fetchGuides = useCallback(async () => {
     setGuidesLoading(true);
+    setGuidesMessage('');
     try {
       const response = await fetch('/api/guides?all=true');
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Failed to fetch guides');
       setGuides(payload.guides || []);
     } catch (error) { setGuidesMessage(error.message || 'Failed to fetch guides'); } finally { setGuidesLoading(false); }
-  };
+  }, []);
 
   useEffect(() => {
-    if (canManage && activeTab === 'guides' && guides.length === 0 && !guidesLoading) fetchGuides();
-  }, [activeTab, canManage, guides.length, guidesLoading]);
+    if (canManage) fetchGuides();
+  }, [canManage, fetchGuides]);
 
   const moderateGuide = async (guideId, approvalStatus) => {
     setGuidesMessage('');
@@ -1885,7 +1886,7 @@ return (
               <Typography variant="h6">Guide moderation</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Approve verified guide applications before profiles and packages can appear publicly.</Typography>
               {guidesMessage && <Alert severity={guidesMessage === 'Guide status updated.' ? 'success' : 'error'} sx={{ mb: 2 }}>{guidesMessage}</Alert>}
-              <AppButton variant="outlined" onClick={fetchGuides} disabled={guidesLoading} sx={{ mb: 2 }}>{guidesLoading ? 'Refreshing…' : 'Refresh applications'}</AppButton>
+              {guidesLoading && <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Loading guide applications…</Typography>}
               <Stack spacing={1.5}>
                 {guides.map((guide) => (
                   <Card key={guide.id} variant="outlined">
