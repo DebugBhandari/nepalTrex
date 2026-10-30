@@ -345,6 +345,10 @@ export default function SiteHeader() {
                 <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
                 Profile
               </MenuItem>
+              <MenuItem component={Link} href="/reservations" onClick={() => setUserMenuAnchor(null)}>
+                <HotelRoundedIcon fontSize="small" style={{ marginRight: 8 }} />
+                My Reservations
+              </MenuItem>
               {isSuperUser && (
                 <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
                   <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
