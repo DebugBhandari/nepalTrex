@@ -1,107 +1,84 @@
-# New Nx Repository
+# NepalTrex
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+NepalTrex is a Nepal-focused trekking discovery and stay marketplace. Travellers can explore curated treks and nearby stays, while verified property partners manage room and food offers and respond to customer requests.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Product direction
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/js?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-## Finish your Nx platform setup
+The product is being built around a dependable planning-to-stay journey:
 
-🚀 [Finish setting up your workspace](https://cloud.nx.app/connect/PXbtqsxSOL) to get faster builds with remote caching, distributed task execution, and self-healing CI. [Learn more about Nx Cloud](https://nx.dev/ci/intro/why-nx-cloud).
-## Generate a library
+1. Discover treks by region, duration, difficulty, and elevation.
+2. Review route details, waypoints, nearby stays, and traveller reviews.
+3. Browse trusted hotel, lodge, and homestay listings.
+4. Request rooms and food from a stay.
+5. Let the host accept, decline, or complete the request.
+6. Keep both travellers and hosts informed through their dashboards.
 
-```sh
-npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
+The next domain evolution is dedicated date-based reservations with inventory and booking history. Generic menu orders are retained for food and legacy requests; they are not a substitute for accommodation inventory.
+
+## Stack
+
+- Next.js, React, and Material UI
+- Nx workspace tooling
+- PostgreSQL 16
+- NextAuth credentials and Google sign-in
+- Leaflet route and nearby-stay maps
+- MinIO-compatible object storage for images
+- GitHub Actions deployment to a VPS using PM2 and Nginx
+
+## Local development
+
+### Prerequisites
+
+- Node.js `20.19.x`
+- npm `10+`
+- Docker and Docker Compose for local PostgreSQL and MinIO
+
+### Start services and app
+
+```bash
+cp .env.example .env
+docker compose up -d
+npm ci
+npm run migrate:db
+npm run dev
 ```
 
-## Run tasks
+The web application runs at `http://localhost:3000`.
 
-To build the library use:
+### Useful commands
 
-```sh
-npx nx build pkg1
+```bash
+npm run build
+npm run migrate:db
+npm run seed:demo:stays
+npm run seed:demo:reviews
 ```
 
-To run any task with Nx use:
+## Database migrations
 
-```sh
-npx nx <target> <project-name>
+`db/init.sql` initializes a new local Docker volume and demo content. Production schema changes belong in ordered, immutable SQL files under `db/migrations`.
+
+Run migrations with:
+
+```bash
+npm run migrate:db
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+The migration runner tracks each file and its SHA-256 checksum in `schema_migrations`. Never edit a migration after it has been deployed; create a later migration instead.
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+The runner serializes migrations with a PostgreSQL advisory lock and applies new migrations together with their migration record in one transaction. Do not put `BEGIN` or `COMMIT` inside new migration files. The first migration retains its original transaction wrapper for backward compatibility and is safely idempotent if an interrupted deployment needs to retry it.
 
-## Versioning and releasing
+The VPS deployment workflow runs migrations before rebuilding and restarting the Next.js application. A production database created before migrations existed must have the existing baseline schema applied before its first migration run.
 
-To version and release the library use
+## Marketplace rules
 
-```
-npx nx release
-```
+- The server, not the browser, is authoritative for menu-item names, prices, categories, availability, and stay ownership.
+- New order records are linked to the authenticated purchaser through `customer_user_id`.
+- Legacy email-based ownership remains supported only for historical order visibility.
+- Room availability will move to a date-aware reservation and inventory model before accommodation booking is presented as confirmed.
 
-Pass `--dry-run` to see what would happen without actually releasing the library.
+## Deployment notes
 
-[Learn more about Nx release &raquo;](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Keep TypeScript project references up to date
-
-Nx automatically updates TypeScript [project references](https://www.typescriptlang.org/docs/handbook/project-references.html) in `tsconfig.json` files to ensure they remain accurate based on your project dependencies (`import` or `require` statements). This sync is automatically done when running tasks such as `build` or `typecheck`, which require updated references to function correctly.
-
-To manually trigger the process to sync the project graph dependencies information to the TypeScript project references, run the following command:
-
-```sh
-npx nx sync
-```
-
-You can enforce that the TypeScript project references are always in the correct state when running in CI by adding a step to your CI job configuration that runs the following command:
-
-```sh
-npx nx sync:check
-```
-
-[Learn more about nx sync](https://nx.dev/reference/nx-commands#sync)
-
-## Nx Cloud
-
-Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
-
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Set up CI (non-Github Actions CI)
-
-**Note:** This is only required if your CI provider is not GitHub Actions.
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
-```
-
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Install Nx Console
-
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
-
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/nx-api/js?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-# nepalTrex
+- Configure `DATABASE_URL`, NextAuth settings, and MinIO credentials in the VPS environment secret.
+- Do not expose PostgreSQL or MinIO administration ports publicly in production.
+- Back up PostgreSQL before every schema migration and verify the deployed service health after each release.
