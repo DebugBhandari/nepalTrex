@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { pool, query } from '../../../lib/db';
 
-const ALLOWED_MENU_CATEGORIES = new Set(['room', 'food']);
+const MAX_ORDER_ITEM_QUANTITY = 20;
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -94,10 +94,6 @@ export default async function handler(req, res) {
   const {
     stayId,
     items,
-    menuItemName,
-    menuItemCategory,
-    unitPrice,
-    quantity,
     customerName,
     customerEmail,
     customerPhone,
@@ -105,25 +101,27 @@ export default async function handler(req, res) {
   } = req.body || {};
 
   const session = await getServerSession(req, res, authOptions);
+  if (!session?.user?.id) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
   let resolvedCustomerName = customerName;
   let resolvedCustomerEmail = customerEmail;
 
-  if (session?.user?.id) {
-    const userResult = await query(
-      `
-        SELECT display_name, username, email
-        FROM users
-        WHERE id = $1
-        LIMIT 1
-      `,
-      [session.user.id]
-    );
+  const userResult = await query(
+    `
+      SELECT display_name, username, email
+      FROM users
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [session.user.id]
+  );
 
-    if (userResult.rows.length > 0) {
-      const row = userResult.rows[0];
-      resolvedCustomerName = row.display_name || row.username || session.user.name || customerName;
-      resolvedCustomerEmail = row.email || session.user.email || customerEmail;
-    }
+  if (userResult.rows.length > 0) {
+    const row = userResult.rows[0];
+    resolvedCustomerName = row.display_name || row.username || session.user.name || customerName;
+    resolvedCustomerEmail = row.email || session.user.email || customerEmail;
   }
 
   if (!stayId || !resolvedCustomerName) {
@@ -133,38 +131,19 @@ export default async function handler(req, res) {
   const normalizedItems = Array.isArray(items) && items.length > 0
     ? items
         .map((item) => ({
-          menuItemId: item?.menuItemId || null,
-          menuItemName: (item?.menuItemName || '').toString().trim(),
-          menuItemCategory: (item?.menuItemCategory || '').toString().trim().toLowerCase(),
-          unitPrice: Number(item?.unitPrice),
+          menuItemId: (item?.menuItemId || '').toString().trim(),
           quantity: Number(item?.quantity),
         }))
-        .filter((item) => item.menuItemName)
-    : [
-        {
-          menuItemId: null,
-          menuItemName: (menuItemName || '').toString().trim(),
-          menuItemCategory: (menuItemCategory || '').toString().trim().toLowerCase(),
-          unitPrice: Number(unitPrice),
-          quantity: Number(quantity),
-        },
-      ];
+        .filter((item) => item.menuItemId)
+    : [];
 
   if (normalizedItems.length === 0) {
     return res.status(400).json({ error: 'At least one valid order item is required' });
   }
 
   for (const item of normalizedItems) {
-    if (!ALLOWED_MENU_CATEGORIES.has(item.menuItemCategory)) {
-      return res.status(400).json({ error: 'menuItemCategory must be room or food' });
-    }
-
-    if (!Number.isFinite(item.unitPrice) || item.unitPrice < 0) {
-      return res.status(400).json({ error: 'Invalid item price' });
-    }
-
-    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
-      return res.status(400).json({ error: 'Quantity must be a positive integer' });
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > MAX_ORDER_ITEM_QUANTITY) {
+      return res.status(400).json({ error: `Item quantity must be between 1 and ${MAX_ORDER_ITEM_QUANTITY}` });
     }
   }
 
@@ -189,14 +168,51 @@ export default async function handler(req, res) {
     try {
       await client.query('BEGIN');
 
+      const requestedItemsById = new Map();
+      for (const item of normalizedItems) {
+        const totalQuantity = (requestedItemsById.get(item.menuItemId) || 0) + item.quantity;
+        if (totalQuantity > MAX_ORDER_ITEM_QUANTITY) {
+          const error = new Error(`Item quantity must be between 1 and ${MAX_ORDER_ITEM_QUANTITY}`);
+          error.statusCode = 400;
+          throw error;
+        }
+        requestedItemsById.set(item.menuItemId, totalQuantity);
+      }
+
+      const menuItemIds = Array.from(requestedItemsById.keys());
+      const menuItemsResult = await client.query(
+        `
+          SELECT id, name, category, price, available
+          FROM menu_items
+          WHERE stay_id = $1 AND id = ANY($2::uuid[])
+          FOR UPDATE
+        `,
+        [stayId, menuItemIds]
+      );
+
+      if (menuItemsResult.rows.length !== menuItemIds.length) {
+        const error = new Error('One or more selected items are no longer offered by this stay');
+        error.statusCode = 409;
+        throw error;
+      }
+
+      const unavailableItem = menuItemsResult.rows.find((item) => !item.available);
+      if (unavailableItem) {
+        const error = new Error(`${unavailableItem.name} is currently unavailable`);
+        error.statusCode = 409;
+        throw error;
+      }
+
       const createdOrders = [];
 
-      for (const item of normalizedItems) {
+      for (const item of menuItemsResult.rows) {
+        const itemQuantity = requestedItemsById.get(item.id);
         const result = await client.query(
           `
             INSERT INTO orders (
               order_group_id,
               stay_id,
+              customer_user_id,
               menu_item_id,
               menu_item_name,
               menu_item_category,
@@ -208,20 +224,21 @@ export default async function handler(req, res) {
               customer_phone,
               notes
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING id, status, created_at
           `,
           [
             orderGroupId,
             stayId,
-            item.menuItemId || null,
-            item.menuItemName,
-            item.menuItemCategory,
-            item.unitPrice,
-            item.quantity,
-            item.unitPrice * item.quantity,
+            session.user.id,
+            item.id,
+            item.name,
+            item.category,
+            item.price,
+            itemQuantity,
+            Number(item.price) * itemQuantity,
             resolvedCustomerName.toString().trim(),
-            resolvedCustomerEmail?.toString().trim() || null,
+            (session.user.email || resolvedCustomerEmail || '').toString().trim() || null,
             customerPhone?.toString().trim() || null,
             notes?.toString().trim() || null,
           ]
@@ -243,6 +260,6 @@ export default async function handler(req, res) {
       client.release();
     }
   } catch (error) {
-    return res.status(500).json({ error: error.message || 'Failed to place booking' });
+    return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to place booking' });
   }
 }

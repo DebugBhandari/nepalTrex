@@ -57,14 +57,20 @@ export default async function handler(req, res) {
         )
     : await query(
         `
-          SELECT o.id, o.order_group_id, o.status
+            SELECT o.id, o.order_group_id, o.status
           FROM orders o
           WHERE (o.id::text = $1 OR o.order_group_id::text = $1)
-            AND LOWER(COALESCE(o.customer_email, '')) = LOWER($2)
+              AND (
+                o.customer_user_id = $2
+                OR (
+                  o.customer_user_id IS NULL
+                  AND LOWER(COALESCE(o.customer_email, '')) = LOWER($3)
+                )
+              )
           ORDER BY o.created_at ASC
           LIMIT 1
         `,
-        [id, (session.user.email || '').toString().trim()]
+        [id, session.user.id, (session.user.email || '').toString().trim()]
       );
 
   if (ownerCheck.rows.length === 0) return res.status(404).json({ error: 'Order not found' });

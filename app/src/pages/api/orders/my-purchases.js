@@ -12,11 +12,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const email = (session.user.email || '').toString().trim();
-  if (!email) {
-    return res.status(200).json({ orders: [] });
-  }
-
   try {
     const result = await query(
       `SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price,
@@ -24,9 +19,13 @@ export default async function handler(req, res) {
               s.name AS stay_name, s.id AS stay_id
        FROM orders o
        JOIN stays s ON s.id = o.stay_id
-       WHERE LOWER(COALESCE(o.customer_email, '')) = LOWER($1)
+        WHERE o.customer_user_id = $1
+           OR (
+             o.customer_user_id IS NULL
+             AND LOWER(COALESCE(o.customer_email, '')) = LOWER($2)
+           )
        ORDER BY o.created_at DESC`,
-      [email]
+      [session.user.id, (session.user.email || '').toString().trim()]
     );
 
     const groupedOrders = new Map();

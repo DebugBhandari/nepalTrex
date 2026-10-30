@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_group_id UUID,
   stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  customer_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
   menu_item_name TEXT NOT NULL,
   menu_item_category TEXT NOT NULL CHECK (menu_item_category IN ('room', 'food')),
@@ -145,7 +146,12 @@ ALTER TABLE orders
 ALTER TABLE orders
   ADD COLUMN IF NOT EXISTS menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL;
 
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS customer_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+
 CREATE INDEX IF NOT EXISTS orders_stay_id_idx ON orders(stay_id);
+CREATE INDEX IF NOT EXISTS orders_customer_user_id_created_at_idx
+  ON orders(customer_user_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS stay_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
