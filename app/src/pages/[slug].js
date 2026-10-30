@@ -14,6 +14,10 @@ import {
   Chip,
   Container,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   Paper,
   Stack,
@@ -289,6 +293,9 @@ function StayDetailView({ stay }) {
   const { addToCart } = useCart();
   const [loginPrompt, setLoginPrompt] = useState(false);
   const [ownerAlert, setOwnerAlert] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [reservationForm, setReservationForm] = useState({ checkInDate: '', checkOutDate: '', guestCount: 1, units: 1, customerPhone: '', guestNotes: '' });
+  const [reservationStatus, setReservationStatus] = useState({ loading: false, error: '', success: '' });
 
   const handleAddToCart = (item) => {
     if (status !== 'authenticated') {
@@ -302,15 +309,66 @@ function StayDetailView({ stay }) {
     addToCart(stay, item);
   };
 
+  const handleRequestRoom = (room) => {
+    if (status !== 'authenticated') {
+      setLoginPrompt(true);
+      return;
+    }
+    if (session?.user?.id && stay.ownerUserId && session.user.id === stay.ownerUserId) {
+      setOwnerAlert(true);
+      return;
+    }
+    setReservationStatus({ loading: false, error: '', success: '' });
+    setSelectedRoom(room);
+  };
+
+  const closeReservationDialog = () => {
+    if (reservationStatus.loading) return;
+    setSelectedRoom(null);
+    setReservationStatus({ loading: false, error: '', success: '' });
+  };
+
+  const reservationNights = useMemo(() => {
+    if (!reservationForm.checkInDate || !reservationForm.checkOutDate) return 0;
+    const start = new Date(`${reservationForm.checkInDate}T00:00:00.000Z`);
+    const end = new Date(`${reservationForm.checkOutDate}T00:00:00.000Z`);
+    const nights = Math.round((end - start) / 86_400_000);
+    return Number.isFinite(nights) && nights > 0 ? nights : 0;
+  }, [reservationForm.checkInDate, reservationForm.checkOutDate]);
+
+  const submitReservation = async () => {
+    if (!selectedRoom) return;
+    setReservationStatus({ loading: true, error: '', success: '' });
+
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stayId: stay.id,
+          roomId: selectedRoom.id,
+          ...reservationForm,
+          guestCount: Number(reservationForm.guestCount),
+          units: Number(reservationForm.units),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to request this room');
+      setReservationStatus({ loading: false, error: '', success: 'Request sent. The host has up to 24 hours to respond.' });
+    } catch (error) {
+      setReservationStatus({ loading: false, error: error.message || 'Unable to request this room', success: '' });
+    }
+  };
+
   const groupedMenu = useMemo(() => {
     const items = Array.isArray(stay.menuItems) ? stay.menuItems : [];
-    const roomItems = items.filter((item) => item.category === 'room');
+    const roomItems = Array.isArray(stay.rooms) ? stay.rooms : [];
     const availableRoomPrices = roomItems
-      .filter((item) => item.available !== false)
-      .map((item) => Number(item.price))
+      .filter((item) => item.isActive !== false)
+      .map((item) => Number(item.pricePerNight))
       .filter((price) => Number.isFinite(price) && price > 0);
     const allRoomPrices = roomItems
-      .map((item) => Number(item.price))
+      .map((item) => Number(item.pricePerNight))
       .filter((price) => Number.isFinite(price) && price > 0);
 
     return {
@@ -320,7 +378,7 @@ function StayDetailView({ stay }) {
         ? Math.min(...availableRoomPrices)
         : (allRoomPrices.length > 0 ? Math.min(...allRoomPrices) : null),
     };
-  }, [stay.menuItems]);
+  }, [stay.menuItems, stay.rooms]);
 
   const baseRoomPrice = groupedMenu.cheapestRoomPrice;
   const finalPrice = baseRoomPrice && stay.discountPercent > 0
@@ -507,7 +565,7 @@ function StayDetailView({ stay }) {
                 >
                   sign in
                 </Link>
-                {' '}to place an order.
+                {' '}to request a room or place a food order.
               </Alert>
             )}
 
@@ -527,11 +585,11 @@ function StayDetailView({ stay }) {
                   <Typography color="text.secondary">No room options listed yet.</Typography>
                 ) : (
                   <Stack spacing={2}>
-                    {groupedMenu.rooms.map((item, index) => {
-                      const isUnavailable = item.available === false;
+                    {groupedMenu.rooms.map((item) => {
+                      const isUnavailable = item.isActive === false;
                       return (
                         <Card
-                          key={`room-${index}`}
+                          key={item.id}
                           sx={(theme) => ({
                             display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, borderRadius: 2,
                             overflow: 'hidden', border: `1px solid ${theme.palette.divider}`,
@@ -549,16 +607,19 @@ function StayDetailView({ stay }) {
                             <Box>
                               <Typography variant="subtitle1" fontWeight={700}>{item.name}</Typography>
                               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4, mb: 1.2 }}>{item.description}</Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.2 }}>
+                                Sleeps up to {item.capacity} guest{Number(item.capacity) === 1 ? '' : 's'} · {item.totalUnits} room{Number(item.totalUnits) === 1 ? '' : 's'} available to request
+                              </Typography>
                               {isUnavailable && (
                                 <Chip size="small" color="default" label="Unavailable" sx={{ mb: 1 }} />
                               )}
                             </Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <Typography variant="body1" fontWeight={700} color="primary.main">
-                                NPR {Number(item.price).toLocaleString()}
+                                NPR {Number(item.pricePerNight).toLocaleString()} / night
                               </Typography>
-                              <AppButton variant="contained" size="small" disabled={isUnavailable} onClick={() => handleAddToCart(item)}>
-                                {isUnavailable ? 'Unavailable' : 'Add to order'}
+                              <AppButton variant="contained" size="small" disabled={isUnavailable} onClick={() => handleRequestRoom(item)}>
+                                {isUnavailable ? 'Unavailable' : 'Request room'}
                               </AppButton>
                             </Box>
                           </CardContent>
@@ -635,13 +696,56 @@ function StayDetailView({ stay }) {
             )}
             <Divider sx={{ my: 2.25 }} />
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65, mb: 2.25 }}>
-              Select a room or meal below. Your order is sent directly to the host for confirmation.
+              Choose dates and request a room below. Food can still be added to an order separately.
             </Typography>
             <AppButton fullWidth onClick={() => document.getElementById('room-options')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>View rooms</AppButton>
           </Paper>
           </Box>
         </Container>
       </Box>
+
+      <Dialog open={Boolean(selectedRoom)} onClose={closeReservationDialog} fullWidth maxWidth="sm">
+        <DialogTitle>{reservationStatus.success ? 'Reservation request sent' : `Request ${selectedRoom?.name || 'room'}`}</DialogTitle>
+        <DialogContent>
+          {reservationStatus.success ? (
+            <Stack spacing={1.5} sx={{ pt: 1 }}>
+              <Alert severity="success">{reservationStatus.success}</Alert>
+              <Typography color="text.secondary">The request is now held for host review. A reservation is confirmed only after the host accepts it.</Typography>
+            </Stack>
+          ) : (
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              {reservationStatus.error && <Alert severity="error">{reservationStatus.error}</Alert>}
+              <Typography variant="body2" color="text.secondary">
+                This is a reservation request, not an instant confirmation. Availability and the final total are confirmed by the host.
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <TextField label="Check-in" type="date" fullWidth required value={reservationForm.checkInDate} onChange={(event) => setReservationForm((current) => ({ ...current, checkInDate: event.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: new Date().toISOString().slice(0, 10) } }} />
+                <TextField label="Check-out" type="date" fullWidth required value={reservationForm.checkOutDate} onChange={(event) => setReservationForm((current) => ({ ...current, checkOutDate: event.target.value }))} slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: reservationForm.checkInDate || new Date().toISOString().slice(0, 10) } }} />
+              </Stack>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <TextField label="Guests" type="number" fullWidth required value={reservationForm.guestCount} onChange={(event) => setReservationForm((current) => ({ ...current, guestCount: event.target.value }))} slotProps={{ htmlInput: { min: 1, max: Math.max(1, Number(selectedRoom?.capacity || 1) * Number(reservationForm.units || 1)) } }} />
+                <TextField label="Rooms" type="number" fullWidth required value={reservationForm.units} onChange={(event) => setReservationForm((current) => ({ ...current, units: event.target.value }))} slotProps={{ htmlInput: { min: 1, max: selectedRoom?.totalUnits || 1 } }} />
+              </Stack>
+              <TextField label="Phone number" fullWidth required value={reservationForm.customerPhone} onChange={(event) => setReservationForm((current) => ({ ...current, customerPhone: event.target.value }))} />
+              <TextField label="Note for the host (optional)" fullWidth multiline minRows={3} value={reservationForm.guestNotes} onChange={(event) => setReservationForm((current) => ({ ...current, guestNotes: event.target.value }))} />
+              {reservationNights > 0 && selectedRoom && (
+                <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'action.hover' }}>
+                  <Typography variant="body2" fontWeight={700}>
+                    Estimated total: NPR {(Number(selectedRoom.pricePerNight) * reservationNights * Number(reservationForm.units || 1)).toLocaleString()}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {reservationNights} night{reservationNights === 1 ? '' : 's'} · final availability and total are confirmed by the host.
+                  </Typography>
+                </Paper>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <AppButton variant="outlined" onClick={closeReservationDialog} disabled={reservationStatus.loading}>{reservationStatus.success ? 'Close' : 'Cancel'}</AppButton>
+          {!reservationStatus.success && <AppButton onClick={submitReservation} disabled={reservationStatus.loading || reservationNights === 0 || !reservationForm.customerPhone}>{reservationStatus.loading ? 'Sending request…' : 'Send request'}</AppButton>}
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
@@ -949,7 +1053,21 @@ export async function getServerSideProps(context) {
             )
           ) FILTER (WHERE m.id IS NOT NULL),
           '[]'::jsonb
-        ) AS menu_items
+          ) AS menu_items,
+          COALESCE(
+            (
+              SELECT jsonb_agg(
+                jsonb_build_object(
+                  'id', r.id, 'name', r.name, 'description', r.description,
+                  'pricePerNight', r.price_per_night, 'capacity', r.capacity,
+                  'totalUnits', r.total_units, 'imageUrl', r.image_url, 'isActive', r.is_active
+                ) ORDER BY r.created_at
+              )
+              FROM rooms r
+              WHERE r.stay_id = s.id
+            ),
+            '[]'::jsonb
+          ) AS rooms
       FROM stays s
       LEFT JOIN menu_items m ON m.stay_id = s.id
       WHERE s.slug = $1
@@ -981,6 +1099,7 @@ export async function getServerSideProps(context) {
         description: row.description,
         imageUrl: row.image_url || DEFAULT_STAY_IMAGE,
         menuItems: Array.isArray(row.menu_items) ? row.menu_items : [],
+        rooms: Array.isArray(row.rooms) ? row.rooms : [],
         contactPhone: row.contact_phone || '',
         ownerUserId: row.owner_user_id,
         pricePerNight: row.price_per_night ? Number(row.price_per_night) : null,
