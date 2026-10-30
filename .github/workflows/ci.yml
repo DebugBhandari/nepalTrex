@@ -57,7 +57,7 @@ jobs:
           DATABASE_URL: postgres://nepaltrex:nepaltrex@localhost:5432/nepaltrex
         run: >-
           node --input-type=module -e
-          "import { Client } from 'pg'; const client = new Client({ connectionString: process.env.DATABASE_URL }); await client.connect(); await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE TABLE users (id UUID PRIMARY KEY DEFAULT gen_random_uuid()); CREATE TABLE orders (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());'); await client.end();"
+          "import fs from 'fs/promises'; import { Client } from 'pg'; const client = new Client({ connectionString: process.env.DATABASE_URL }); await client.connect(); await client.query(await fs.readFile('db/init.sql', 'utf8')); await client.end();"
 
       - name: Apply database migrations
         env:

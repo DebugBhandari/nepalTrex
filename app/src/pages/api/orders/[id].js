@@ -109,40 +109,6 @@ export default async function handler(req, res) {
       [status, String(targetGroupId)]
     );
 
-    if (status === 'accepted') {
-      await client.query(
-        `
-          UPDATE menu_items
-          SET available = false
-          WHERE id IN (
-            SELECT DISTINCT o.menu_item_id
-            FROM orders o
-            WHERE COALESCE(o.order_group_id::text, o.id::text) = $1
-              AND o.menu_item_category = 'room'
-              AND o.menu_item_id IS NOT NULL
-          )
-        `,
-        [String(targetGroupId)]
-      );
-    }
-
-    if (['completed', 'declined', 'cancelled'].includes(status)) {
-      await client.query(
-        `
-          UPDATE menu_items
-          SET available = true
-          WHERE id IN (
-            SELECT DISTINCT o.menu_item_id
-            FROM orders o
-            WHERE COALESCE(o.order_group_id::text, o.id::text) = $1
-              AND o.menu_item_category = 'room'
-              AND o.menu_item_id IS NOT NULL
-          )
-        `,
-        [String(targetGroupId)]
-      );
-    }
-
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK');
