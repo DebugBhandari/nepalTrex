@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS menu_items (
   description TEXT,
   category TEXT NOT NULL CHECK (category IN ('room', 'food')),
   price NUMERIC(10, 2) NOT NULL,
-  is_available BOOLEAN NOT NULL DEFAULT true,
+  available BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

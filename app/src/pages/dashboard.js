@@ -195,6 +195,9 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
   const [draftRolesById, setDraftRolesById] = useState({});
   const [userPage, setUserPage] = useState(1);
   const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [guides, setGuides] = useState([]);
+  const [guidesLoading, setGuidesLoading] = useState(false);
+  const [guidesMessage, setGuidesMessage] = useState('');
 
   // Stay management state
   const [stayItems, setStayItems] = useState(() => stays.map((s) => ({ ...s })));
@@ -215,7 +218,7 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
     const persistedTab = window.localStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
     if (!persistedTab) return;
 
-    const allowedTabs = canManage ? ['treks', 'stays', 'users'] : ['treks'];
+    const allowedTabs = canManage ? ['treks', 'stays', 'users', 'guides'] : ['treks'];
     if (allowedTabs.includes(persistedTab)) {
       setActiveTab(persistedTab);
     }
@@ -383,6 +386,31 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
       fetchUsers('');
     }
   }, [activeTab, canManage, users.length, usersLoading, fetchUsers]);
+
+  const fetchGuides = async () => {
+    setGuidesLoading(true);
+    try {
+      const response = await fetch('/api/guides?all=true');
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Failed to fetch guides');
+      setGuides(payload.guides || []);
+    } catch (error) { setGuidesMessage(error.message || 'Failed to fetch guides'); } finally { setGuidesLoading(false); }
+  };
+
+  useEffect(() => {
+    if (canManage && activeTab === 'guides' && guides.length === 0 && !guidesLoading) fetchGuides();
+  }, [activeTab, canManage, guides.length, guidesLoading]);
+
+  const moderateGuide = async (guideId, approvalStatus) => {
+    setGuidesMessage('');
+    try {
+      const response = await fetch(`/api/guides/moderation/${guideId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approvalStatus }) });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Failed to moderate guide');
+      setGuides((previous) => previous.map((guide) => guide.id === guideId ? { ...guide, approval_status: payload.guide.approval_status, moderation_note: payload.guide.moderation_note } : guide));
+      setGuidesMessage('Guide status updated.');
+    } catch (error) { setGuidesMessage(error.message || 'Failed to moderate guide'); }
+  };
 
   const handleTrekFieldChange = (id, field, value) => {
     setItems((prev) => prev.map((trek) => (trek.id === id ? { ...trek, [field]: value } : trek)));
@@ -738,6 +766,7 @@ return (
             <Tab value="treks" label="Trek Updates" />
             {canManage && <Tab value="stays" label="Stay Management" />}
             {canManage && <Tab value="users" label="User Management" />}
+            {canManage && <Tab value="guides" label="Guide Moderation" />}
           </Tabs>
 
           {activeTab === 'treks' && (
@@ -1846,6 +1875,17 @@ return (
                   />
                 </Stack>
               )}
+            </Box>
+          )}
+
+          {activeTab === 'guides' && canManage && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h6">Guide moderation</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Approve verified guide applications before profiles and packages can appear publicly.</Typography>
+              {guidesMessage && <Alert severity={guidesMessage === 'Guide status updated.' ? 'success' : 'error'} sx={{ mb: 2 }}>{guidesMessage}</Alert>}
+              <AppButton variant="outlined" onClick={fetchGuides} disabled={guidesLoading} sx={{ mb: 2 }}>{guidesLoading ? 'Refreshing…' : 'Refresh applications'}</AppButton>
+              <Stack spacing={1.5}>{guides.map((guide) => <Card key={guide.id} variant="outlined"><CardContent><Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}><Box><Typography fontWeight={800}>{guide.guide_name}</Typography><Typography variant="body2" color="text.secondary">{guide.home_region} · {guide.years_experience} years · {guide.license_number || 'No license number provided'}</Typography><Typography variant="body2" sx={{ mt: .75 }}>{guide.headline}</Typography><Typography variant="caption" color="text.secondary">{guide.package_count} active packages · Status: {guide.approval_status}</Typography></Box><Stack direction="row" spacing={1} alignItems="center"><AppButton size="small" disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton></Stack></Stack></CardContent></Card>)}</Stack>
+              {!guidesLoading && guides.length === 0 && <Typography color="text.secondary">No guide applications found.</Typography>}
             </Box>
           )}
         </Paper>

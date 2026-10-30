@@ -52,7 +52,7 @@ function formatDate(value) {
     : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function UserProfilePage({ profile, wishlistItems, initialReservations }) {
+export default function UserProfilePage({ profile, wishlistItems, initialReservations, guideBookings }) {
   const { data: session } = useSession();
   const [statusMessage, setStatusMessage] = useState('');
   const [saving, setSaving] = useState(false);
@@ -61,7 +61,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window === 'undefined') return 'reservations';
     const saved = window.localStorage.getItem('nepaltrex-profile-active-tab');
-    return ['reservations', 'wishlist'].includes(saved) ? saved : 'reservations';
+    return ['reservations', 'guide-bookings', 'wishlist'].includes(saved) ? saved : 'reservations';
   });
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
@@ -146,6 +146,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
             <CardContent sx={{ pb: 0 }}>
               <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)} variant="scrollable" allowScrollButtonsMobile>
                 {ownProfile && <Tab value="reservations" label={`My reservations${activeReservations.length ? ` (${activeReservations.length})` : ''}`} />}
+                {ownProfile && <Tab value="guide-bookings" label={`Guide bookings${guideBookings.length ? ` (${guideBookings.length})` : ''}`} />}
                 <Tab value="wishlist" label="Wishlist" />
               </Tabs>
             </CardContent>
@@ -186,6 +187,9 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                   ))}
                 </Stack>
               )}
+              {activeTab === 'guide-bookings' && ownProfile && (
+                <Stack spacing={1.5}>{guideBookings.length === 0 ? <Typography color="text.secondary">No guide booking requests yet.</Typography> : guideBookings.map((booking) => <Card key={booking.id} variant="outlined"><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography fontWeight={800}>{booking.packageTitle}</Typography><Typography variant="body2" color="text.secondary">with {booking.guideName} · {formatDate(booking.startDate)} · {booking.travelerCount} travelers</Typography></Box><Chip label={booking.status} color={RESERVATION_STATUS_COLORS[booking.status] || 'default'} size="small" /></Stack></CardContent></Card>)}</Stack>
+              )}
             </CardContent>
           </Card>
         </Stack>
@@ -214,12 +218,16 @@ export async function getServerSideProps(context) {
       [row.id]
     )
     : { rows: [] };
+  const guideBookingsResult = session?.user?.id && String(session.user.id) === String(row.id)
+    ? await query(`SELECT b.id, b.start_date, b.traveler_count, b.status, p.title AS package_title, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name FROM guide_bookings b JOIN guide_packages p ON p.id = b.guide_package_id JOIN guide_profiles gp ON gp.id = b.guide_profile_id JOIN users u ON u.id = gp.user_id WHERE b.customer_user_id = $1 ORDER BY b.created_at DESC`, [row.id])
+    : { rows: [] };
 
   return {
     props: {
       profile: { id: row.id, username: row.username || '', name: row.display_name || row.username || '', email: row.email || '', role: row.role || 'user', provider: row.provider || 'credentials', imageUrl: row.profile_image_url || '', handle },
       wishlistItems: wishlistResult.rows.map((item) => ({ slug: item.trek_slug, name: item.name || item.trek_slug, durationDays: item.duration_days || null, level: item.level || '', region: item.region || '' })),
       initialReservations: reservationsResult.rows.map((reservation) => ({ id: reservation.id, stayName: reservation.stay_name, checkInDate: reservation.check_in_date, checkOutDate: reservation.check_out_date, guestCount: Number(reservation.guest_count), status: reservation.status, hostNote: reservation.host_note || '', totalPrice: Number(reservation.total_price), items: Array.isArray(reservation.items) ? reservation.items.map((item) => ({ roomName: item.roomName, units: Number(item.units) })) : [] })),
+      guideBookings: guideBookingsResult.rows.map((booking) => ({ id: booking.id, packageTitle: booking.package_title, guideName: booking.guide_name, startDate: booking.start_date, travelerCount: Number(booking.traveler_count), status: booking.status })),
     },
   };
 }

@@ -18,6 +18,7 @@ import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import SignpostRoundedIcon from '@mui/icons-material/SignpostRounded';
+import HikingRoundedIcon from '@mui/icons-material/HikingRounded';
 import AppButton from './AppButton';
 import NepalTrexLogo from './NepalTrexLogo';
 
@@ -29,6 +30,7 @@ function initialsFromName(value) {
 const navItems = [
   { label: 'Discover treks', href: '/', icon: MapRoundedIcon },
   { label: 'Find stays', href: '/stays', icon: HotelRoundedIcon },
+  { label: 'Find guides', href: '/guides', icon: HikingRoundedIcon },
 ];
 
 export default function SiteHeader() {
@@ -97,7 +99,6 @@ export default function SiteHeader() {
               </Avatar>
             </IconButton>
             <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={() => setUserMenuAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
-              <MenuItem component={Link} href="/attempts" onClick={() => setUserMenuAnchor(null)}><SignpostRoundedIcon fontSize="small" sx={{ mr: 1 }} />My trek attempts</MenuItem>
               <MenuItem component={Link} href="/profile" onClick={() => setUserMenuAnchor(null)}><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />My profile</MenuItem>
               {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><HotelRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}
               {session?.user?.role === 'superUser' && <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}><DashboardRoundedIcon fontSize="small" sx={{ mr: 1 }} />Platform dashboard</MenuItem>}
