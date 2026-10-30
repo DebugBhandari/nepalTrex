@@ -198,7 +198,7 @@ export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
   const handle = normalizeHandle(context.params?.name);
   const profileResult = await query(
-    `SELECT id, username, display_name, email, role, provider, profile_image_url FROM users WHERE lower(COALESCE(username, '')) = $1 OR lower(COALESCE(display_name, '')) = $1 LIMIT 1`,
+    `SELECT id, username, display_name, email, role, provider, profile_image_url FROM users WHERE trim(both '-' from regexp_replace(lower(COALESCE(username, '')), '[^a-z0-9]+', '-', 'g')) = $1 OR trim(both '-' from regexp_replace(lower(COALESCE(display_name, '')), '[^a-z0-9]+', '-', 'g')) = $1 LIMIT 1`,
     [handle]
   );
   const row = profileResult.rows[0];

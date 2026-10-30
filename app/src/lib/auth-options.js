@@ -129,16 +129,17 @@ export const authOptions = {
 
         await query(
           `
-            INSERT INTO users (email, display_name, provider, provider_account_id, role)
-            VALUES ($1, $2, 'google', $3, $4)
+            INSERT INTO users (email, display_name, profile_image_url, provider, provider_account_id, role)
+            VALUES ($1, $2, $3, 'google', $4, $5)
             ON CONFLICT (provider, provider_account_id)
             DO UPDATE SET
               email = EXCLUDED.email,
               display_name = EXCLUDED.display_name,
+              profile_image_url = COALESCE(users.profile_image_url, EXCLUDED.profile_image_url),
               role = EXCLUDED.role,
               updated_at = NOW()
           `,
-          [user.email || null, user.name || null, account.providerAccountId, role]
+          [user.email || null, user.name || null, user.image || null, account.providerAccountId, role]
         );
 
         await query(
@@ -186,11 +187,17 @@ export const authOptions = {
 
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        token.userId = user.id;
-        token.role = user.role || token.role || 'user';
-        token.isBanned = Boolean(user.isBanned);
+        const result = await query(
+          `SELECT id, role, is_banned, profile_image_url FROM users WHERE LOWER(email) = $1 OR (provider = $2 AND provider_account_id = $3) ORDER BY created_at DESC LIMIT 1`,
+          [(user.email || '').trim().toLowerCase(), account?.provider || '', account?.providerAccountId || '']
+        );
+        const userRow = result.rows[0];
+        token.userId = userRow?.id || user.id;
+        token.role = userRow?.role || user.role || token.role || 'user';
+        token.isBanned = Boolean(userRow?.is_banned ?? user.isBanned);
+        token.picture = userRow?.profile_image_url || user.image || token.picture;
         token.scopes = scopesForRole(token.role);
       } else if (token?.email) {
         const result = await query(
@@ -240,6 +247,8 @@ export const authOptions = {
 
         if (result.rows[0]?.profile_image_url) {
           session.user.image = result.rows[0].profile_image_url;
+        } else if (token?.picture) {
+          session.user.image = token.picture;
         }
       }
       return session;

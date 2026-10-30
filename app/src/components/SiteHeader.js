@@ -1,17 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
 import {
   AppBar,
   Avatar,
-  Badge,
   Box,
   IconButton,
   Menu,
   MenuItem,
   Toolbar,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
@@ -19,7 +17,6 @@ import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
-import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import SignpostRoundedIcon from '@mui/icons-material/SignpostRounded';
 import AppButton from './AppButton';
 import NepalTrexLogo from './NepalTrexLogo';
@@ -27,14 +24,6 @@ import NepalTrexLogo from './NepalTrexLogo';
 function initialsFromName(value) {
   const parts = String(value || 'Nepal Trex').trim().split(/\s+/).filter(Boolean);
   return `${parts[0]?.[0] || 'N'}${parts[1]?.[0] || 'T'}`.toUpperCase();
-}
-
-function normalizeHandle(value) {
-  return String(value || 'user')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'user';
 }
 
 const navItems = [
@@ -46,34 +35,7 @@ export default function SiteHeader() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
-  const [reservationCount, setReservationCount] = useState(0);
-  const profileHandle = normalizeHandle(
-    session?.user?.name || session?.user?.email?.split('@')[0]
-  );
   const isAdmin = ['admin', 'superUser'].includes(session?.user?.role);
-
-  useEffect(() => {
-    if (status !== 'authenticated') {
-      setReservationCount(0);
-      return;
-    }
-
-    let active = true;
-    fetch('/api/reservations/my')
-      .then((response) => (response.ok ? response.json() : { reservations: [] }))
-      .then((data) => {
-        if (!active) return;
-        const activeBookings = (data.reservations || []).filter((reservation) =>
-          ['pending', 'confirmed'].includes(reservation.status)
-        );
-        setReservationCount(activeBookings.length);
-      })
-      .catch(() => active && setReservationCount(0));
-
-    return () => {
-      active = false;
-    };
-  }, [status]);
 
   const isCurrent = (href) =>
     href === '/' ? router.pathname === '/' : router.pathname.startsWith(href);
@@ -129,22 +91,14 @@ export default function SiteHeader() {
 
         {status === 'authenticated' ? (
           <>
-            <Tooltip title="My reservations">
-              <IconButton component={Link} href="/reservations" aria-label="My reservations" color="inherit">
-                <Badge badgeContent={reservationCount} color="primary" max={9}>
-                  <ReceiptLongRoundedIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
             <IconButton onClick={(event) => setUserMenuAnchor(event.currentTarget)} aria-label="Open account menu" sx={{ p: 0.45, ml: 0.25 }}>
-              <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#fff', fontSize: 13, fontWeight: 800 }}>
+              <Avatar src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'Account'} sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#fff', fontSize: 13, fontWeight: 800 }}>
                 {initialsFromName(session.user?.name || session.user?.email)}
               </Avatar>
             </IconButton>
             <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={() => setUserMenuAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
-              <MenuItem component={Link} href="/reservations" onClick={() => setUserMenuAnchor(null)}><ReceiptLongRoundedIcon fontSize="small" sx={{ mr: 1 }} />My reservations</MenuItem>
               <MenuItem component={Link} href="/attempts" onClick={() => setUserMenuAnchor(null)}><SignpostRoundedIcon fontSize="small" sx={{ mr: 1 }} />My trek attempts</MenuItem>
-              <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />My profile</MenuItem>
+              <MenuItem component={Link} href="/profile" onClick={() => setUserMenuAnchor(null)}><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />My profile</MenuItem>
               {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><HotelRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}
               {session?.user?.role === 'superUser' && <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}><DashboardRoundedIcon fontSize="small" sx={{ mr: 1 }} />Platform dashboard</MenuItem>}
               <MenuItem onClick={() => signOut({ callbackUrl: '/' })}><LogoutRoundedIcon fontSize="small" sx={{ mr: 1 }} />Sign out</MenuItem>
