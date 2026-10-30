@@ -39,11 +39,18 @@ export default function StayThumbnailCard({ stay }) {
         }}
       >
         <Box
-          component="img"
-          src={stay.imageUrl || DEFAULT_STAY_IMAGE}
-          alt={stay.name}
-          sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-        />
+          component={Link}
+          href={`/stays/${stay.slug}`}
+          aria-label={`View ${stay.name}`}
+          sx={{ position: 'absolute', inset: 0, display: 'block' }}
+        >
+          <Box
+            component="img"
+            src={stay.imageUrl || DEFAULT_STAY_IMAGE}
+            alt={stay.name}
+            sx={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
+          />
+        </Box>
 
         {stay.discountPercent > 0 && (
           <Box
@@ -59,6 +66,7 @@ export default function StayThumbnailCard({ stay }) {
               display: 'flex',
               alignItems: 'center',
               gap: 0.4,
+              pointerEvents: 'none',
             }}
           >
             <LocalOfferRoundedIcon sx={{ fontSize: 12, color: themeColors.ink }} />
@@ -78,6 +86,7 @@ export default function StayThumbnailCard({ stay }) {
               py: 0.5,
               borderRadius: 1,
               bgcolor: 'primary.main',
+              pointerEvents: 'none',
             }}
           >
             <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
@@ -100,6 +109,7 @@ export default function StayThumbnailCard({ stay }) {
             display: 'flex',
             alignItems: 'center',
             gap: 0.5,
+            pointerEvents: 'none',
           }}
         >
           {stay.stayType === 'hotel'
@@ -128,6 +138,7 @@ export default function StayThumbnailCard({ stay }) {
             display: 'flex',
             alignItems: 'center',
             gap: 0.4,
+            zIndex: 1,
           }}
         >
           {Number(stay.reviewCount || 0) > 0 ? (

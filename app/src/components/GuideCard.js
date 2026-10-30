@@ -15,7 +15,8 @@ export default function GuideCard({ guide, packageDetails }) {
   const yearsExperience = value(guide, 'yearsExperience', 'years_experience', 0);
   const headline = value(guide, 'headline', 'headline');
   const bio = value(guide, 'bio', 'bio');
-  const languages = value(guide, 'languages', 'languages', []);
+  const languagesValue = value(guide, 'languages', 'languages', []);
+  const languages = Array.isArray(languagesValue) ? languagesValue : [];
   const rating = value(guide, 'avgRating', 'avg_rating', 0);
   const reviewCount = value(guide, 'reviewCount', 'review_count', 0);
 
@@ -40,7 +41,7 @@ export default function GuideCard({ guide, packageDetails }) {
         </Stack>
         {packageDetails && (
           <Box>
-            {packageDetails.title ? <><Typography variant="h6" sx={{ mt: 0.25 }}>{packageDetails.title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{packageDetails.durationDays} days · NPR {Number(packageDetails.priceAmount).toLocaleString()} {packageDetails.priceUnit.replace('_', ' ')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{packageDetails.summary}</Typography></> : <Typography variant="body2" color="text.secondary">Experienced in this terrain. Contact the guide for a tailored itinerary.</Typography>}
+            {packageDetails.title ? <><Typography variant="h6" sx={{ mt: 0.25 }}>{packageDetails.title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{packageDetails.durationDays} days · NPR {Number(packageDetails.priceAmount || 0).toLocaleString()} {String(packageDetails.priceUnit || 'per_person').replace('_', ' ')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{packageDetails.summary}</Typography></> : <Typography variant="body2" color="text.secondary">Experienced in this terrain. Contact the guide for a tailored itinerary.</Typography>}
           </Box>
         )}
         <Box sx={{ mt: 'auto', pt: 1 }}><AppButton component={Link} href={`/guides/${slug}`} fullWidth>View guide</AppButton></Box>

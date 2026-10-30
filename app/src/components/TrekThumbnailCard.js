@@ -28,18 +28,28 @@ export default function TrekThumbnailCard({ trek }) {
         }}
       >
         <Box
-          component="img"
-          src={getTrekImage(trek.name)}
-          alt={`${trek.name} route preview`}
+          component={Link}
+          href={`/treks/${trek.slug}`}
+          aria-label={`View ${trek.name}`}
           sx={{
             position: 'absolute',
             inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
+            display: 'block',
           }}
-        />
+        >
+          <Box
+            component="img"
+            src={getTrekImage(trek.name)}
+            alt={`${trek.name} route preview`}
+            sx={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+              display: 'block',
+            }}
+          />
+        </Box>
 
         {trek.isFeatured && (
           <Box
@@ -54,6 +64,7 @@ export default function TrekThumbnailCard({ trek }) {
               boxShadow: '0 4px 10px rgba(2, 62, 138, 0.18)',
               display: 'grid',
               placeItems: 'center',
+              pointerEvents: 'none',
             }}
             title="Featured trek"
           >
@@ -79,6 +90,7 @@ export default function TrekThumbnailCard({ trek }) {
             display: 'flex',
             alignItems: 'center',
             gap: 0.4,
+            zIndex: 1,
           }}
         >
           {Number(trek.reviewCount || 0) > 0 ? (

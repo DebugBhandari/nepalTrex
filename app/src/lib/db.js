@@ -157,6 +157,49 @@ ALTER TABLE menu_items
 
 CREATE INDEX IF NOT EXISTS menu_items_stay_id_idx ON menu_items(stay_id);
 
+CREATE TABLE IF NOT EXISTS rooms (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
+  legacy_menu_item_id UUID UNIQUE REFERENCES menu_items(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  price_per_night NUMERIC(10, 2) NOT NULL CHECK (price_per_night >= 0),
+  capacity INT NOT NULL DEFAULT 2 CHECK (capacity > 0),
+  total_units INT NOT NULL DEFAULT 1 CHECK (total_units > 0),
+  image_url TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS rooms_stay_id_active_idx
+  ON rooms(stay_id, is_active);
+
+INSERT INTO rooms (
+  stay_id,
+  legacy_menu_item_id,
+  name,
+  description,
+  price_per_night,
+  capacity,
+  total_units,
+  image_url,
+  is_active
+)
+SELECT
+  m.stay_id,
+  m.id,
+  m.name,
+  m.description,
+  m.price,
+  2,
+  1,
+  m.image_url,
+  m.available
+FROM menu_items m
+WHERE m.category = 'room'
+ON CONFLICT (legacy_menu_item_id) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS stay_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
