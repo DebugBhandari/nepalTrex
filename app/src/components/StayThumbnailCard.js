@@ -24,7 +24,7 @@ export default function StayThumbnailCard({ stay }) {
   const finalPrice = discountedPrice(stay);
 
   return (
-    <Box component={Link} href={`/stays/${stay.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block', borderRadius: 2, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
+    <Box sx={{ color: 'inherit', display: 'block', borderRadius: 2, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
       <Box
         sx={{
           position: 'relative',
@@ -111,7 +111,11 @@ export default function StayThumbnailCard({ stay }) {
         </Box>
 
         <Box
+          component={Link}
+          href={`/reviews/stay/${stay.slug}`}
           sx={{
+            textDecoration: 'none',
+            color: 'inherit',
             position: 'absolute',
             top: 12,
             right: 12,
@@ -144,6 +148,8 @@ export default function StayThumbnailCard({ stay }) {
       <Box sx={{ px: 0.5 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.3 }}>
           <Typography
+            component={Link}
+            href={`/stays/${stay.slug}`}
             variant="subtitle1"
             fontWeight={700}
             sx={{
@@ -155,6 +161,8 @@ export default function StayThumbnailCard({ stay }) {
               flex: 1,
               mr: 1,
               letterSpacing: '-0.018em',
+              color: 'inherit',
+              textDecoration: 'none',
             }}
           >
             {stay.name}

@@ -28,8 +28,8 @@ function Stars({ rating }) {
 }
 
 export default function ReviewsPage({ item, reviews, targetType }) {
-  const itemPath = targetType === 'trek' ? `/treks/${item.slug}` : `/stays/${item.slug}`;
-  const itemTypeLabel = targetType === 'trek' ? 'trek' : 'stay';
+  const itemPath = targetType === 'trek' ? `/treks/${item.slug}` : targetType === 'stay' ? `/stays/${item.slug}` : `/guides/${item.slug}`;
+  const itemTypeLabel = targetType;
 
   return (
     <>
@@ -80,14 +80,16 @@ export default function ReviewsPage({ item, reviews, targetType }) {
 export async function getServerSideProps(context) {
   const targetType = context.params?.type;
   const slug = context.params?.slug;
-  if (!['trek', 'stay'].includes(targetType) || !slug) return { notFound: true };
+  if (!['trek', 'stay', 'guide'].includes(targetType) || !slug) return { notFound: true };
 
   const itemResult = targetType === 'trek'
     ? await query(
       `SELECT id, name FROM treks WHERE trim(both '-' from regexp_replace(lower(name), '[^a-z0-9]+', '-', 'g')) = $1 LIMIT 1`,
       [slug.toLowerCase()]
     )
-    : await query('SELECT id, name, slug FROM stays WHERE slug = $1 LIMIT 1', [slug]);
+    : targetType === 'stay'
+      ? await query('SELECT id, name, slug FROM stays WHERE slug = $1 LIMIT 1', [slug])
+      : await query(`SELECT gp.id, gp.slug, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS name FROM guide_profiles gp JOIN users u ON u.id = gp.user_id WHERE gp.slug = $1 AND gp.approval_status = 'approved' LIMIT 1`, [slug]);
 
   const itemRow = itemResult.rows[0];
   if (!itemRow) return { notFound: true };

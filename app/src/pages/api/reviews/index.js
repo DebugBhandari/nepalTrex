@@ -2,12 +2,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { query } from '../../../lib/db';
 
-const TARGET_TYPES = new Set(['stay', 'trek']);
+const TARGET_TYPES = new Set(['stay', 'trek', 'guide']);
 
 async function targetExists(targetType, targetId) {
   const sql = targetType === 'stay'
     ? 'SELECT id FROM stays WHERE id = $1 LIMIT 1'
-    : 'SELECT id FROM treks WHERE id = $1 LIMIT 1';
+    : targetType === 'guide'
+      ? "SELECT id FROM guide_profiles WHERE id = $1 AND approval_status = 'approved' LIMIT 1"
+      : 'SELECT id FROM treks WHERE id = $1 LIMIT 1';
   const result = await query(sql, [targetId]);
   return Boolean(result.rows[0]);
 }

@@ -13,7 +13,7 @@ import { themeColors } from '../lib/theme';
 
 export default function TrekThumbnailCard({ trek }) {
   return (
-    <Box component={Link} href={`/treks/${trek.slug}`} sx={{ textDecoration: 'none', color: 'inherit', display: 'block', borderRadius: 2, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
+    <Box sx={{ color: 'inherit', display: 'block', borderRadius: 2, p: 1, mx: -1, transition: 'background-color 180ms ease, transform 180ms ease', '&:hover': { backgroundColor: 'action.hover', transform: 'translateY(-3px)' } }}>
       <Box
         sx={{
           position: 'relative',
@@ -62,7 +62,11 @@ export default function TrekThumbnailCard({ trek }) {
         )}
 
         <Box
+          component={Link}
+          href={`/reviews/trek/${trek.slug}`}
           sx={{
+            textDecoration: 'none',
+            color: 'inherit',
             position: 'absolute',
             top: 12,
             right: 12,
@@ -94,6 +98,8 @@ export default function TrekThumbnailCard({ trek }) {
 
       <Box sx={{ px: 0.5 }}>
         <Typography
+          component={Link}
+          href={`/treks/${trek.slug}`}
           variant="subtitle1"
           fontWeight={700}
           sx={{
@@ -104,6 +110,8 @@ export default function TrekThumbnailCard({ trek }) {
             WebkitBoxOrient: 'vertical',
             mb: 0.8,
             letterSpacing: '-0.018em',
+            color: 'inherit',
+            textDecoration: 'none',
             '&:hover': { color: 'primary.main' },
           }}
         >

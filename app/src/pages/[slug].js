@@ -6,7 +6,6 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import {
   Alert,
-  Avatar,
   Box,
   Card,
   CardContent,
@@ -38,6 +37,7 @@ import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
 import StayThumbnailCard from '../components/StayThumbnailCard';
+import GuideCard from '../components/GuideCard';
 import {
   getDifficultyLabel,
   getTrekImage,
@@ -359,7 +359,9 @@ function ReviewsSection({
             {title}
           </Typography>
           {rating ? (
-            <StarRow rating={rating} count={reviewCount} />
+            <Box component={Link} href={reviewsPageHref} sx={{ display: 'inline-flex', color: 'inherit', textDecoration: 'none', borderRadius: 1, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } }} aria-label={`View all ${title.toLowerCase()}`}>
+              <StarRow rating={rating} count={reviewCount} />
+            </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
               No reviews yet — be the first to share feedback.
@@ -1904,7 +1906,7 @@ function TrekDetailView({ trek }) {
               </Typography>
             ) : (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
-                {trek.guidePackages.map((pkg) => <Card key={pkg.id} variant="outlined"><CardContent><Stack direction="row" spacing={1.25} alignItems="center"><Avatar src={pkg.guideImageUrl || undefined}>{pkg.guideName?.slice(0, 1)}</Avatar><Box><Typography fontWeight={700}>{pkg.guideName}</Typography><Typography variant="body2" color="text.secondary">{pkg.homeRegion} · {pkg.yearsExperience} years of local experience</Typography><Stack direction="row" spacing={0.45} alignItems="center" sx={{ mt: 0.35 }}><StarRoundedIcon sx={{ fontSize: 16, color: '#F59E0B' }} /><Typography variant="body2" fontWeight={700}>{pkg.reviewCount ? `${pkg.avgRating.toFixed(1)} (${pkg.reviewCount})` : 'New guide'}</Typography></Stack></Box></Stack>{pkg.title ? <><Typography variant="h6" sx={{ mt: 1.5 }}>{pkg.title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{pkg.durationDays} days · NPR {pkg.priceAmount.toLocaleString()} {pkg.priceUnit.replace('_', ' ')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{pkg.summary}</Typography></> : <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>Experienced in this terrain. Contact the guide for a tailored itinerary.</Typography>}<AppButton component={Link} href={`/guides/${pkg.guideSlug}`} size="small" sx={{ mt: 1.5 }}>View guide</AppButton></CardContent></Card>)}
+                {trek.guidePackages.map((guide) => <GuideCard key={guide.guideId} guide={guide} packageDetails={guide.packageDetails} />)}
               </Box>
             )}
           </Paper>
@@ -2071,7 +2073,7 @@ export async function getServerSideProps(context) {
       ),
       getReviews('trek', row.id, 4),
       getReviewSummary('trek', row.id),
-      query(`SELECT gp.id AS guide_id, COALESCE(p.id, gp.id) AS id, p.title, p.summary, p.duration_days, p.price_amount, p.price_unit, gp.slug AS guide_slug, gp.home_region, gp.years_experience, gp.profile_image_url, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name, COALESCE(review_summary.avg_rating, 0)::numeric(3,1) AS avg_rating, COALESCE(review_summary.review_count, 0)::int AS review_count FROM guide_profiles gp JOIN users u ON u.id=gp.user_id LEFT JOIN LATERAL (SELECT id, title, summary, duration_days, price_amount, price_unit, trek_id, region, created_at FROM guide_packages WHERE guide_profile_id=gp.id AND is_active=true ORDER BY CASE WHEN trek_id=$1 THEN 0 WHEN lower(trim(region))=lower(trim($2)) THEN 1 ELSE 2 END, created_at DESC LIMIT 1) p ON true LEFT JOIN LATERAL (SELECT ROUND(AVG(r.rating)::numeric, 1) AS avg_rating, COUNT(r.id)::int AS review_count FROM reviews r WHERE r.target_type='guide' AND r.target_id=gp.id) review_summary ON true WHERE gp.approval_status='approved' AND (lower(trim(gp.home_region))=lower(trim($2)) OR EXISTS (SELECT 1 FROM guide_packages terrain_package WHERE terrain_package.guide_profile_id=gp.id AND terrain_package.is_active=true AND lower(trim(terrain_package.region))=lower(trim($2)))) ORDER BY COALESCE(review_summary.avg_rating, 0) DESC, COALESCE(review_summary.review_count, 0) DESC, guide_name ASC`, [row.id, row.region]),
+      query(`SELECT gp.id AS guide_id, gp.slug AS guide_slug, gp.headline, gp.bio, gp.home_region, gp.languages, gp.years_experience, gp.profile_image_url, p.title, p.summary, p.duration_days, p.price_amount, p.price_unit, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name, COALESCE(review_summary.avg_rating, 0)::numeric(3,1) AS avg_rating, COALESCE(review_summary.review_count, 0)::int AS review_count FROM guide_profiles gp JOIN users u ON u.id=gp.user_id LEFT JOIN LATERAL (SELECT id, title, summary, duration_days, price_amount, price_unit, trek_id, region, created_at FROM guide_packages WHERE guide_profile_id=gp.id AND is_active=true ORDER BY CASE WHEN trek_id=$1 THEN 0 WHEN lower(trim(region))=lower(trim($2)) THEN 1 ELSE 2 END, created_at DESC LIMIT 1) p ON true LEFT JOIN LATERAL (SELECT ROUND(AVG(r.rating)::numeric, 1) AS avg_rating, COUNT(r.id)::int AS review_count FROM reviews r WHERE r.target_type='guide' AND r.target_id=gp.id) review_summary ON true WHERE gp.approval_status='approved' AND (lower(trim(gp.home_region))=lower(trim($2)) OR EXISTS (SELECT 1 FROM guide_packages terrain_package WHERE terrain_package.guide_profile_id=gp.id AND terrain_package.is_active=true AND lower(trim(terrain_package.region))=lower(trim($2)))) ORDER BY COALESCE(review_summary.avg_rating, 0) DESC, COALESCE(review_summary.review_count, 0) DESC, guide_name ASC`, [row.id, row.region]),
     ]);
 
     const nearbyStays = stayRows.rows
@@ -2129,7 +2131,7 @@ export async function getServerSideProps(context) {
           reviews,
           reviewCount: reviewSummary.reviewCount,
           avgRating: reviewSummary.avgRating,
-          guidePackages: guidePackageRows.rows.map((pkg) => ({ id: pkg.id, title: pkg.title, summary: pkg.summary, durationDays: pkg.duration_days, priceAmount: Number(pkg.price_amount), priceUnit: pkg.price_unit, guideSlug: pkg.guide_slug, guideName: pkg.guide_name, homeRegion: pkg.home_region, yearsExperience: pkg.years_experience, guideImageUrl: pkg.profile_image_url || '', avgRating: Number(pkg.avg_rating), reviewCount: Number(pkg.review_count) })),
+          guidePackages: guidePackageRows.rows.map((guide) => ({ guideId: guide.guide_id, slug: guide.guide_slug, name: guide.guide_name, headline: guide.headline, bio: guide.bio, homeRegion: guide.home_region, languages: guide.languages || [], yearsExperience: guide.years_experience, profileImageUrl: guide.profile_image_url || '', avgRating: Number(guide.avg_rating), reviewCount: Number(guide.review_count), packageDetails: { title: guide.title, summary: guide.summary, durationDays: guide.duration_days, priceAmount: Number(guide.price_amount || 0), priceUnit: guide.price_unit || 'per_person' } })),
         },
       },
     };
