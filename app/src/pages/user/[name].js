@@ -166,9 +166,12 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
                           <Box>
                             <Typography variant="subtitle1" fontWeight={800}>{reservation.stayName || 'Stay reservation'}</Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.45 }}>{formatDate(reservation.checkInDate)} – {formatDate(reservation.checkOutDate)} · {reservation.guestCount} guest{reservation.guestCount === 1 ? '' : 's'}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.45 }}>{reservation.stayLocation} · {formatDate(reservation.checkInDate)} – {formatDate(reservation.checkOutDate)} · {reservation.nights} night{reservation.nights === 1 ? '' : 's'} · {reservation.guestCount} guest{reservation.guestCount === 1 ? '' : 's'}</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{reservation.items.map((item) => `${item.roomName} × ${item.units}`).join(' · ')}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Booked on {formatDate(reservation.createdAt)} · Contact: {reservation.contactPhone || 'Not provided'}</Typography>
+                            {reservation.guestNotes && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Your request: {reservation.guestNotes}</Typography>}
                             {reservation.hostNote && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Host note: {reservation.hostNote}</Typography>}
+                            {reservation.events.length > 0 && <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>Latest activity: {reservation.events[reservation.events.length - 1].eventType.replace(/_/g, ' ')} by {reservation.events[reservation.events.length - 1].actorName} on {formatDate(reservation.events[reservation.events.length - 1].createdAt)}</Typography>}
                           </Box>
                           <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
                             <Chip label={reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)} color={RESERVATION_STATUS_COLORS[reservation.status] || 'default'} size="small" />
@@ -214,7 +217,7 @@ export async function getServerSideProps(context) {
   );
   const reservationsResult = session?.user?.id && String(session.user.id) === String(row.id)
     ? await query(
-      `SELECT r.id, r.check_in_date, r.check_out_date, r.guest_count, r.status, r.host_note, r.total_price, s.name AS stay_name, COALESCE(json_agg(json_build_object('roomName', ri.room_name, 'units', ri.units)) FILTER (WHERE ri.id IS NOT NULL), '[]'::json) AS items FROM reservations r JOIN stays s ON s.id = r.stay_id LEFT JOIN reservation_items ri ON ri.reservation_id = r.id WHERE r.customer_user_id = $1 GROUP BY r.id, s.id ORDER BY r.created_at DESC`,
+      `SELECT r.id, r.check_in_date, r.check_out_date, r.guest_count, r.status, r.host_note, r.guest_notes, r.customer_phone, r.total_price, r.created_at, s.name AS stay_name, s.location AS stay_location, COALESCE(json_agg(DISTINCT jsonb_build_object('roomName', ri.room_name, 'units', ri.units)) FILTER (WHERE ri.id IS NOT NULL), '[]'::json) AS items, COALESCE((SELECT json_agg(json_build_object('eventType', re.event_type, 'actorName', COALESCE(re.actor_name, 'System'), 'createdAt', re.created_at) ORDER BY re.created_at ASC) FROM reservation_events re WHERE re.reservation_id = r.id), '[]'::json) AS events FROM reservations r JOIN stays s ON s.id = r.stay_id LEFT JOIN reservation_items ri ON ri.reservation_id = r.id WHERE r.customer_user_id = $1 GROUP BY r.id, s.id ORDER BY r.created_at DESC`,
       [row.id]
     )
     : { rows: [] };
@@ -226,7 +229,7 @@ export async function getServerSideProps(context) {
     props: {
       profile: { id: row.id, username: row.username || '', name: row.display_name || row.username || '', email: row.email || '', role: row.role || 'user', provider: row.provider || 'credentials', imageUrl: row.profile_image_url || '', handle },
       wishlistItems: wishlistResult.rows.map((item) => ({ slug: item.trek_slug, name: item.name || item.trek_slug, durationDays: item.duration_days || null, level: item.level || '', region: item.region || '' })),
-      initialReservations: reservationsResult.rows.map((reservation) => ({ id: reservation.id, stayName: reservation.stay_name, checkInDate: reservation.check_in_date, checkOutDate: reservation.check_out_date, guestCount: Number(reservation.guest_count), status: reservation.status, hostNote: reservation.host_note || '', totalPrice: Number(reservation.total_price), items: Array.isArray(reservation.items) ? reservation.items.map((item) => ({ roomName: item.roomName, units: Number(item.units) })) : [] })),
+      initialReservations: reservationsResult.rows.map((reservation) => ({ id: reservation.id, stayName: reservation.stay_name, stayLocation: reservation.stay_location || '', checkInDate: reservation.check_in_date, checkOutDate: reservation.check_out_date, nights: Math.max(1, Math.round((new Date(reservation.check_out_date) - new Date(reservation.check_in_date)) / 86400000)), guestCount: Number(reservation.guest_count), status: reservation.status, guestNotes: reservation.guest_notes || '', hostNote: reservation.host_note || '', contactPhone: reservation.customer_phone || '', createdAt: reservation.created_at, totalPrice: Number(reservation.total_price), items: Array.isArray(reservation.items) ? reservation.items.map((item) => ({ roomName: item.roomName, units: Number(item.units) })) : [], events: Array.isArray(reservation.events) ? reservation.events : [] })),
       guideBookings: guideBookingsResult.rows.map((booking) => ({ id: booking.id, packageTitle: booking.package_title, guideName: booking.guide_name, startDate: booking.start_date, travelerCount: Number(booking.traveler_count), status: booking.status })),
     },
   };

@@ -22,15 +22,16 @@ export default async function handler(req, res) {
   try {
     const result = await query(
       `
-        SELECT id, username, email, display_name, role, is_banned, provider, profile_image_url, created_at, last_login_at
-        FROM users
+        SELECT u.id, u.username, u.email, u.display_name, u.role, u.is_banned, u.provider, u.profile_image_url, u.created_at, u.last_login_at,
+          EXISTS (SELECT 1 FROM guide_profiles gp WHERE gp.user_id = u.id) AS is_guide
+        FROM users u
         WHERE (
           $1 = ''
-          OR COALESCE(username, '') ILIKE '%' || $1 || '%'
-          OR COALESCE(email, '') ILIKE '%' || $1 || '%'
-          OR COALESCE(display_name, '') ILIKE '%' || $1 || '%'
+          OR COALESCE(u.username, '') ILIKE '%' || $1 || '%'
+          OR COALESCE(u.email, '') ILIKE '%' || $1 || '%'
+          OR COALESCE(u.display_name, '') ILIKE '%' || $1 || '%'
         )
-        ORDER BY last_login_at DESC NULLS LAST, created_at DESC
+        ORDER BY u.last_login_at DESC NULLS LAST, u.created_at DESC
         LIMIT 200
       `,
       [search]
@@ -43,6 +44,7 @@ export default async function handler(req, res) {
       displayName: row.display_name,
       role: row.role || 'user',
       isBanned: Boolean(row.is_banned),
+      isGuide: Boolean(row.is_guide),
       provider: row.provider,
       profileImageUrl: row.profile_image_url || '',
       createdAt: row.created_at,

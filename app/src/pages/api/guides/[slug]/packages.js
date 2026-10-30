@@ -6,10 +6,11 @@ import { resolveImageInput } from '../../../../lib/object-storage';
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id || session.user.isBanned) return res.status(401).json({ error: 'Authentication required' });
-  const profileResult = await query('SELECT id, user_id FROM guide_profiles WHERE slug = $1 LIMIT 1', [req.query.slug]);
+  const profileResult = await query('SELECT id, user_id, approval_status FROM guide_profiles WHERE slug = $1 LIMIT 1', [req.query.slug]);
   const profile = profileResult.rows[0];
   if (!profile) return res.status(404).json({ error: 'Guide profile not found' });
   if (profile.user_id !== session.user.id && session.user.role !== 'superUser') return res.status(403).json({ error: 'You cannot manage this guide profile' });
+  if (req.method !== 'GET' && session.user.role !== 'superUser' && profile.approval_status !== 'approved') return res.status(403).json({ error: 'Your guide application must be approved before packages can be created' });
   if (req.method === 'GET') { const result = await query('SELECT * FROM guide_packages WHERE guide_profile_id = $1 ORDER BY created_at DESC', [profile.id]); return res.status(200).json({ packages: result.rows }); }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const p = req.body || {}; const duration = Number(p.durationDays); const price = Number(p.priceAmount); const min = Number(p.groupSizeMin || 1); const max = Number(p.groupSizeMax || min);

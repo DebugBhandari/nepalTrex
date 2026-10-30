@@ -9,6 +9,7 @@
     "migrate:db": "node scripts/migrate-db.mjs",
     "seed:demo:stays": "node scripts/seed-demo-stays.mjs",
     "seed:demo:reviews": "node scripts/seed-demo-reviews.mjs",
+    "seed:demo:guides": "node scripts/seed-demo-guides.mjs",
     "migrate:images:minio": "node scripts/migrate-public-images-to-minio.mjs"
   },
   "private": true,

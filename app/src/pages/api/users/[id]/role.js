@@ -33,8 +33,8 @@ export default async function handler(req, res) {
   try {
     const targetResult = await query(
       `
-        SELECT id, role
-        FROM users
+        SELECT u.id, u.role, EXISTS (SELECT 1 FROM guide_profiles gp WHERE gp.user_id = u.id) AS is_guide
+        FROM users u
         WHERE id = $1
         LIMIT 1
       `,
@@ -43,6 +43,10 @@ export default async function handler(req, res) {
 
     if (targetResult.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (targetResult.rows[0].is_guide) {
+      return res.status(400).json({ error: 'Guide accounts cannot have their roles changed. Manage their guide application separately.' });
     }
 
     const currentUserResult = await query(

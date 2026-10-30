@@ -1698,6 +1698,7 @@ return (
                   const isUpdatingBan = Boolean(updatingBanById[entry.id]);
                   const isDeleting = Boolean(deletingUserById[entry.id]);
                   const currentDraft = draftRolesById[entry.id] || entry.role || 'user';
+                  const isGuide = Boolean(entry.isGuide);
                   const isSelf = entry.id === user.id;
                   const isAdminLike = ['admin', 'superUser'].includes(entry.role || '');
                   const ownedStays = stayItems.filter((stay) => String(stay.ownerUserId) === String(entry.id));
@@ -1742,6 +1743,7 @@ return (
                               </Typography>
                               <Stack direction="row" spacing={0.8} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
                                 <Chip label={`Current role: ${entry.role || 'user'}`} size="small" />
+                                {isGuide && <Chip label="Guide provider" size="small" color="primary" variant="outlined" />}
                                 <Chip
                                   label={entry.isBanned ? 'Banned' : 'Active'}
                                   size="small"
@@ -1796,7 +1798,7 @@ return (
                                 onChange={(event) =>
                                   setDraftRolesById((prev) => ({ ...prev, [entry.id]: event.target.value }))
                                 }
-                                disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
+                                disabled={isSaving || isUpdatingBan || isDeleting || isSelf || isGuide}
                               >
                                 {ROLE_OPTIONS.map((roleOption) => (
                                   <MenuItem key={roleOption} value={roleOption}>
@@ -1807,7 +1809,7 @@ return (
                             </FormControl>
                             <AppButton
                               variant="contained"
-                              disabled={isSaving || isUpdatingBan || isDeleting || isSelf || currentDraft === entry.role}
+                              disabled={isSaving || isUpdatingBan || isDeleting || isSelf || isGuide || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
                               sx={{
                                 height: 36,
@@ -1826,7 +1828,7 @@ return (
                                 },
                               }}
                             >
-                              {isSaving ? 'Saving...' : 'Update Role'}
+                              {isGuide ? 'Guide account' : isSaving ? 'Saving...' : 'Update Role'}
                             </AppButton>
                             <AppButton
                               variant="outlined"
@@ -1884,7 +1886,7 @@ return (
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Approve verified guide applications before profiles and packages can appear publicly.</Typography>
               {guidesMessage && <Alert severity={guidesMessage === 'Guide status updated.' ? 'success' : 'error'} sx={{ mb: 2 }}>{guidesMessage}</Alert>}
               <AppButton variant="outlined" onClick={fetchGuides} disabled={guidesLoading} sx={{ mb: 2 }}>{guidesLoading ? 'Refreshing…' : 'Refresh applications'}</AppButton>
-              <Stack spacing={1.5}>{guides.map((guide) => <Card key={guide.id} variant="outlined"><CardContent><Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}><Box><Typography fontWeight={800}>{guide.guide_name}</Typography><Typography variant="body2" color="text.secondary">{guide.home_region} · {guide.years_experience} years · {guide.license_number || 'No license number provided'}</Typography><Typography variant="body2" sx={{ mt: .75 }}>{guide.headline}</Typography><Typography variant="caption" color="text.secondary">{guide.package_count} active packages · Status: {guide.approval_status}</Typography></Box><Stack direction="row" spacing={1} alignItems="center"><AppButton size="small" disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton></Stack></Stack></CardContent></Card>)}</Stack>
+              <Stack spacing={1.5}>{guides.map((guide) => <Card key={guide.id} variant="outlined"><CardContent><Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}><Box><Typography fontWeight={800}>{guide.guide_name}</Typography><Typography variant="body2" color="text.secondary">{guide.home_region} · {guide.years_experience} years · {guide.license_number || 'No license number provided'}</Typography><Typography variant="body2" sx={{ mt: .75 }}>{guide.headline}</Typography><Stack direction="row" spacing={1} sx={{ mt: 1 }}><AppButton size="small" variant="outlined" disabled={!guide.license_document_url} component={guide.license_document_url ? 'a' : 'button'} href={guide.license_document_url || undefined} target="_blank" rel="noreferrer">License evidence</AppButton><AppButton size="small" variant="outlined" disabled={!guide.citizenship_document_url} component={guide.citizenship_document_url ? 'a' : 'button'} href={guide.citizenship_document_url || undefined} target="_blank" rel="noreferrer">Citizenship evidence</AppButton></Stack><Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}> {guide.package_count} active packages · Status: {guide.approval_status}</Typography></Box><Stack direction="row" spacing={1} alignItems="center"><AppButton size="small" disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton><AppButton size="small" variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton></Stack></Stack></CardContent></Card>)}</Stack>
               {!guidesLoading && guides.length === 0 && <Typography color="text.secondary">No guide applications found.</Typography>}
             </Box>
           )}
