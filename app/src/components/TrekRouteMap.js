@@ -1,7 +1,15 @@
 import { useEffect, useMemo } from 'react';
 import { geoJSON } from 'leaflet';
 import { useRouter } from 'next/router';
-import { CircleMarker, GeoJSON, MapContainer, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import {
+  CircleMarker,
+  GeoJSON,
+  MapContainer,
+  Polyline,
+  TileLayer,
+  Tooltip,
+  useMap,
+} from 'react-leaflet';
 
 const NEPAL_CENTER = [28.2, 84.1];
 const NEPAL_ZOOM = 7;
@@ -25,9 +33,18 @@ function normalizeGeoJson(routeGeojson) {
     }
 
     // Convert our custom RouteWaypoints format → GeoJSON LineString Feature
-    if (routeGeojson.type === 'RouteWaypoints' && Array.isArray(routeGeojson.waypoints)) {
+    if (
+      routeGeojson.type === 'RouteWaypoints' &&
+      Array.isArray(routeGeojson.waypoints)
+    ) {
       const coords = routeGeojson.waypoints
-        .filter(([lat, lng]) => lat !== '' && lng !== '' && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lng)))
+        .filter(
+          ([lat, lng]) =>
+            lat !== '' &&
+            lng !== '' &&
+            !Number.isNaN(Number(lat)) &&
+            !Number.isNaN(Number(lng))
+        )
         .map(([lat, lng]) => [Number(lng), Number(lat)]);
       if (coords.length < 2) return null;
       return {
@@ -37,7 +54,10 @@ function normalizeGeoJson(routeGeojson) {
       };
     }
 
-    if (routeGeojson.type === 'Feature' || routeGeojson.type === 'FeatureCollection') {
+    if (
+      routeGeojson.type === 'Feature' ||
+      routeGeojson.type === 'FeatureCollection'
+    ) {
       return routeGeojson;
     }
 
@@ -53,9 +73,21 @@ function normalizeGeoJson(routeGeojson) {
 
 function extractNamedWaypoints(routeGeojson) {
   if (!routeGeojson || typeof routeGeojson !== 'object') return [];
-  const raw = typeof routeGeojson === 'string' ? (() => { try { return JSON.parse(routeGeojson); } catch { return null; } })() : routeGeojson;
-  if (!raw || raw.type !== 'RouteWaypoints' || !Array.isArray(raw.waypoints)) return [];
-  return raw.waypoints.filter(wp => Array.isArray(wp) && wp[2] && typeof wp[2] === 'string');
+  const raw =
+    typeof routeGeojson === 'string'
+      ? (() => {
+          try {
+            return JSON.parse(routeGeojson);
+          } catch {
+            return null;
+          }
+        })()
+      : routeGeojson;
+  if (!raw || raw.type !== 'RouteWaypoints' || !Array.isArray(raw.waypoints))
+    return [];
+  return raw.waypoints.filter(
+    (wp) => Array.isArray(wp) && wp[2] && typeof wp[2] === 'string'
+  );
 }
 
 function TrekRouteBounds({ routeGeojson }) {
@@ -82,10 +114,22 @@ function TrekRouteBounds({ routeGeojson }) {
   return null;
 }
 
-export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredStayId = null }) {
+export default function TrekRouteMap({
+  selectedTrek,
+  nearbyStays = [],
+  hoveredStayId = null,
+  userLocation = null,
+  guidanceWaypoint = null,
+}) {
   const router = useRouter();
-  const routeGeojson = useMemo(() => normalizeGeoJson(selectedTrek?.routeGeojson), [selectedTrek]);
-  const namedWaypoints = useMemo(() => extractNamedWaypoints(selectedTrek?.routeGeojson), [selectedTrek]);
+  const routeGeojson = useMemo(
+    () => normalizeGeoJson(selectedTrek?.routeGeojson),
+    [selectedTrek]
+  );
+  const namedWaypoints = useMemo(
+    () => extractNamedWaypoints(selectedTrek?.routeGeojson),
+    [selectedTrek]
+  );
 
   return (
     <MapContainer
@@ -96,18 +140,53 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-        subdomains='abcd'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        subdomains="abcd"
         maxZoom={19}
       />
       <TrekRouteBounds routeGeojson={routeGeojson} />
       {routeGeojson && (
         <GeoJSON
-          key='route-layer'
+          key="route-layer"
           data={routeGeojson}
           style={{
             color: '#0077B6',
             weight: 5,
+            opacity: 0.9,
+          }}
+        />
+      )}
+      {userLocation &&
+        Number.isFinite(Number(userLocation.latitude)) &&
+        Number.isFinite(Number(userLocation.longitude)) && (
+          <CircleMarker
+            center={[
+              Number(userLocation.latitude),
+              Number(userLocation.longitude),
+            ]}
+            radius={9}
+            pathOptions={{
+              color: '#ffffff',
+              fillColor: '#D00000',
+              fillOpacity: 1,
+              weight: 3,
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -10]} permanent>
+              Your current location
+            </Tooltip>
+          </CircleMarker>
+        )}
+      {userLocation && guidanceWaypoint && (
+        <Polyline
+          positions={[
+            [Number(userLocation.latitude), Number(userLocation.longitude)],
+            [Number(guidanceWaypoint.lat), Number(guidanceWaypoint.lng)],
+          ]}
+          pathOptions={{
+            color: '#D00000',
+            weight: 3,
+            dashArray: '7 8',
             opacity: 0.9,
           }}
         />
@@ -134,14 +213,17 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
               weight: isHovered ? 3 : 2,
             }}
           >
-            <Tooltip direction='top' offset={[0, -10]} permanent={isHovered}>
+            <Tooltip direction="top" offset={[0, -10]} permanent={isHovered}>
               <strong>{stay.name}</strong>
               <br />
               <span style={{ fontSize: '0.75em', opacity: 0.8 }}>
-                {Number(stay.latitude).toFixed(5)}, {Number(stay.longitude).toFixed(5)}
+                {Number(stay.latitude).toFixed(5)},{' '}
+                {Number(stay.longitude).toFixed(5)}
               </span>
               <br />
-              <span style={{ fontSize: '0.72em', opacity: 0.9 }}>Click to view stay</span>
+              <span style={{ fontSize: '0.72em', opacity: 0.9 }}>
+                Click to view stay
+              </span>
             </Tooltip>
           </CircleMarker>
         );
@@ -151,9 +233,14 @@ export default function TrekRouteMap({ selectedTrek, nearbyStays = [], hoveredSt
           key={name + '-' + i}
           center={[lat, lng]}
           radius={5}
-          pathOptions={{ color: '#023E8A', fillColor: '#90E0EF', fillOpacity: 1, weight: 2 }}
+          pathOptions={{
+            color: '#023E8A',
+            fillColor: '#90E0EF',
+            fillOpacity: 1,
+            weight: 2,
+          }}
         >
-          <Tooltip direction='top' offset={[0, -8]}>
+          <Tooltip direction="top" offset={[0, -8]}>
             {name}
           </Tooltip>
         </CircleMarker>

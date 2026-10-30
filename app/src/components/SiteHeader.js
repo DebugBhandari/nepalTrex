@@ -8,6 +8,7 @@ import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonIcon from '@mui/icons-material/Person';
+import PlaceIcon from '@mui/icons-material/Place';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -41,12 +42,14 @@ function initialsFromName(value) {
 }
 
 function normalizeHandle(value) {
-  return (value || '')
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'user';
+  return (
+    (value || '')
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'user'
+  );
 }
 
 export default function SiteHeader() {
@@ -60,11 +63,15 @@ export default function SiteHeader() {
   const [myPurchases, setMyPurchases] = useState([]);
   const [assignedOrders, setAssignedOrders] = useState([]);
 
-  const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
+  const isAdminOrSuperUser = ['admin', 'superUser'].includes(
+    session?.user?.role || ''
+  );
   const isSuperUser = session?.user?.role === 'superUser';
   const isUserMenuOpen = Boolean(userMenuAnchor);
   const isOrdersOpen = Boolean(ordersAnchor);
-  const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
+  const profileHandle = normalizeHandle(
+    session?.user?.name || (session?.user?.email || '').split('@')[0]
+  );
   const activePurchases = myPurchases.filter(
     (o) => !['completed', 'declined', 'cancelled'].includes(o.status)
   );
@@ -128,12 +135,23 @@ export default function SiteHeader() {
   }, [status, session?.user?.role]);
 
   return (
-    <AppBar position="sticky" elevation={0} sx={{ backdropFilter: 'blur(8px)' }}>
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{ backdropFilter: 'blur(8px)' }}
+    >
       <Toolbar>
         <Box
           component={Link}
           href="/"
-          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.3, minWidth: 0, textDecoration: 'none', mr: { xs: 0.5, sm: 1.25 } }}
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.3,
+            minWidth: 0,
+            textDecoration: 'none',
+            mr: { xs: 0.5, sm: 1.25 },
+          }}
         >
           <NepalTrexLogo width={120} />
         </Box>
@@ -148,9 +166,24 @@ export default function SiteHeader() {
                 component={Link}
                 href="/stays/checkout"
                 aria-label="Open cart"
-                sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
+                sx={(theme) => ({
+                  mr: 0.5,
+                  width: 42,
+                  height: 42,
+                  border: '1px solid',
+                  borderColor: 'transparent',
+                  borderRadius: 1.5,
+                  '&:hover': {
+                    borderColor: theme.palette.divider,
+                    backgroundColor: 'action.hover',
+                  },
+                })}
               >
-                <Badge badgeContent={getCartTotals().totalItems} color="error" max={99}>
+                <Badge
+                  badgeContent={getCartTotals().totalItems}
+                  color="error"
+                  max={99}
+                >
                   <ShoppingCartIcon sx={{ fontSize: 24 }} />
                 </Badge>
               </IconButton>
@@ -160,10 +193,26 @@ export default function SiteHeader() {
               color="inherit"
               onClick={(event) => setWishlistAnchor(event.currentTarget)}
               aria-label="Open wishlist"
-              sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
+              sx={(theme) => ({
+                mr: 0.5,
+                width: 42,
+                height: 42,
+                border: '1px solid',
+                borderColor: 'transparent',
+                borderRadius: 1.5,
+                '&:hover': {
+                  borderColor: theme.palette.divider,
+                  backgroundColor: 'action.hover',
+                },
+              })}
             >
               <Badge badgeContent={wishlistTreks.length} color="error" max={99}>
-                <FavoriteIcon sx={{ fontSize: 24, color: wishlistTreks.length > 0 ? '#ef4444' : 'inherit' }} />
+                <FavoriteIcon
+                  sx={{
+                    fontSize: 24,
+                    color: wishlistTreks.length > 0 ? '#ef4444' : 'inherit',
+                  }}
+                />
               </Badge>
             </IconButton>
           </>
@@ -175,7 +224,18 @@ export default function SiteHeader() {
               color="inherit"
               onClick={(event) => setOrdersAnchor(event.currentTarget)}
               aria-label="Open notifications"
-              sx={(theme) => ({ mr: 0.5, width: 42, height: 42, border: '1px solid', borderColor: 'transparent', borderRadius: 1.5, '&:hover': { borderColor: theme.palette.divider, backgroundColor: 'action.hover' } })}
+              sx={(theme) => ({
+                mr: 0.5,
+                width: 42,
+                height: 42,
+                border: '1px solid',
+                borderColor: 'transparent',
+                borderRadius: 1.5,
+                '&:hover': {
+                  borderColor: theme.palette.divider,
+                  backgroundColor: 'action.hover',
+                },
+              })}
             >
               <Badge badgeContent={notificationCount} color="error" max={99}>
                 <NotificationsNoneIcon sx={{ fontSize: 24 }} />
@@ -188,7 +248,9 @@ export default function SiteHeader() {
               onClose={() => setOrdersAnchor(null)}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{ sx: { width: 360, maxWidth: 'calc(100vw - 24px)' } }}
+              PaperProps={{
+                sx: { width: 360, maxWidth: 'calc(100vw - 24px)' },
+              }}
             >
               {/* My Purchases section */}
               {activePurchases.length > 0 && (
@@ -202,16 +264,32 @@ export default function SiteHeader() {
                   key={`purchase-${order.id}`}
                   onClick={() => {
                     setOrdersAnchor(null);
-                    router.push(`/user/${profileHandle}?orderId=${encodeURIComponent(order.id)}`);
+                    router.push(
+                      `/user/${profileHandle}?orderId=${encodeURIComponent(
+                        order.id
+                      )}`
+                    );
                   }}
                   sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
                 >
                   <Box>
-                    <Typography variant="body2" fontWeight={700}>{order.stayName || 'Order'}</Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice || 0).toLocaleString()}
+                    <Typography variant="body2" fontWeight={700}>
+                      {order.stayName || 'Order'}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize' }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                    >
+                      {order.quantity} item{order.quantity === 1 ? '' : 's'} ·
+                      NPR {Number(order.totalPrice || 0).toLocaleString()}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      sx={{ textTransform: 'capitalize' }}
+                    >
                       {order.status}
                     </Typography>
                   </Box>
@@ -219,7 +297,9 @@ export default function SiteHeader() {
               ))}
 
               {/* Section divider (only if both sections have items) */}
-              {isAdminOrSuperUser && activePurchases.length > 0 && pendingAssigned.length > 0 && <Divider />}
+              {isAdminOrSuperUser &&
+                activePurchases.length > 0 &&
+                pendingAssigned.length > 0 && <Divider />}
 
               {/* Orders section — admins/superUsers only */}
               {isAdminOrSuperUser && pendingAssigned.length > 0 && (
@@ -228,26 +308,42 @@ export default function SiteHeader() {
                 </MenuItem>
               )}
               {isAdminOrSuperUser && pendingAssigned.length > 0 && <Divider />}
-              {isAdminOrSuperUser && pendingAssigned.map((order) => (
-                <MenuItem
-                  key={`order-${order.id}`}
-                  onClick={() => {
-                    setOrdersAnchor(null);
-                    router.push(`/admin?orderId=${encodeURIComponent(order.id)}`);
-                  }}
-                  sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
-                >
-                  <Box>
-                    <Typography variant="body2" fontWeight={700}>{order.stayName || 'Order'}</Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {order.customerName || 'Guest'} · {order.quantity} item{order.quantity === 1 ? '' : 's'} · NPR {Number(order.totalPrice || 0).toLocaleString()}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ textTransform: 'capitalize' }}>
-                      {order.status}
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              ))}
+              {isAdminOrSuperUser &&
+                pendingAssigned.map((order) => (
+                  <MenuItem
+                    key={`order-${order.id}`}
+                    onClick={() => {
+                      setOrdersAnchor(null);
+                      router.push(
+                        `/admin?orderId=${encodeURIComponent(order.id)}`
+                      );
+                    }}
+                    sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
+                  >
+                    <Box>
+                      <Typography variant="body2" fontWeight={700}>
+                        {order.stayName || 'Order'}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                      >
+                        {order.customerName || 'Guest'} · {order.quantity} item
+                        {order.quantity === 1 ? '' : 's'} · NPR{' '}
+                        {Number(order.totalPrice || 0).toLocaleString()}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        sx={{ textTransform: 'capitalize' }}
+                      >
+                        {order.status}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
 
               {/* Empty state */}
               {notificationCount === 0 && (
@@ -258,49 +354,81 @@ export default function SiteHeader() {
         )}
 
         {/* Wishlist popover */}
-        {status === 'authenticated' && <Popover
-          open={Boolean(wishlistAnchor)}
-          anchorEl={wishlistAnchor}
-          onClose={() => setWishlistAnchor(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          PaperProps={{ sx: { width: 310, maxHeight: 420, display: 'flex', flexDirection: 'column', borderRadius: 2 } }}
-        >
-          <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <FavoriteIcon sx={{ color: '#ef4444', fontSize: 18 }} />
-            <Typography variant="subtitle1" fontWeight={700}>
-              Wishlist · {wishlistTreks.length} saved
-            </Typography>
-          </Box>
-          <Divider />
-          {wishlistTreks.length === 0 ? (
-            <Box sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                No treks saved yet. Click the heart on any trek to save it.
+        {status === 'authenticated' && (
+          <Popover
+            open={Boolean(wishlistAnchor)}
+            anchorEl={wishlistAnchor}
+            onClose={() => setWishlistAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                width: 310,
+                maxHeight: 420,
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 2,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                px: 2,
+                py: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <FavoriteIcon sx={{ color: '#ef4444', fontSize: 18 }} />
+              <Typography variant="subtitle1" fontWeight={700}>
+                Wishlist · {wishlistTreks.length} saved
               </Typography>
             </Box>
-          ) : (
-            <List dense disablePadding sx={{ overflow: 'auto', flex: 1 }}>
-              {wishlistTreks.map((trek) => (
-                <ListItem
-                  key={trek.slug}
-                  divider
-                  component={Link}
-                  href={`/treks/${trek.slug}`}
-                  onClick={() => setWishlistAnchor(null)}
-                  sx={{ textDecoration: 'none', color: 'inherit', '&:hover': { bgcolor: 'action.hover' }, cursor: 'pointer' }}
-                >
-                  <ListItemText
-                    primary={trek.name || trek.slug}
-                    secondary={[trek.region, trek.level, trek.durationDays ? `${trek.durationDays} days` : null].filter(Boolean).join(' · ')}
-                    primaryTypographyProps={{ fontWeight: 600, variant: 'body2' }}
-                    secondaryTypographyProps={{ variant: 'caption' }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </Popover>}
+            <Divider />
+            {wishlistTreks.length === 0 ? (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No treks saved yet. Click the heart on any trek to save it.
+                </Typography>
+              </Box>
+            ) : (
+              <List dense disablePadding sx={{ overflow: 'auto', flex: 1 }}>
+                {wishlistTreks.map((trek) => (
+                  <ListItem
+                    key={trek.slug}
+                    divider
+                    component={Link}
+                    href={`/treks/${trek.slug}`}
+                    onClick={() => setWishlistAnchor(null)}
+                    sx={{
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      '&:hover': { bgcolor: 'action.hover' },
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <ListItemText
+                      primary={trek.name || trek.slug}
+                      secondary={[
+                        trek.region,
+                        trek.level,
+                        trek.durationDays ? `${trek.durationDays} days` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                      primaryTypographyProps={{
+                        fontWeight: 600,
+                        variant: 'body2',
+                      }}
+                      secondaryTypographyProps={{ variant: 'caption' }}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
+          </Popover>
+        )}
 
         {/* User menu */}
         {status === 'authenticated' ? (
@@ -321,7 +449,13 @@ export default function SiteHeader() {
               <Avatar
                 src={session?.user?.image || ''}
                 alt={session?.user?.name || session?.user?.email || 'User'}
-                sx={{ width: 36, height: 36, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  bgcolor: 'primary.main',
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
               >
                 {initialsFromName(session?.user?.name || session?.user?.email)}
               </Avatar>
@@ -333,30 +467,62 @@ export default function SiteHeader() {
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <MenuItem component={Link} href="/" onClick={() => setUserMenuAnchor(null)}>
+              <MenuItem
+                component={Link}
+                href="/"
+                onClick={() => setUserMenuAnchor(null)}
+              >
                 <HomeIcon fontSize="small" style={{ marginRight: 8 }} />
                 Home
               </MenuItem>
-              <MenuItem component={Link} href="/stays" onClick={() => setUserMenuAnchor(null)}>
+              <MenuItem
+                component={Link}
+                href="/stays"
+                onClick={() => setUserMenuAnchor(null)}
+              >
                 <HotelRoundedIcon fontSize="small" style={{ marginRight: 8 }} />
                 Stays
               </MenuItem>
-              <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}>
+              <MenuItem
+                component={Link}
+                href={`/user/${profileHandle}`}
+                onClick={() => setUserMenuAnchor(null)}
+              >
                 <PersonIcon fontSize="small" style={{ marginRight: 8 }} />
                 Profile
               </MenuItem>
-              <MenuItem component={Link} href="/reservations" onClick={() => setUserMenuAnchor(null)}>
+              <MenuItem
+                component={Link}
+                href="/reservations"
+                onClick={() => setUserMenuAnchor(null)}
+              >
                 <HotelRoundedIcon fontSize="small" style={{ marginRight: 8 }} />
                 My Reservations
               </MenuItem>
+              <MenuItem
+                component={Link}
+                href="/attempts"
+                onClick={() => setUserMenuAnchor(null)}
+              >
+                <PlaceIcon fontSize="small" style={{ marginRight: 8 }} />
+                My Trek Attempts
+              </MenuItem>
               {isSuperUser && (
-                <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}>
+                <MenuItem
+                  component={Link}
+                  href="/dashboard"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
                   <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
                   Super Dashboard
                 </MenuItem>
               )}
               {isAdminOrSuperUser && (
-                <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}>
+                <MenuItem
+                  component={Link}
+                  href="/admin"
+                  onClick={() => setUserMenuAnchor(null)}
+                >
                   <DashboardIcon fontSize="small" style={{ marginRight: 8 }} />
                   Admin Dashboard
                 </MenuItem>
@@ -373,7 +539,13 @@ export default function SiteHeader() {
             </Menu>
           </>
         ) : (
-          <AppButton component={Link} href="/auth/signin" startIcon={<LoginIcon />} variant="outlined" size="small">
+          <AppButton
+            component={Link}
+            href="/auth/signin"
+            startIcon={<LoginIcon />}
+            variant="outlined"
+            size="small"
+          >
             Login
           </AppButton>
         )}
