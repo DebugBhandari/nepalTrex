@@ -1,17 +1,10 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/router';
 import { getServerSession } from 'next-auth/next';
-import { signOut, useSession } from 'next-auth/react';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import HomeIcon from '@mui/icons-material/Home';
-import LoginIcon from '@mui/icons-material/Login';
-import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
+import { useSession } from 'next-auth/react';
 import {
   Alert,
-  AppBar,
   Avatar,
   Box,
   Card,
@@ -19,28 +12,27 @@ import {
   Chip,
   Container,
   Divider,
-  FormControl,
-  IconButton,
-  InputLabel,
-  Menu,
-  MenuItem,
-  Select,
   Stack,
   Tab,
   Tabs,
   TextField,
-  Toolbar,
   Typography,
 } from '@mui/material';
 import AppButton from '../../components/AppButton';
 import { authOptions } from '../../lib/auth-options';
-import NepalTrexLogo from '../../components/NepalTrexLogo';
 import { query } from '../../lib/db';
 import SiteHeader from '../../components/SiteHeader';
 
+const RESERVATION_STATUS_COLORS = {
+  pending: 'warning',
+  confirmed: 'success',
+  declined: 'error',
+  cancelled: 'default',
+  completed: 'primary',
+};
+
 function normalizeHandle(value) {
-  return (value || '')
-    .toString()
+  return String(value || '')
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -48,114 +40,67 @@ function normalizeHandle(value) {
 }
 
 function initialsFromName(value) {
-  const text = String(value || '').trim();
-  if (!text) return 'NT';
-  const parts = text.split(/\s+/).filter(Boolean);
-  const first = parts[0]?.[0] || '';
-  const second = parts[1]?.[0] || '';
-  return `${first}${second}`.toUpperCase() || first.toUpperCase() || 'NT';
+  const parts = String(value || '').trim().split(/\s+/).filter(Boolean);
+  return `${parts[0]?.[0] || 'N'}${parts[1]?.[0] || 'T'}`.toUpperCase();
 }
 
-function orderChipColor(status) {
-  if (status === 'completed') return 'success';
-  if (status === 'accepted') return 'primary';
-  if (status === 'declined') return 'error';
-  if (status === 'cancelled') return 'warning';
-  return 'default';
+function formatDate(value) {
+  if (!value) return '—';
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export default function UserProfilePage({ profile, wishlistItems, initialOrders }) {
-  const router = useRouter();
-  const { data: session, status } = useSession();
+export default function UserProfilePage({ profile, wishlistItems, initialReservations }) {
+  const { data: session } = useSession();
   const [statusMessage, setStatusMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const [displayName, setDisplayName] = useState(profile.name || '');
   const [imageUrl, setImageUrl] = useState(profile.imageUrl || '');
-  const [orders, setOrders] = useState(initialOrders || []);
-  const [orderFilter, setOrderFilter] = useState('all');
-  const [updatingOrderId, setUpdatingOrderId] = useState('');
-  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window === 'undefined') return 'purchases';
+    if (typeof window === 'undefined') return 'reservations';
     const saved = window.localStorage.getItem('nepaltrex-profile-active-tab');
-    return ['purchases', 'wishlist'].includes(saved) ? saved : 'purchases';
+    return ['reservations', 'wishlist'].includes(saved) ? saved : 'reservations';
   });
 
   const ownProfile = session?.user?.id && session.user.id === profile.id;
-  const isAdminOrSuperUser = ['admin', 'superUser'].includes(session?.user?.role || '');
-  const isSuperUser = session?.user?.role === 'superUser';
-  const isUserMenuOpen = Boolean(userMenuAnchor);
-  const profileHandle = normalizeHandle(session?.user?.name || (session?.user?.email || '').split('@')[0]);
-
   const effectiveImage = imageUrl || (ownProfile && profile.provider === 'google' ? session?.user?.image || '' : '');
-  const filteredOrders = useMemo(
-    () =>
-      orderFilter === 'active'
-        ? orders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status))
-        : orders,
-    [orderFilter, orders]
+  const activeReservations = useMemo(
+    () => (initialReservations || []).filter((reservation) => ['pending', 'confirmed'].includes(reservation.status)),
+    [initialReservations]
   );
 
   useEffect(() => {
-    const queryOrderId = router.query?.orderId;
-    if (!queryOrderId || !orders.length) return;
-
-    setActiveTab('purchases');
-
-    const timer = setTimeout(() => {
-      const targetElement = document.getElementById(`order-${String(queryOrderId)}`);
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [router.query?.orderId, orders]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem('nepaltrex-profile-active-tab', activeTab);
+    if (typeof window !== 'undefined') window.localStorage.setItem('nepaltrex-profile-active-tab', activeTab);
   }, [activeTab]);
 
   useEffect(() => {
-    if (!ownProfile && activeTab === 'purchases') {
-      setActiveTab('wishlist');
-    }
+    if (!ownProfile && activeTab === 'reservations') setActiveTab('wishlist');
   }, [activeTab, ownProfile]);
 
-  const uploadImage = async (event) => {
+  const uploadImage = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(typeof reader.result === 'string' ? reader.result : '');
-    };
+    reader.onload = () => setImageUrl(typeof reader.result === 'string' ? reader.result : '');
     reader.readAsDataURL(file);
   };
 
   const saveProfile = async () => {
     setSaving(true);
     setStatusMessage('');
-
     try {
       const response = await fetch('/api/users/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          displayName,
-          imageDataUrl: imageUrl,
-        }),
+        body: JSON.stringify({ displayName, imageDataUrl: imageUrl }),
       });
-
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update profile');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Failed to update profile');
+      setDisplayName(data.profile.displayName || '');
       setImageUrl(data.profile.imageUrl || '');
-      setDisplayName(data.profile.name || displayName);
-      setStatusMessage('Profile updated successfully.');
+      setStatusMessage('Profile saved.');
     } catch (error) {
       setStatusMessage(error.message || 'Failed to update profile');
     } finally {
@@ -163,97 +108,35 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
     }
   };
 
-  const cancelOrder = async (orderId) => {
-    if (!ownProfile) return;
-
-    setUpdatingOrderId(orderId);
-    setStatusMessage('');
-    try {
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'cancelled' }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to cancel order');
-      }
-
-      setOrders((prev) => prev.map((order) => (order.id === orderId ? { ...order, status: 'cancelled' } : order)));
-      setStatusMessage('Order cancelled successfully.');
-    } catch (error) {
-      setStatusMessage(error.message || 'Failed to cancel order');
-    } finally {
-      setUpdatingOrderId('');
-    }
-  };
-
   return (
     <>
-      <Head>
-        <title>{profile.name || profile.username || 'User'} | NepalTrex</title>
-      </Head>
-
+      <Head><title>{profile.name || 'Profile'} | NepalTrex</title></Head>
       <SiteHeader />
-
-      <Box
-        sx={(theme) => ({
-          minHeight: '100vh',
-          py: 4,
-          background:
-            theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(72,202,228,0.3) 0%, transparent 32%), linear-gradient(160deg, #03045E 0%, #023E8A 46%, #0077B6 100%)'
-              : theme.palette.background.default,
-        })}
-      >
-        <Container maxWidth="lg">
-          <Card sx={{ mb: 2 }}>
-            <CardContent>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
-                <Avatar
-                  src={effectiveImage}
-                  sx={{ width: 88, height: 88, bgcolor: effectiveImage ? 'transparent' : 'primary.main', color: effectiveImage ? 'inherit' : 'white', fontSize: 32, fontWeight: 700 }}
-                >
-                  {!effectiveImage && (profile.name || profile.username || 'U').charAt(0).toUpperCase()}
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+        <Stack spacing={3}>
+          <Card>
+            <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} alignItems={{ sm: 'center' }}>
+                <Avatar src={effectiveImage || undefined} sx={{ width: 88, height: 88, bgcolor: 'primary.main', fontWeight: 800, fontSize: 28 }}>
+                  {initialsFromName(profile.name)}
                 </Avatar>
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="h4">{displayName || profile.username || 'User'}</Typography>
-                  <Typography color="text.secondary">@{profile.handle}</Typography>
-                  <Typography color="text.secondary">{profile.email}</Typography>
+                  <Typography variant="h3" sx={{ fontSize: { xs: '2rem', md: '2.5rem' } }}>{profile.name || profile.username}</Typography>
+                  <Typography color="text.secondary" sx={{ mt: 0.45 }}>@{profile.handle}</Typography>
+                  {ownProfile && <Typography color="text.secondary" sx={{ mt: 0.8 }}>{profile.email}</Typography>}
                 </Box>
+                {ownProfile && <Chip label="Your profile" color="primary" variant="outlined" />}
               </Stack>
 
-              {statusMessage && (
-                <Alert sx={{ mt: 2 }} severity="info">
-                  {statusMessage}
-                </Alert>
-              )}
-
               {ownProfile && (
-                <Stack spacing={1.2} sx={{ mt: 2 }}>
-                  <TextField
-                    label="Display Name"
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                    fullWidth
-                  />
-
+                <Stack spacing={1.5} sx={{ mt: 3 }}>
+                  {statusMessage && <Alert severity={statusMessage === 'Profile saved.' ? 'success' : 'error'} onClose={() => setStatusMessage('')}>{statusMessage}</Alert>}
+                  <TextField label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} fullWidth />
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} alignItems={{ sm: 'center' }}>
-                    <AppButton variant="outlined" component="label">
-                      Upload Profile Picture
-                      <input hidden type="file" accept="image/*" onChange={uploadImage} />
-                    </AppButton>
-                    {profile.provider === 'google' && (
-                      <Typography variant="caption" color="text.secondary">
-                        Google photo is used by default until you upload your own.
-                      </Typography>
-                    )}
+                    <AppButton variant="outlined" component="label">Upload profile picture<input hidden type="file" accept="image/*" onChange={uploadImage} /></AppButton>
+                    {profile.provider === 'google' && <Typography variant="caption" color="text.secondary">Your Google image is used until you upload a replacement.</Typography>}
                   </Stack>
-
-                  <AppButton variant="contained" onClick={saveProfile} disabled={saving} sx={{ alignSelf: 'flex-start' }}>
-                    {saving ? 'Saving...' : 'Save Profile'}
-                  </AppButton>
+                  <AppButton onClick={saveProfile} disabled={saving} sx={{ alignSelf: 'flex-start' }}>{saving ? 'Saving…' : 'Save profile'}</AppButton>
                 </Stack>
               )}
             </CardContent>
@@ -261,244 +144,82 @@ export default function UserProfilePage({ profile, wishlistItems, initialOrders 
 
           <Card>
             <CardContent sx={{ pb: 0 }}>
-              <Tabs
-                value={activeTab}
-                onChange={(_, value) => setActiveTab(value)}
-                variant="scrollable"
-                allowScrollButtonsMobile
-              >
-                {ownProfile && <Tab value="purchases" label="Purchases" />}
+              <Tabs value={activeTab} onChange={(_, value) => setActiveTab(value)} variant="scrollable" allowScrollButtonsMobile>
+                {ownProfile && <Tab value="reservations" label={`My reservations${activeReservations.length ? ` (${activeReservations.length})` : ''}`} />}
                 <Tab value="wishlist" label="Wishlist" />
               </Tabs>
             </CardContent>
-
             <Divider />
-
             <CardContent>
-              {activeTab === 'purchases' && (
-                <>
-                  <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1.5 }}>
-                    <FormControl size="small" sx={{ minWidth: 170 }}>
-                      <InputLabel id="profile-order-filter-label">Order Filter</InputLabel>
-                      <Select
-                        labelId="profile-order-filter-label"
-                        label="Order Filter"
-                        value={orderFilter}
-                        onChange={(event) => setOrderFilter(event.target.value)}
-                      >
-                        <MenuItem value="all">All Orders</MenuItem>
-                        <MenuItem value="active">Active Orders</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Stack>
-
-                  <Stack spacing={1.5}>
-                    {filteredOrders.map((order) => (
-                      <Card key={order.id} id={`order-${order.id}`} variant="outlined">
-                        <CardContent>
-                          <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography variant="subtitle1">{order.stayName || 'N/A'}</Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {new Date(order.createdAt).toLocaleDateString()} · {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                              </Typography>
-                              <Stack spacing={0.5} sx={{ mt: 1 }}>
-                                {order.items.map((item, idx) => (
-                                  <Typography key={idx} variant="body2" color="text.secondary">
-                                    {item.menuItemName} x {item.quantity}
-                                  </Typography>
-                                ))}
-                              </Stack>
-                            </Box>
-
-                            <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={1}>
-                              <Chip
-                                label={order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                color={orderChipColor(order.status)}
-                                variant="outlined"
-                                size="small"
-                              />
-                              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                Rs. {order.totalPrice.toLocaleString()}
-                              </Typography>
-                              {ownProfile && !['completed', 'cancelled'].includes(order.status) && (
-                                <AppButton
-                                  size="small"
-                                  variant="outlined"
-                                  color="error"
-                                  disabled={updatingOrderId === order.id}
-                                  onClick={() => cancelOrder(order.id)}
-                                >
-                                  {updatingOrderId === order.id ? 'Cancelling...' : 'Cancel Order'}
-                                </AppButton>
-                              )}
-                            </Stack>
-                          </Stack>
-                        </CardContent>
-                      </Card>
-                    ))}
-
-                    {filteredOrders.length === 0 && (
-                      <Typography color="text.secondary">No purchases yet.</Typography>
-                    )}
-                  </Stack>
-                </>
-              )}
-
-              {activeTab === 'wishlist' && (
-                <Stack spacing={1.1}>
-                  {wishlistItems.map((item) => (
-                    <Card key={item.slug} variant="outlined">
-                      <CardContent sx={{ py: 1.2, '&:last-child': { pb: 1.2 } }}>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1}>
+              {activeTab === 'reservations' && (
+                <Stack spacing={1.5}>
+                  {initialReservations.length === 0 ? (
+                    <Box sx={{ py: 4, textAlign: 'center' }}>
+                      <Typography variant="h6" fontWeight={800}>No stay reservations yet</Typography>
+                      <Typography color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>Find a place to rest along your route and send a request to its host.</Typography>
+                      <AppButton component={Link} href="/stays">Find stays</AppButton>
+                    </Box>
+                  ) : initialReservations.map((reservation) => (
+                    <Card key={reservation.id} variant="outlined">
+                      <CardContent>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5}>
                           <Box>
-                            <Typography variant="subtitle1">{item.name || item.slug}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {item.region ? `${item.region} · ` : ''}{item.level || 'Unknown difficulty'}{item.durationDays ? ` · ${item.durationDays} days` : ''}
-                            </Typography>
+                            <Typography variant="subtitle1" fontWeight={800}>{reservation.stayName || 'Stay reservation'}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.45 }}>{formatDate(reservation.checkInDate)} – {formatDate(reservation.checkOutDate)} · {reservation.guestCount} guest{reservation.guestCount === 1 ? '' : 's'}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{reservation.items.map((item) => `${item.roomName} × ${item.units}`).join(' · ')}</Typography>
+                            {reservation.hostNote && <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>Host note: {reservation.hostNote}</Typography>}
                           </Box>
-                          <AppButton component={Link} href={`/treks/${item.slug}`} variant="outlined" size="small">
-                            Open Trek
-                          </AppButton>
+                          <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
+                            <Chip label={reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)} color={RESERVATION_STATUS_COLORS[reservation.status] || 'default'} size="small" />
+                            <Typography fontWeight={800}>NPR {Number(reservation.totalPrice || 0).toLocaleString()}</Typography>
+                          </Stack>
                         </Stack>
                       </CardContent>
                     </Card>
                   ))}
-
-                  {wishlistItems.length === 0 && (
-                    <Typography color="text.secondary">No wishlist items yet.</Typography>
-                  )}
+                </Stack>
+              )}
+              {activeTab === 'wishlist' && (
+                <Stack spacing={1.5}>
+                  {wishlistItems.length === 0 ? <Typography color="text.secondary">No saved treks yet.</Typography> : wishlistItems.map((item) => (
+                    <Card key={item.slug} variant="outlined"><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography variant="subtitle1" fontWeight={800}>{item.name}</Typography><Typography variant="body2" color="text.secondary">{[item.region, item.durationDays ? `${item.durationDays} days` : '', item.level].filter(Boolean).join(' · ')}</Typography></Box><AppButton size="small" variant="outlined" component={Link} href={`/treks/${item.slug}`}>View trek</AppButton></Stack></CardContent></Card>
+                  ))}
                 </Stack>
               )}
             </CardContent>
           </Card>
-        </Container>
-      </Box>
+        </Stack>
+      </Container>
     </>
   );
 }
 
 export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
-  const requestedHandle = normalizeHandle(context.params?.name || '');
-
-  if (!requestedHandle) {
-    return { notFound: true };
-  }
-
-  const userResult = await query(
-    `
-      SELECT id, username, email, display_name, role, provider, profile_image_url
-      FROM users
-      WHERE trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(username, ''), NULLIF(display_name, ''), split_part(COALESCE(email, ''), '@', 1))), '[^a-z0-9]+', '-', 'g')) = $1
-      LIMIT 1
-    `,
-    [requestedHandle]
+  const handle = normalizeHandle(context.params?.name);
+  const profileResult = await query(
+    `SELECT id, username, display_name, email, role, provider, profile_image_url FROM users WHERE lower(COALESCE(username, '')) = $1 OR lower(COALESCE(display_name, '')) = $1 LIMIT 1`,
+    [handle]
   );
-
-  if (userResult.rows.length === 0) {
-    return { notFound: true };
-  }
-
-  const row = userResult.rows[0];
-  const baseName = row.username || row.display_name || (row.email || '').split('@')[0] || 'user';
-  const handle = normalizeHandle(baseName);
+  const row = profileResult.rows[0];
+  if (!row) return { notFound: true };
 
   const wishlistResult = await query(
-    `
-      SELECT
-        w.trek_slug,
-        t.name,
-        t.duration_days,
-        t.level,
-        t.region
-      FROM user_trek_wishlists w
-      LEFT JOIN treks t ON trim(both '-' from regexp_replace(lower(t.name), '[^a-z0-9]+', '-', 'g')) = w.trek_slug
-      WHERE w.user_id = $1
-      ORDER BY w.created_at DESC
-    `,
+    `SELECT w.trek_slug, t.name, t.duration_days, t.level, t.region FROM user_trek_wishlists w LEFT JOIN treks t ON trim(both '-' from regexp_replace(lower(t.name), '[^a-z0-9]+', '-', 'g')) = w.trek_slug WHERE w.user_id = $1 ORDER BY w.created_at DESC`,
     [row.id]
   );
-
-  const groupedOrders = new Map();
-  if (session?.user?.id && String(session.user.id) === String(row.id) && row.email) {
-    const ordersResult = await query(
-      `
-        SELECT o.id, o.order_group_id, o.menu_item_name, o.menu_item_category, o.unit_price, o.quantity, o.total_price, o.customer_name, o.customer_email, o.customer_phone, o.notes, o.status, o.created_at, s.name AS stay_name, s.id AS stay_id
-        FROM orders o JOIN stays s ON s.id = o.stay_id
-        WHERE LOWER(COALESCE(o.customer_email, '')) = LOWER($1)
-        ORDER BY o.created_at DESC
-      `,
-      [row.email]
-    );
-
-    for (const orderRow of ordersResult.rows) {
-      const groupId = orderRow.order_group_id || orderRow.id;
-      const groupKey = String(groupId);
-
-      if (!groupedOrders.has(groupKey)) {
-        groupedOrders.set(groupKey, {
-          id: groupKey,
-          orderGroupId: orderRow.order_group_id || null,
-          stayId: orderRow.stay_id,
-          stayName: orderRow.stay_name,
-          customerName: orderRow.customer_name,
-          customerEmail: orderRow.customer_email || '',
-          customerPhone: orderRow.customer_phone || '',
-          notes: orderRow.notes || '',
-          createdAt: orderRow.created_at,
-          status: orderRow.status,
-          totalPrice: 0,
-          quantity: 0,
-          items: [],
-        });
-      }
-
-      const group = groupedOrders.get(groupKey);
-      group.items.push({
-        id: orderRow.id,
-        menuItemName: orderRow.menu_item_name,
-        menuItemCategory: orderRow.menu_item_category,
-        unitPrice: Number(orderRow.unit_price),
-        quantity: Number(orderRow.quantity),
-        totalPrice: Number(orderRow.total_price),
-        status: orderRow.status,
-      });
-      group.totalPrice += Number(orderRow.total_price);
-      group.quantity += Number(orderRow.quantity);
-
-      if (orderRow.status === 'completed') {
-        group.status = 'completed';
-      } else if (orderRow.status === 'declined' && !['completed'].includes(group.status)) {
-        group.status = 'declined';
-      } else if (orderRow.status === 'cancelled' && !['completed', 'declined'].includes(group.status)) {
-        group.status = 'cancelled';
-      } else if (orderRow.status === 'accepted' && group.status === 'pending') {
-        group.status = 'accepted';
-      }
-    }
-  }
+  const reservationsResult = session?.user?.id && String(session.user.id) === String(row.id)
+    ? await query(
+      `SELECT r.id, r.check_in_date, r.check_out_date, r.guest_count, r.status, r.host_note, r.total_price, s.name AS stay_name, COALESCE(json_agg(json_build_object('roomName', ri.room_name, 'units', ri.units)) FILTER (WHERE ri.id IS NOT NULL), '[]'::json) AS items FROM reservations r JOIN stays s ON s.id = r.stay_id LEFT JOIN reservation_items ri ON ri.reservation_id = r.id WHERE r.customer_user_id = $1 GROUP BY r.id, s.id ORDER BY r.created_at DESC`,
+      [row.id]
+    )
+    : { rows: [] };
 
   return {
     props: {
-      profile: {
-        id: row.id,
-        username: row.username || '',
-        name: row.display_name || row.username || '',
-        email: row.email || '',
-        role: row.role || 'user',
-        provider: row.provider || 'credentials',
-        imageUrl: row.profile_image_url || '',
-        handle,
-      },
-      wishlistItems: wishlistResult.rows.map((item) => ({
-        slug: item.trek_slug,
-        name: item.name || item.trek_slug,
-        durationDays: item.duration_days || null,
-        level: item.level || '',
-        region: item.region || '',
-      })),
-      initialOrders: Array.from(groupedOrders.values()),
+      profile: { id: row.id, username: row.username || '', name: row.display_name || row.username || '', email: row.email || '', role: row.role || 'user', provider: row.provider || 'credentials', imageUrl: row.profile_image_url || '', handle },
+      wishlistItems: wishlistResult.rows.map((item) => ({ slug: item.trek_slug, name: item.name || item.trek_slug, durationDays: item.duration_days || null, level: item.level || '', region: item.region || '' })),
+      initialReservations: reservationsResult.rows.map((reservation) => ({ id: reservation.id, stayName: reservation.stay_name, checkInDate: reservation.check_in_date, checkOutDate: reservation.check_out_date, guestCount: Number(reservation.guest_count), status: reservation.status, hostNote: reservation.host_note || '', totalPrice: Number(reservation.total_price), items: Array.isArray(reservation.items) ? reservation.items.map((item) => ({ roomName: item.roomName, units: Number(item.units) })) : [] })),
     },
   };
 }

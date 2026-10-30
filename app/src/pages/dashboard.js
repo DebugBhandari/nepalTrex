@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { getToken } from 'next-auth/jwt';
 import { signOut } from 'next-auth/react';
@@ -9,7 +9,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
@@ -205,41 +204,11 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
   const [staySearch, setStaySearch] = useState('');
   const [stayPage, setStayPage] = useState(1);
 
-  const [orders, setOrders] = useState([]);
-  const [ordersLoaded, setOrdersLoaded] = useState(false);
-  const [notificationsAnchor, setNotificationsAnchor] = useState(null);
-
   const canManage = useMemo(() => user?.role === 'superUser', [user?.role]);
   const isSuperUser = user?.role === 'superUser';
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const isUserMenuOpen = Boolean(userMenuAnchor);
-  const isNotificationsOpen = Boolean(notificationsAnchor);
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
-  const pendingOrders = useMemo(() => orders.filter((order) => order.status === 'pending'), [orders]);
-
-  const fetchOrders = useCallback(async () => {
-    try {
-      const response = await fetch('/api/orders');
-      const data = await response.json();
-      const fetchedOrders = data.orders || [];
-
-      setOrders(fetchedOrders);
-      if (!ordersLoaded) {
-        setOrdersLoaded(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      if (!ordersLoaded) {
-        setOrdersLoaded(true);
-      }
-    }
-  }, [ordersLoaded]);
-
-  useEffect(() => {
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
-  }, [fetchOrders]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -349,11 +318,6 @@ export default function DashboardPage({ user, treks, stays = [], ownerCandidates
     const startIndex = (stayPage - 1) * STAYS_PER_PAGE;
     return filteredStays.slice(startIndex, startIndex + STAYS_PER_PAGE);
   }, [filteredStays, stayPage]);
-
-  const openOrderFromMenu = (orderId) => {
-    setNotificationsAnchor(null);
-    router.push(`/admin?orderId=${encodeURIComponent(orderId)}`);
-  };
 
   const fetchUsers = useCallback(
     async (search = '') => {

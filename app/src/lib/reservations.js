@@ -39,6 +39,16 @@ export function serializeReservation(row) {
     totalPrice: Number(row.total_price),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    events: Array.isArray(row.events) ? row.events.map((event) => ({
+      id: event.id,
+      eventType: event.eventType,
+      previousStatus: event.previousStatus,
+      nextStatus: event.nextStatus,
+      note: event.note || '',
+      createdAt: event.createdAt,
+      actorName: event.actorName || 'System',
+      actorRole: event.actorRole || '',
+    })) : [],
     items: Array.isArray(row.items) ? row.items.map((item) => ({
       roomId: item.roomId,
       roomName: item.roomName,

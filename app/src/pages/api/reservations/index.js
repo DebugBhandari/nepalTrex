@@ -25,7 +25,21 @@ async function listReservationsForHost(userId, isSuperUser) {
           json_agg(json_build_object('roomId', ri.room_id, 'roomName', ri.room_name, 'nightlyPrice', ri.nightly_price, 'units', ri.units))
           FILTER (WHERE ri.id IS NOT NULL),
           '[]'::json
-        ) AS items
+        ) AS items,
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object(
+              'id', re.id, 'eventType', re.event_type, 'previousStatus', re.previous_status,
+              'nextStatus', re.next_status, 'note', re.note, 'createdAt', re.created_at,
+              'actorName', COALESCE(re.actor_name, NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1), 'System'),
+              'actorRole', COALESCE(re.actor_role, u.role, '')
+            ) ORDER BY re.created_at ASC)
+            FROM reservation_events re
+            LEFT JOIN users u ON u.id = re.actor_user_id
+            WHERE re.reservation_id = r.id
+          ),
+          '[]'::json
+        ) AS events
       FROM reservations r
       JOIN stays s ON s.id = r.stay_id
       LEFT JOIN reservation_items ri ON ri.reservation_id = r.id
@@ -168,7 +182,14 @@ export default async function handler(req, res) {
         [reservation.id, room.id, room.name, room.price_per_night, normalizedUnits]
       );
       await client.query(
-        `INSERT INTO reservation_events (reservation_id, actor_user_id, event_type, next_status) VALUES ($1, $2, 'requested', 'pending')`,
+        `
+          INSERT INTO reservation_events (
+            reservation_id, actor_user_id, actor_name, actor_role, event_type, next_status
+          )
+          SELECT $1, u.id, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)), u.role, 'requested', 'pending'
+          FROM users u
+          WHERE u.id = $2
+        `,
         [reservation.id, session.user.id]
       );
 

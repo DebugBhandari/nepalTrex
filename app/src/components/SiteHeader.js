@@ -145,7 +145,8 @@ export default function SiteHeader() {
               <MenuItem component={Link} href="/reservations" onClick={() => setUserMenuAnchor(null)}><ReceiptLongRoundedIcon fontSize="small" sx={{ mr: 1 }} />My reservations</MenuItem>
               <MenuItem component={Link} href="/attempts" onClick={() => setUserMenuAnchor(null)}><SignpostRoundedIcon fontSize="small" sx={{ mr: 1 }} />My trek attempts</MenuItem>
               <MenuItem component={Link} href={`/user/${profileHandle}`} onClick={() => setUserMenuAnchor(null)}><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />My profile</MenuItem>
-              {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><DashboardRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}
+              {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><HotelRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}
+              {session?.user?.role === 'superUser' && <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}><DashboardRoundedIcon fontSize="small" sx={{ mr: 1 }} />Platform dashboard</MenuItem>}
               <MenuItem onClick={() => signOut({ callbackUrl: '/' })}><LogoutRoundedIcon fontSize="small" sx={{ mr: 1 }} />Sign out</MenuItem>
             </Menu>
           </>

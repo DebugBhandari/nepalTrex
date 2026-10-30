@@ -121,38 +121,6 @@ CREATE TABLE IF NOT EXISTS menu_items (
 
 CREATE INDEX IF NOT EXISTS menu_items_stay_id_idx ON menu_items(stay_id);
 
-CREATE TABLE IF NOT EXISTS orders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_group_id UUID,
-  stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
-  customer_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL,
-  menu_item_name TEXT NOT NULL,
-  menu_item_category TEXT NOT NULL CHECK (menu_item_category IN ('room', 'food')),
-  unit_price NUMERIC(10, 2) NOT NULL,
-  quantity INT NOT NULL CHECK (quantity > 0),
-  total_price NUMERIC(10, 2) NOT NULL,
-  customer_name TEXT NOT NULL,
-  customer_email TEXT,
-  customer_phone TEXT,
-  notes TEXT,
-  status TEXT NOT NULL DEFAULT 'pending',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE orders
-  ADD COLUMN IF NOT EXISTS order_group_id UUID;
-
-ALTER TABLE orders
-  ADD COLUMN IF NOT EXISTS menu_item_id UUID REFERENCES menu_items(id) ON DELETE SET NULL;
-
-ALTER TABLE orders
-  ADD COLUMN IF NOT EXISTS customer_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS orders_stay_id_idx ON orders(stay_id);
-CREATE INDEX IF NOT EXISTS orders_customer_user_id_created_at_idx
-  ON orders(customer_user_id, created_at DESC);
-
 CREATE TABLE IF NOT EXISTS stay_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   stay_id UUID NOT NULL REFERENCES stays(id) ON DELETE CASCADE,
@@ -288,7 +256,7 @@ CREATE INDEX IF NOT EXISTS user_trek_wishlists_user_id_idx ON user_trek_wishlist
 -- DUMMY DATA: STAYS + MENU ITEMS + ORDERS
 -- Truncate and re-seed on every fresh init
 -- ============================================================
-TRUNCATE TABLE orders, menu_items, stays RESTART IDENTITY CASCADE;
+TRUNCATE TABLE menu_items, stays RESTART IDENTITY CASCADE;
 
 -- Stock image URLs (Wikimedia Commons)
 -- Keeping URLs in seed data removes dependency on local /public image folders.
@@ -409,43 +377,10 @@ FROM new_stay s, (VALUES
 ) AS m(category, name, description, price, image_url, sort_order);
 
 -- Sample accepted order for Ghandruk Homestay
-DO $$
-DECLARE
-  v_stay_id UUID;
-  v_room_id UUID;
-  v_food_id UUID;
-  v_group_id UUID := gen_random_uuid();
-BEGIN
-  SELECT id INTO v_stay_id FROM stays WHERE slug = 'ghandruk-homestay';
-  SELECT id INTO v_room_id FROM menu_items WHERE stay_id = v_stay_id AND category = 'room' LIMIT 1;
-  SELECT id INTO v_food_id FROM menu_items WHERE stay_id = v_stay_id AND category = 'food' ORDER BY sort_order LIMIT 1;
 
-  INSERT INTO orders (order_group_id, stay_id, menu_item_id, menu_item_name, menu_item_category, unit_price, quantity, total_price, customer_name, customer_email, customer_phone, notes, status)
-  SELECT v_group_id, v_stay_id, v_room_id, 'Mountain View Room', 'room', price, 2, price * 2,
-         'Priya Sharma', 'priya@example.com', '+977-9811234567', 'Arriving evening of the 15th.', 'accepted'
-  FROM menu_items WHERE id = v_room_id;
-
-  INSERT INTO orders (order_group_id, stay_id, menu_item_id, menu_item_name, menu_item_category, unit_price, quantity, total_price, customer_name, customer_email, customer_phone, notes, status)
-  SELECT v_group_id, v_stay_id, v_food_id, name, 'food', price, 4, price * 4,
-         'Priya Sharma', 'priya@example.com', '+977-9811234567', 'Arriving evening of the 15th.', 'accepted'
-  FROM menu_items WHERE id = v_food_id;
-END $$;
 
 -- Pending order for Namche Teahouse Hotel
-DO $$
-DECLARE
-  v_stay_id UUID;
-  v_room_id UUID;
-  v_group_id UUID := gen_random_uuid();
-BEGIN
-  SELECT id INTO v_stay_id FROM stays WHERE slug = 'namche-teahouse-hotel';
-  SELECT id INTO v_room_id FROM menu_items WHERE stay_id = v_stay_id AND category = 'room' AND name LIKE 'Standard%' LIMIT 1;
 
-  INSERT INTO orders (order_group_id, stay_id, menu_item_id, menu_item_name, menu_item_category, unit_price, quantity, total_price, customer_name, customer_email, customer_phone, status)
-  SELECT v_group_id, v_stay_id, v_room_id, name, 'room', price, 3, price * 3,
-         'James Walker', 'james@example.com', '+44-7700900123', 'pending'
-  FROM menu_items WHERE id = v_room_id;
-END $$;
 
 
 -- Stay 7: Thamel Boutique Hotel (Kathmandu)

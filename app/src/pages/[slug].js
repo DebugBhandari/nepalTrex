@@ -1831,6 +1831,7 @@ function TrekDetailView({ trek }) {
             {[
               ['Duration', `${trek.durationDays} days`],
               ['Difficulty', trek.level],
+              ['Route stops', routeWaypoints.length ? `${routeWaypoints.length} mapped waypoints` : 'Route details pending'],
               [
                 'Elevation',
                 trek.elevationMinM && trek.elevationMaxM
@@ -1968,7 +1969,7 @@ function TrekDetailView({ trek }) {
                   gridTemplateColumns: {
                     xs: '1fr',
                     sm: 'repeat(2, minmax(0, 1fr))',
-                    md: 'repeat(3, minmax(0, 1fr))',
+                md: 'repeat(4, minmax(0, 1fr))',
                   },
                 }}
               >

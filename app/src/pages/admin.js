@@ -53,8 +53,6 @@ const STAY_TYPES = ['hotel', 'homestay'];
 const MENU_CATEGORIES = ['room', 'food'];
 const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
-const ADMIN_ORDER_FILTERS_STORAGE_KEY = 'nepaltrex-admin-order-filters';
-const ADMIN_ORDER_COLLAPSE_STORAGE_KEY = 'nepaltrex-admin-order-collapsed';
 
 function normalizeHandle(value) {
   return (value || '')
@@ -116,18 +114,12 @@ export default function AdminPage({ user, initialStays }) {
   const [editingById, setEditingById] = useState({});
   const [menuOpenById, setMenuOpenById] = useState({});
 
-  const [orders, setOrders] = useState([]);
-  const [orderFilterByStayId, setOrderFilterByStayId] = useState({});
-  const [orderCollapsedByStayId, setOrderCollapsedByStayId] = useState({});
-  const [ordersLoaded, setOrdersLoaded] = useState(false);
-  const [updatingOrderId, setUpdatingOrderId] = useState('');
   const [reservations, setReservations] = useState([]);
   const [reservationsLoaded, setReservationsLoaded] = useState(false);
   const [updatingReservationId, setUpdatingReservationId] = useState('');
   const [reservationNotes, setReservationNotes] = useState({});
   const [staySearch, setStaySearch] = useState('');
   const [showStayFilters, setShowStayFilters] = useState(false);
-  const [showOrderFilters, setShowOrderFilters] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState(null);
 
@@ -136,7 +128,6 @@ export default function AdminPage({ user, initialStays }) {
   const isSuperUser = user?.role === 'superUser';
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
-  const pendingOrders = orders.filter((order) => order.status === 'pending');
   const pendingReservations = reservations.filter((reservation) => reservation.status === 'pending');
   const visibleStays = useMemo(() => {
     if (!isSuperUser) {
@@ -155,29 +146,6 @@ export default function AdminPage({ user, initialStays }) {
     });
   }, [isSuperUser, stays, staySearch]);
 
-  const openOrderFromMenu = (orderId) => {
-    setNotificationsAnchor(null);
-    router.push(`/admin?orderId=${encodeURIComponent(orderId)}`);
-  };
-
-  const fetchOrders = async () => {
-    try {
-      const response = await fetch('/api/orders');
-      const data = await response.json();
-      const fetchedOrders = data.orders || [];
-
-      setOrders(fetchedOrders);
-      if (!ordersLoaded) {
-        setOrdersLoaded(true);
-      }
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      if (!ordersLoaded) {
-        setOrdersLoaded(true);
-      }
-    }
-  };
-
   const fetchReservations = async () => {
     try {
       const response = await fetch('/api/reservations');
@@ -192,74 +160,11 @@ export default function AdminPage({ user, initialStays }) {
   };
 
   useEffect(() => {
-    fetchOrders();
     fetchReservations();
-    const interval = setInterval(() => {
-      fetchOrders();
-      fetchReservations();
-    }, 5000);
+    const interval = setInterval(fetchReservations, 5000);
     return () => clearInterval(interval);
-  }, [ordersLoaded]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    try {
-      const savedOrderFilters = window.localStorage.getItem(ADMIN_ORDER_FILTERS_STORAGE_KEY);
-      if (savedOrderFilters) {
-        const parsed = JSON.parse(savedOrderFilters);
-        if (parsed && typeof parsed === 'object') {
-          setOrderFilterByStayId(parsed);
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to parse saved admin order filters:', error);
-    }
-
-    try {
-      const savedCollapsed = window.localStorage.getItem(ADMIN_ORDER_COLLAPSE_STORAGE_KEY);
-      if (savedCollapsed) {
-        const parsed = JSON.parse(savedCollapsed);
-        if (parsed && typeof parsed === 'object') {
-          setOrderCollapsedByStayId(parsed);
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to parse saved admin order collapse state:', error);
-    }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(ADMIN_ORDER_FILTERS_STORAGE_KEY, JSON.stringify(orderFilterByStayId));
-  }, [orderFilterByStayId]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(ADMIN_ORDER_COLLAPSE_STORAGE_KEY, JSON.stringify(orderCollapsedByStayId));
-  }, [orderCollapsedByStayId]);
-
-  useEffect(() => {
-    const queryOrderId = router.query?.orderId;
-    if (!queryOrderId || !orders.length) return;
-
-    const targetOrder = orders.find((order) => String(order.id) === String(queryOrderId));
-    if (targetOrder?.stayId) {
-      setOrderCollapsedByStayId((prev) => ({
-        ...prev,
-        [targetOrder.stayId]: false,
-      }));
-    }
-
-    const timer = setTimeout(() => {
-      const targetElement = document.getElementById(`order-${String(queryOrderId)}`);
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [router.query?.orderId, orders]);
 
   const [newStay, setNewStay] = useState({
     name: '', slug: '', stayType: 'homestay', location: '', latitude: '', longitude: '',
@@ -279,31 +184,6 @@ export default function AdminPage({ user, initialStays }) {
         return { ...stay, menuItems: nextMenu };
       })
     );
-
-  const updateOrderStatus = async (orderId, newStatus) => {
-    setUpdatingOrderId(orderId);
-    setMessage('');
-    try {
-      const r = await fetch(`/api/orders/${orderId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      const data = await r.json();
-      if (!r.ok) {
-        throw new Error(data.error || 'Failed to update order status');
-      }
-
-      if (r.ok) {
-        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: data.order.status } : o)));
-        setMessage(`Order status updated to ${data.order.status}.`);
-      }
-    } catch (error) {
-      setMessage(error.message || 'Failed to update order status');
-    } finally {
-      setUpdatingOrderId('');
-    }
-  };
 
   const updateReservationStatus = async (reservationId, status) => {
     setUpdatingReservationId(reservationId);
@@ -658,6 +538,18 @@ export default function AdminPage({ user, initialStays }) {
                             </Stack>
                             {reservation.guestNotes && <Typography variant="body2" sx={{ mt: 1.25 }}><strong>Guest note:</strong> {reservation.guestNotes}</Typography>}
                             {reservation.hostNote && <Typography variant="body2" sx={{ mt: 0.7 }}><strong>Host note:</strong> {reservation.hostNote}</Typography>}
+                            {(reservation.events || []).length > 0 && (
+                              <Box sx={{ mt: 1.25 }}>
+                                <Typography variant="caption" color="text.secondary" fontWeight={800}>Reservation history</Typography>
+                                <Stack spacing={0.35} sx={{ mt: 0.35 }}>
+                                  {reservation.events.map((event) => (
+                                    <Typography key={event.id} variant="caption" color="text.secondary">
+                                      {new Date(event.createdAt).toLocaleString()} · {event.nextStatus || event.eventType} by {event.actorName}{event.actorRole ? ` (${event.actorRole})` : ''}
+                                    </Typography>
+                                  ))}
+                                </Stack>
+                              </Box>
+                            )}
                             {isPending && (
                               <Alert severity={holdIsActive ? 'info' : 'warning'} sx={{ mt: 1.5, py: 0 }}>
                                 {holdIsActive ? `Hold expires ${holdExpiry.toLocaleString()}.` : 'This pending request has expired and can no longer be confirmed or declined.'}
@@ -725,15 +617,8 @@ export default function AdminPage({ user, initialStays }) {
               const isEditing = Boolean(editingById[stay.id]);
               const isMenuOpen = Boolean(menuOpenById[stay.id]);
               const isSaving = savingId === stay.id;
-              const isOrdersCollapsed = Boolean(orderCollapsedByStayId[stay.id]);
               const availableCount = (stay.menuItems || []).filter((m) => m.available !== false).length;
               const totalCount = (stay.menuItems || []).length;
-              const stayOrderFilter = orderFilterByStayId[stay.id] || 'all';
-              const stayOrders = orders.filter((order) => String(order.stayId) === String(stay.id));
-              const visibleStayOrders =
-                stayOrderFilter === 'active'
-                  ? stayOrders.filter((order) => !['completed', 'declined', 'cancelled'].includes(order.status))
-                  : stayOrders;
 
               return (
                 <Card key={stay.id} sx={(theme) => ({ background: theme.palette.mode === 'dark' ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)' : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(202,240,248,0.98) 100%)', color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary, border: '1px solid', borderColor: 'divider', boxShadow: '0 8px 24px rgba(2,62,138,0.12)' })}>
@@ -890,133 +775,6 @@ export default function AdminPage({ user, initialStays }) {
                     </>
                   )}
 
-                  <Divider />
-                  <CardContent>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 1.5 }}>
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        Orders{ordersLoaded ? ` (${visibleStayOrders.length})` : ''}
-                      </Typography>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                        <AppButton size="small" variant="outlined" onClick={() => setShowOrderFilters((prev) => !prev)}>
-                          {showOrderFilters ? 'Hide Filters' : 'Filters'}
-                        </AppButton>
-                        {showOrderFilters && (
-                          <FormControl size="small" sx={{ minWidth: 170 }}>
-                            <InputLabel id={`admin-order-filter-${stay.id}`}>Order Filter</InputLabel>
-                            <Select
-                              labelId={`admin-order-filter-${stay.id}`}
-                              label="Order Filter"
-                              value={stayOrderFilter}
-                              onChange={(event) =>
-                                setOrderFilterByStayId((prev) => ({
-                                  ...prev,
-                                  [stay.id]: event.target.value,
-                                }))
-                              }
-                            >
-                              <MenuItem value="all">All Orders</MenuItem>
-                              <MenuItem value="active">Active Orders</MenuItem>
-                            </Select>
-                          </FormControl>
-                        )}
-                        <AppButton
-                          size="small"
-                          variant="outlined"
-                          onClick={() =>
-                            setOrderCollapsedByStayId((prev) => ({
-                              ...prev,
-                              [stay.id]: !isOrdersCollapsed,
-                            }))
-                          }
-                        >
-                          {isOrdersCollapsed ? 'Expand Orders' : 'Collapse Orders'}
-                        </AppButton>
-                      </Stack>
-                    </Stack>
-
-                    {!isOrdersCollapsed && !ordersLoaded && <Typography color="text.secondary">Loading orders...</Typography>}
-
-                    {!isOrdersCollapsed && ordersLoaded && visibleStayOrders.length === 0 && (
-                      <Paper sx={{ p: 2, textAlign: 'center' }}>
-                        <Typography color="text.secondary">No orders for this stay.</Typography>
-                      </Paper>
-                    )}
-
-                    {!isOrdersCollapsed && (
-                      <Stack spacing={2}>
-                        {visibleStayOrders.map((order) => {
-                        const isUpdating = updatingOrderId === order.id;
-                        const statusColor =
-                          order.status === 'completed'
-                            ? 'success'
-                            : order.status === 'accepted'
-                              ? 'primary'
-                              : order.status === 'declined'
-                                ? 'error'
-                                : order.status === 'cancelled'
-                                  ? 'warning'
-                                  : 'default';
-                        return (
-                          <Card key={order.id} id={`order-${order.id}`}>
-                            <CardContent>
-                              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'flex-start' }} spacing={1.5}>
-                                <Box sx={{ flex: 1 }}>
-                                  <Typography fontWeight={700}>{order.stayName}</Typography>
-                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.8 }}>
-                                    {order.items?.length || 0} item{(order.items?.length || 0) === 1 ? '' : 's'} in this order
-                                  </Typography>
-                                  {Array.isArray(order.items) && order.items.length > 0 && (
-                                    <Stack spacing={0.6} sx={{ mb: 1.1 }}>
-                                      {order.items.map((entry) => (
-                                        <Typography key={entry.id} variant="body2" color="text.secondary">
-                                          {entry.menuItemName} ({entry.menuItemCategory}) &times; {entry.quantity} - NPR {Number(entry.totalPrice).toLocaleString()}
-                                        </Typography>
-                                      ))}
-                                    </Stack>
-                                  )}
-                                  <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                                    <Chip size="small" label={order.customerName} />
-                                    {order.customerPhone && <Chip size="small" variant="outlined" label={order.customerPhone} />}
-                                    {order.customerEmail && <Chip size="small" variant="outlined" label={order.customerEmail} />}
-                                    <Chip size="small" variant="outlined" label={`Created by: ${order.createdBy || 'Unknown'}`} />
-                                    <Chip size="small" variant="outlined" label={`Assigned to: ${order.assignedTo || 'Unassigned'}`} />
-                                    <Chip size="small" variant="outlined" label={`NPR ${Number(order.totalPrice).toLocaleString()} (qty ${order.quantity})`} />
-                                  </Stack>
-                                  {order.notes && (
-                                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                                      Note: {order.notes}
-                                    </Typography>
-                                  )}
-                                </Box>
-                                <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.5}>
-                                  <Chip size="small" color={statusColor} label={order.status} sx={{ textTransform: 'capitalize' }} />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {new Date(order.createdAt).toLocaleDateString()}
-                                  </Typography>
-                                </Stack>
-                              </Stack>
-                              {!['completed', 'declined', 'cancelled'].includes(order.status) && (
-                                <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-                                  {order.status === 'pending' && (
-                                    <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateOrderStatus(order.id, 'accepted')} disabled={isUpdating}>
-                                      Accept Order
-                                    </AppButton>
-                                  )}
-                                  <AppButton size="small" color="error" variant="outlined" startIcon={<HighlightOffIcon />} onClick={() => updateOrderStatus(order.id, 'declined')} disabled={isUpdating}>
-                                    Decline Order
-                                  </AppButton>
-                                  <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateOrderStatus(order.id, 'completed')} disabled={isUpdating}>
-                                    Mark Order Complete
-                                  </AppButton>
-                                </Stack>
-                              )}
-                            </CardContent>
-                          </Card>
-                        );
-                        })}
-                      </Stack>
-                    )}
-                  </CardContent>
                 </Card>
               );
             })}

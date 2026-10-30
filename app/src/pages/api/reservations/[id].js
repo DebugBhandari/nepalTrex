@@ -72,7 +72,14 @@ export default async function handler(req, res) {
       [status, isHost && typeof hostNote === 'string' ? hostNote.trim() || null : null, id]
     );
     await client.query(
-      `INSERT INTO reservation_events (reservation_id, actor_user_id, event_type, previous_status, next_status, note) VALUES ($1, $2, $3, $4, $5, $6)`,
+      `
+        INSERT INTO reservation_events (
+          reservation_id, actor_user_id, actor_name, actor_role, event_type, previous_status, next_status, note
+        )
+        SELECT $1, u.id, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)), u.role, $3, $4, $5, $6
+        FROM users u
+        WHERE u.id = $2
+      `,
       [id, session.user.id, isHost ? 'host_status_updated' : 'customer_cancelled', reservation.status, status, isHost && typeof hostNote === 'string' ? hostNote.trim() || null : null]
     );
     await client.query('COMMIT');
