@@ -121,6 +121,10 @@ export default function AdminPage({ user, initialStays }) {
   const [orderCollapsedByStayId, setOrderCollapsedByStayId] = useState({});
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState('');
+  const [reservations, setReservations] = useState([]);
+  const [reservationsLoaded, setReservationsLoaded] = useState(false);
+  const [updatingReservationId, setUpdatingReservationId] = useState('');
+  const [reservationNotes, setReservationNotes] = useState({});
   const [staySearch, setStaySearch] = useState('');
   const [showStayFilters, setShowStayFilters] = useState(false);
   const [showOrderFilters, setShowOrderFilters] = useState(false);
@@ -133,6 +137,7 @@ export default function AdminPage({ user, initialStays }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
   const pendingOrders = orders.filter((order) => order.status === 'pending');
+  const pendingReservations = reservations.filter((reservation) => reservation.status === 'pending');
   const visibleStays = useMemo(() => {
     if (!isSuperUser) {
       return stays;
@@ -173,9 +178,26 @@ export default function AdminPage({ user, initialStays }) {
     }
   };
 
+  const fetchReservations = async () => {
+    try {
+      const response = await fetch('/api/reservations');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch reservations');
+      setReservations(data.reservations || []);
+    } catch (error) {
+      console.error('Failed to fetch reservations:', error);
+    } finally {
+      setReservationsLoaded(true);
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 5000);
+    fetchReservations();
+    const interval = setInterval(() => {
+      fetchOrders();
+      fetchReservations();
+    }, 5000);
     return () => clearInterval(interval);
   }, [ordersLoaded]);
 
@@ -280,6 +302,30 @@ export default function AdminPage({ user, initialStays }) {
       setMessage(error.message || 'Failed to update order status');
     } finally {
       setUpdatingOrderId('');
+    }
+  };
+
+  const updateReservationStatus = async (reservationId, status) => {
+    setUpdatingReservationId(reservationId);
+    setMessage('');
+    try {
+      const response = await fetch(`/api/reservations/${reservationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, hostNote: reservationNotes[reservationId] || '' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update reservation');
+      setReservations((current) => current.map((reservation) => (
+        reservation.id === reservationId
+          ? { ...reservation, status: data.reservation.status, updatedAt: data.reservation.updated_at || reservation.updatedAt, hostNote: reservationNotes[reservationId] || reservation.hostNote }
+          : reservation
+      )));
+      setMessage(`Reservation ${data.reservation.status}.`);
+    } catch (error) {
+      setMessage(error.message || 'Failed to update reservation');
+    } finally {
+      setUpdatingReservationId('');
     }
   };
 
@@ -557,6 +603,96 @@ export default function AdminPage({ user, initialStays }) {
               </CardContent>
             </Card>
           )}
+
+          <Card sx={{ mt: 4, border: '1px solid', borderColor: 'divider' }}>
+            <CardContent>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1} sx={{ mb: 0.6 }}>
+                <Typography variant="h6" fontWeight={800}>Reservation Inbox{reservationsLoaded ? ` (${reservations.length})` : ''}</Typography>
+                {pendingReservations.length > 0 && <Chip size="small" color="warning" label={`${pendingReservations.length} awaiting response`} />}
+              </Stack>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2.25 }}>
+                Review date-aware room requests. Confirmed reservations reserve inventory; pending requests expire after 24 hours.
+              </Typography>
+
+              {!reservationsLoaded && <Typography color="text.secondary">Loading reservations...</Typography>}
+              {reservationsLoaded && reservations.length === 0 && <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}><Typography color="text.secondary">No reservation requests yet.</Typography></Paper>}
+
+              <Stack spacing={1.5}>
+                {reservations.map((reservation) => {
+                  const isUpdating = updatingReservationId === reservation.id;
+                  const isPending = reservation.status === 'pending';
+                  const holdExpiry = reservation.holdExpiresAt ? new Date(reservation.holdExpiresAt) : null;
+                  const holdIsActive = isPending && holdExpiry && holdExpiry > new Date();
+                  const canComplete = reservation.status === 'confirmed';
+                  const isFinal = ['declined', 'cancelled', 'completed'].includes(reservation.status);
+                  const canRespond = holdIsActive || canComplete;
+                  const statusColor = reservation.status === 'confirmed' || reservation.status === 'completed'
+                    ? 'success'
+                    : reservation.status === 'pending'
+                      ? 'warning'
+                      : reservation.status === 'declined'
+                        ? 'error'
+                        : 'default';
+
+                  return (
+                    <Card key={reservation.id} id={`reservation-${reservation.id}`} variant="outlined">
+                      <CardContent>
+                        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'flex-start' }} spacing={1.5}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Stack direction="row" alignItems="center" spacing={0.8} flexWrap="wrap" useFlexGap>
+                              <Typography variant="subtitle1" fontWeight={800}>{reservation.stayName || 'Stay reservation'}</Typography>
+                              <Chip size="small" color={statusColor} label={reservation.status} sx={{ textTransform: 'capitalize' }} />
+                            </Stack>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4 }}>
+                              {reservation.stayLocation || 'Location unavailable'} · {new Date(`${String(reservation.checkInDate).slice(0, 10)}T00:00:00`).toLocaleDateString()} – {new Date(`${String(reservation.checkOutDate).slice(0, 10)}T00:00:00`).toLocaleDateString()}
+                            </Typography>
+                            <Stack direction="row" spacing={0.75} sx={{ mt: 1.25, flexWrap: 'wrap', gap: 0.5 }}>
+                              <Chip size="small" variant="outlined" label={reservation.customerName || 'Guest'} />
+                              {reservation.customerPhone && <Chip size="small" variant="outlined" label={reservation.customerPhone} />}
+                              {reservation.customerEmail && <Chip size="small" variant="outlined" label={reservation.customerEmail} />}
+                              <Chip size="small" variant="outlined" label={`${reservation.guestCount} guest${reservation.guestCount === 1 ? '' : 's'}`} />
+                              <Chip size="small" variant="outlined" label={`NPR ${Number(reservation.totalPrice || 0).toLocaleString()}`} />
+                            </Stack>
+                            <Stack spacing={0.35} sx={{ mt: 1.25 }}>
+                              {(reservation.items || []).map((item) => <Typography key={item.roomId} variant="body2" color="text.secondary">{item.roomName} · {item.units} room{item.units === 1 ? '' : 's'} · NPR {Number(item.nightlyPrice).toLocaleString()}/night</Typography>)}
+                            </Stack>
+                            {reservation.guestNotes && <Typography variant="body2" sx={{ mt: 1.25 }}><strong>Guest note:</strong> {reservation.guestNotes}</Typography>}
+                            {reservation.hostNote && <Typography variant="body2" sx={{ mt: 0.7 }}><strong>Host note:</strong> {reservation.hostNote}</Typography>}
+                            {isPending && (
+                              <Alert severity={holdIsActive ? 'info' : 'warning'} sx={{ mt: 1.5, py: 0 }}>
+                                {holdIsActive ? `Hold expires ${holdExpiry.toLocaleString()}.` : 'This pending request has expired and can no longer be confirmed or declined.'}
+                              </Alert>
+                            )}
+                          </Box>
+                          <Typography variant="caption" color="text.secondary">Requested {new Date(reservation.createdAt).toLocaleString()}</Typography>
+                        </Stack>
+
+                        {!isFinal && canRespond && (
+                          <Stack spacing={1.2} sx={{ mt: 2 }}>
+                            <TextField
+                              label="Note for guest (optional)"
+                              size="small"
+                              fullWidth
+                              multiline
+                              minRows={2}
+                              value={reservationNotes[reservation.id] || ''}
+                              onChange={(event) => setReservationNotes((current) => ({ ...current, [reservation.id]: event.target.value }))}
+                              disabled={isUpdating}
+                            />
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                              {holdIsActive && <AppButton size="small" variant="outlined" startIcon={<CheckCircleOutlineIcon />} onClick={() => updateReservationStatus(reservation.id, 'confirmed')} disabled={isUpdating}>Confirm reservation</AppButton>}
+                              {holdIsActive && <AppButton size="small" color="error" variant="outlined" startIcon={<HighlightOffIcon />} onClick={() => updateReservationStatus(reservation.id, 'declined')} disabled={isUpdating}>Decline request</AppButton>}
+                              {canComplete && <AppButton size="small" variant="outlined" startIcon={<DoneAllIcon />} onClick={() => updateReservationStatus(reservation.id, 'completed')} disabled={isUpdating}>Mark stay complete</AppButton>}
+                            </Stack>
+                          </Stack>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Stack>
+            </CardContent>
+          </Card>
 
           <Typography variant="h6" sx={{ mt: 4, mb: 1.5 }}>Your Registered Stays ({stays.length})</Typography>
 
