@@ -59,6 +59,22 @@ const STAYS_PER_PAGE = 8;
 const DEFAULT_STAY_IMAGE = 'https://placehold.co/1000x620?text=NepalTrex+Stay';
 const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 
+const DASHBOARD_ACTION_CLASS = 'dashboard-action';
+const DASHBOARD_ACTION_GROUP_CLASS = 'dashboard-action-group';
+
+const dashboardCardSx = (theme) => ({
+  background:
+    theme.palette.mode === 'dark'
+      ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
+      : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(202,240,248,0.5) 100%)',
+  color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+  border: '1px solid',
+  borderColor: theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(2, 62, 138, 0.12)',
+  borderRadius: 3,
+  overflow: 'hidden',
+  boxShadow: theme.palette.mode === 'dark' ? '0 16px 32px rgba(0, 4, 94, 0.2)' : '0 14px 30px rgba(2, 62, 138, 0.08)',
+});
+
 function normalizeHandle(value) {
   return (value || '')
     .toString()
@@ -734,35 +750,73 @@ return (
 
       <SiteHeader />
 
-      <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 } }}>
         <Paper
           sx={(theme) => ({
-            p: { xs: 2, md: 3 },
+            p: { xs: 1.25, sm: 2, md: 2.5 },
             background:
               theme.palette.mode === 'dark'
                 ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
-                : 'linear-gradient(145deg, #FFFFFF 0%, #CAF0F8 100%)',
-            boxShadow: '0 18px 36px rgba(15, 23, 42, 0.14)',
+                : 'linear-gradient(145deg, #FFFFFF 0%, #E8FAFD 100%)',
+            border: '1px solid',
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(144, 224, 239, 0.26)' : 'rgba(2, 62, 138, 0.13)',
+            borderRadius: { xs: 2.5, md: 3.5 },
+            boxShadow: theme.palette.mode === 'dark' ? '0 24px 48px rgba(0, 4, 94, 0.28)' : '0 24px 48px rgba(2, 62, 138, 0.12)',
+            '& .dashboard-action': {
+              minWidth: { xs: '100%', sm: 132 },
+              minHeight: 42,
+              justifyContent: 'center',
+              whiteSpace: 'nowrap',
+            },
+            '& .dashboard-action-group': {
+              width: { xs: '100%', sm: 'auto' },
+              '& > .dashboard-action': { flex: { xs: 1, sm: '0 0 auto' } },
+            },
           })}
         >
-          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ mb: 2.5 }}>
-            <Box>
-              <Typography variant="h4">Welcome, {user?.name || user?.email}</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Manage treks and users from one place.
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4 }}>
-                Role: {user?.role || 'user'}
-              </Typography>
-            </Box>
-          </Stack>
+          <Box
+            sx={(theme) => ({
+              px: { xs: 1, sm: 1.5, md: 2 },
+              py: { xs: 1.25, md: 1.75 },
+              borderRadius: 2.5,
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(120deg, rgba(72,202,228,0.2), rgba(3,4,94,0.08))'
+                : 'linear-gradient(120deg, rgba(0,119,182,0.13), rgba(72,202,228,0.05))',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(144,224,239,0.18)' : 'rgba(0,119,182,0.12)'}`,
+            })}
+          >
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2}>
+              <Box>
+                <Typography variant="overline" color="primary.main" fontWeight={800} sx={{ letterSpacing: '0.12em' }}>
+                  NepalTrex control center
+                </Typography>
+                <Typography variant="h4" sx={{ mt: 0.15 }}>Welcome back, {user?.name || user?.email}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.7, maxWidth: 620 }}>
+                  Keep routes, stays, people, and guide applications accurate from one place.
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip label={`${items.length} treks`} color="primary" variant="outlined" />
+                {canManage && <Chip label={`${stayItems.length} stays`} color="primary" variant="outlined" />}
+                <Chip label={(user?.role || 'user').replace(/([A-Z])/g, ' $1')} sx={{ textTransform: 'capitalize' }} />
+              </Stack>
+            </Stack>
+          </Box>
 
           <Tabs
             value={activeTab}
             onChange={(_, value) => setActiveTab(value)}
             variant="scrollable"
             allowScrollButtonsMobile
-            sx={{ mt: 2 }}
+            sx={(theme) => ({
+              mt: 2.25,
+              px: 0.5,
+              minHeight: 58,
+              borderRadius: 2,
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(3,4,94,0.3)' : 'rgba(255,255,255,0.7)',
+              border: `1px solid ${theme.palette.divider}`,
+              '& .MuiTab-root': { minHeight: 54, px: { xs: 1.5, md: 2.25 } },
+            })}
           >
             <Tab value="treks" label="Trek Updates" />
             {canManage && <Tab value="stays" label="Stay Management" />}
@@ -788,8 +842,8 @@ return (
                 </Alert>
               )}
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
-                <AppButton variant="outlined" onClick={() => setShowTrekFilters((prev) => !prev)}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mt: 2.5, mb: 2 }}>
+                <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" onClick={() => setShowTrekFilters((prev) => !prev)}>
                   {showTrekFilters ? 'Hide Filters' : 'Filters'}
                 </AppButton>
                 <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
@@ -798,7 +852,7 @@ return (
               </Stack>
 
               {showTrekFilters && (
-                <Paper sx={{ p: 1.5, mb: 2 }}>
+                <Paper variant="outlined" sx={(theme) => ({ p: { xs: 1.5, md: 2 }, mb: 2, borderRadius: 2.5, bgcolor: theme.palette.mode === 'dark' ? 'rgba(3,4,94,0.22)' : 'rgba(255,255,255,0.7)' })}>
                   <Stack spacing={1.2}>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
                       <FormControl size="small" sx={{ minWidth: 170 }}>
@@ -877,6 +931,7 @@ return (
                         </Select>
                       </FormControl>
                       <AppButton
+                        className={DASHBOARD_ACTION_CLASS}
                         variant="outlined"
                         onClick={() => {
                           setRegionFilter('all');
@@ -914,14 +969,7 @@ return (
                       key={trek.id}
                       sx={(theme) => ({
                         gridColumn: isEditing ? '1 / -1' : 'auto',
-                        background:
-                          theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
-                            : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-                        border: '1px solid',
-                        borderColor:
-                          theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(11, 31, 42, 0.08)',
+                        ...dashboardCardSx(theme),
                       })}
                     >
                       <Link href={`/treks/${trekSlug}`}>
@@ -973,23 +1021,20 @@ return (
                               </Stack>
                             </Box>
                             {canManage && (
-                              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
+                              <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
                                 <AppButton
+                                  className={DASHBOARD_ACTION_CLASS}
                                   variant={trek.isFeatured ? 'contained' : 'outlined'}
                                   startIcon={<WorkspacePremiumRoundedIcon />}
                                   onClick={() => handleSaveTrek(trek.id, { isFeatured: !trek.isFeatured })}
                                   disabled={isSaving}
                                   aria-pressed={Boolean(trek.isFeatured)}
                                   sx={(theme) => trek.isFeatured ? {
-                                    height: 40,
-                                    minHeight: 40,
                                     background: theme.palette.primary.dark,
                                     color: theme.palette.primary.contrastText,
                                     boxShadow: `0 6px 16px ${theme.palette.primary.dark}55`,
                                     '&:hover': { background: theme.palette.primary.dark },
                                   } : {
-                                    height: 40,
-                                    minHeight: 40,
                                     borderColor: theme.palette.primary.dark,
                                     color: theme.palette.primary.dark,
                                     '&:hover': {
@@ -1001,10 +1046,10 @@ return (
                                   {isSaving ? 'Saving...' : trek.isFeatured ? 'Featured' : 'Feature Trek'}
                                 </AppButton>
                                 <AppButton
+                                  className={DASHBOARD_ACTION_CLASS}
                                   variant="outlined"
                                   onClick={() => setEditingById((prev) => ({ ...prev, [trek.id]: true }))}
                                   disabled={isSaving}
-                                  sx={{ height: 40, minHeight: 40 }}
                                 >
                                   Edit Trek
                                 </AppButton>
@@ -1201,8 +1246,9 @@ return (
                               </Stack>
                             </Box>
 
-                            <Stack direction="row" spacing={1}>
+                            <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                               <AppButton
+                                className={DASHBOARD_ACTION_CLASS}
                                 variant="contained"
                                 onClick={() => handleSaveTrek(trek.id)}
                                 disabled={isSaving}
@@ -1210,6 +1256,7 @@ return (
                                 {isSaving ? 'Saving...' : 'Save Trek'}
                               </AppButton>
                               <AppButton
+                                className={DASHBOARD_ACTION_CLASS}
                                 variant="outlined"
                                 onClick={() =>
                                   setEditingById((prev) => ({ ...prev, [trek.id]: false }))
@@ -1238,8 +1285,8 @@ return (
                 As superUser, you can update stay fields and menu item image links/uploads.
               </Alert>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
-                <AppButton variant="outlined" onClick={() => setShowStayFilters((prev) => !prev)}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mt: 2.5, mb: 2 }}>
+                <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" onClick={() => setShowStayFilters((prev) => !prev)}>
                   {showStayFilters ? 'Hide Filters' : 'Filters'}
                 </AppButton>
                 <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
@@ -1267,6 +1314,7 @@ return (
                     sx={{ flex: 1, minWidth: 240 }}
                   />
                   <AppButton
+                    className={DASHBOARD_ACTION_CLASS}
                     variant="outlined"
                     type="button"
                     onClick={() => {
@@ -1310,14 +1358,7 @@ return (
                       key={stay.id}
                       sx={(theme) => ({
                         gridColumn: isEditing ? '1 / -1' : 'auto',
-                        background:
-                          theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
-                            : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
-                        border: '1px solid',
-                        borderColor:
-                          theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(11, 31, 42, 0.08)',
+                        ...dashboardCardSx(theme),
                       })}
                     >
                       <Link href={`/stays/${stay.slug}`}>
@@ -1577,8 +1618,9 @@ return (
                               label={`Owner: ${ownerLabel}`}
                               sx={{ alignSelf: 'flex-start' }}
                             />
-                            <Stack direction="row" spacing={1}>
+                            <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                               <AppButton
+                                className={DASHBOARD_ACTION_CLASS}
                                 variant="contained"
                                 onClick={() => handleSaveStay(stay.id)}
                                 disabled={isSaving}
@@ -1586,6 +1628,7 @@ return (
                                 {isSaving ? 'Saving...' : 'Save Stay'}
                               </AppButton>
                               <AppButton
+                                className={DASHBOARD_ACTION_CLASS}
                                 variant="outlined"
                                 onClick={() => setEditingStayById((prev) => ({ ...prev, [stay.id]: false }))}
                                 disabled={isSaving}
@@ -1619,16 +1662,16 @@ return (
           )}
 
           {activeTab === 'users' && canManage && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>
+            <Box sx={{ mt: 2.5 }}>
+              <Typography variant="h5" sx={{ mb: 0.5 }}>
                 User Management
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Search users and update roles, including revoking admin or superUser access.
               </Typography>
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>
-                <AppButton variant="outlined" onClick={() => setShowUserFilters((prev) => !prev)}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1.2} sx={{ mb: 2 }}>
+                <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" onClick={() => setShowUserFilters((prev) => !prev)}>
                   {showUserFilters ? 'Hide Filters' : 'Filters'}
                 </AppButton>
                 <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center' }}>
@@ -1668,10 +1711,11 @@ return (
                       <MenuItem value="superUser">SuperUsers</MenuItem>
                     </Select>
                   </FormControl>
-                  <AppButton variant="contained" type="submit" disabled={usersLoading}>
+                  <AppButton className={DASHBOARD_ACTION_CLASS} variant="contained" type="submit" disabled={usersLoading}>
                     {usersLoading ? 'Searching...' : 'Search'}
                   </AppButton>
                   <AppButton
+                    className={DASHBOARD_ACTION_CLASS}
                     variant="outlined"
                     type="button"
                     disabled={usersLoading}
@@ -1780,7 +1824,7 @@ return (
                             </Box>
                           </Stack>
 
-                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+                          <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="stretch">
                             <AppButton
                               component={Link}
                               href={`/user/${normalizeHandle(entry.displayName || entry.username || entry.email?.split('@')[0] || 'user')}`}
@@ -1809,15 +1853,11 @@ return (
                               </Select>
                             </FormControl>
                             <AppButton
+                              className={DASHBOARD_ACTION_CLASS}
                               variant="contained"
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf || isGuide || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
                               sx={{
-                                height: 36,
-                                minHeight: 36,
-                                px: 1.8,
-                                fontSize: '0.82rem',
-                                lineHeight: 1.15,
                                 background: '#0077B6',
                                 color: '#ffffff',
                                 '&:hover': {
@@ -1832,13 +1872,11 @@ return (
                               {isGuide ? 'Guide account' : isSaving ? 'Saving...' : 'Update Role'}
                             </AppButton>
                             <AppButton
+                              className={DASHBOARD_ACTION_CLASS}
                               variant="outlined"
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               onClick={() => toggleUserBan(entry.id, !entry.isBanned)}
                               sx={{
-                                height: 36,
-                                minHeight: 36,
-                                px: 1.8,
                                 color: entry.isBanned ? '#0077B6' : '#023E8A',
                                 borderColor: entry.isBanned ? 'rgba(0, 119, 182, 0.45)' : 'rgba(2, 62, 138, 0.45)',
                               }}
@@ -1846,13 +1884,11 @@ return (
                               {isUpdatingBan ? 'Saving...' : entry.isBanned ? 'Unban' : 'Ban'}
                             </AppButton>
                             <AppButton
+                              className={DASHBOARD_ACTION_CLASS}
                               variant="outlined"
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               onClick={() => deleteUser(entry.id, displayLabel)}
                               sx={{
-                                height: 36,
-                                minHeight: 36,
-                                px: 1.8,
                                 color: '#b91c1c',
                                 borderColor: 'rgba(185, 28, 28, 0.38)',
                               }}
@@ -1882,14 +1918,14 @@ return (
           )}
 
           {activeTab === 'guides' && canManage && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="h6">Guide moderation</Typography>
+            <Box sx={{ mt: 2.5 }}>
+              <Typography variant="h5">Guide moderation</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Approve verified guide applications before profiles and packages can appear publicly.</Typography>
               {guidesMessage && <Alert severity={guidesMessage === 'Guide status updated.' ? 'success' : 'error'} sx={{ mb: 2 }}>{guidesMessage}</Alert>}
               {guidesLoading && <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Loading guide applications…</Typography>}
               <Stack spacing={1.5}>
                 {guides.map((guide) => (
-                  <Card key={guide.id} variant="outlined">
+                  <Card key={guide.id} sx={dashboardCardSx}>
                     <CardContent>
                       <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                         <Box>
@@ -1898,26 +1934,26 @@ return (
                             {guide.home_region} · {guide.years_experience} years · {guide.license_number || 'No license number provided'}
                           </Typography>
                           <Typography variant="body2" sx={{ mt: 0.75 }}>{guide.headline}</Typography>
-                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                          <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mt: 1 }}>
                             {guide.license_document_url ? (
-                              <AppButton size="small" variant="outlined" component="a" href={guide.license_document_url} target="_blank" rel="noreferrer">License evidence</AppButton>
+                              <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" component="a" href={guide.license_document_url} target="_blank" rel="noreferrer">License evidence</AppButton>
                             ) : (
-                              <AppButton size="small" variant="outlined" disabled>License evidence unavailable</AppButton>
+                              <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" disabled>License evidence unavailable</AppButton>
                             )}
                             {guide.citizenship_document_url ? (
-                              <AppButton size="small" variant="outlined" component="a" href={guide.citizenship_document_url} target="_blank" rel="noreferrer">Citizenship evidence</AppButton>
+                              <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" component="a" href={guide.citizenship_document_url} target="_blank" rel="noreferrer">Citizenship evidence</AppButton>
                             ) : (
-                              <AppButton size="small" variant="outlined" disabled>Citizenship evidence unavailable</AppButton>
+                              <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" disabled>Citizenship evidence unavailable</AppButton>
                             )}
                           </Stack>
                           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                             {guide.package_count} active packages · Status: {guide.approval_status}
                           </Typography>
                         </Box>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <AppButton size="small" disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton>
-                          <AppButton size="small" variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton>
-                          <AppButton size="small" variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton>
+                        <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="stretch">
+                          <AppButton className={DASHBOARD_ACTION_CLASS} disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton>
+                          <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton>
+                          <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton>
                         </Stack>
                       </Stack>
                     </CardContent>

@@ -11,9 +11,35 @@ export default async function handler(req, res) {
   try {
     const trekRows = await query(
       `
-        SELECT name, duration_days, level, region, description, route_geojson, is_featured, elevation_min_m, elevation_max_m, avg_rating, review_count
-        FROM treks
-        ORDER BY name ASC
+        SELECT
+          t.name,
+          t.duration_days,
+          t.level,
+          t.region,
+          t.description,
+          t.route_geojson,
+          t.is_featured,
+          t.elevation_min_m,
+          t.elevation_max_m,
+          t.avg_rating,
+          t.review_count,
+          (
+            SELECT COUNT(DISTINCT gp.id)::int
+            FROM guide_profiles gp
+            WHERE gp.approval_status = 'approved'
+              AND (
+                lower(trim(gp.home_region)) = lower(trim(t.region))
+                OR EXISTS (
+                  SELECT 1
+                  FROM guide_packages guide_package
+                  WHERE guide_package.guide_profile_id = gp.id
+                    AND guide_package.is_active = true
+                    AND lower(trim(guide_package.region)) = lower(trim(t.region))
+                )
+              )
+          ) AS available_guide_count
+        FROM treks t
+        ORDER BY t.name ASC
       `
     );
 
@@ -59,6 +85,7 @@ export default async function handler(req, res) {
       elevationMaxM: row.elevation_max_m || null,
       avgRating: row.avg_rating === null ? null : Number(row.avg_rating),
       reviewCount: Number(row.review_count || 0),
+      availableGuideCount: Number(row.available_guide_count || 0),
     })).map((trek) => {
       const nearbyStaysCount = stayCoordinates.filter((stay) => {
         const distanceKm = minDistanceToRouteKm(trek.routeWaypoints, stay.lat, stay.lng);
@@ -78,6 +105,7 @@ export default async function handler(req, res) {
         elevationMaxM: trek.elevationMaxM,
         avgRating: trek.avgRating,
         reviewCount: trek.reviewCount,
+        availableGuideCount: trek.availableGuideCount,
         nearbyStaysCount,
         wishlistCount: Number(wishlistCountBySlug[trek.slug] || 0),
       };

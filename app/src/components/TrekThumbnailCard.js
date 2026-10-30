@@ -116,6 +116,7 @@ export default function TrekThumbnailCard({ trek }) {
             <Chip label={trek.level} size="small" color="secondary" />
           </Tooltip>
           <Chip label={trek.region || 'Other'} size="small" variant="outlined" />
+          <Chip label={`${trek.availableGuideCount || 0} guides available`} size="small" color="primary" variant="outlined" />
           <Chip label={`${trek.nearbyStaysCount || 0} nearby stays`} size="small" variant="outlined" />
         </Stack>
 
