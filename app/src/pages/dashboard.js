@@ -61,6 +61,8 @@ const DEFAULT_MENU_IMAGE = 'https://placehold.co/600x380?text=Menu+Item';
 
 const DASHBOARD_ACTION_CLASS = 'dashboard-action';
 const DASHBOARD_ACTION_GROUP_CLASS = 'dashboard-action-group';
+const DASHBOARD_MANAGEMENT_ACTION_CLASS = 'dashboard-management-action';
+const DASHBOARD_MANAGEMENT_ACTION_GROUP_CLASS = 'dashboard-management-action-group';
 
 const dashboardCardSx = (theme) => ({
   background:
@@ -772,6 +774,18 @@ return (
               width: { xs: '100%', sm: 'auto' },
               '& > .dashboard-action': { flex: { xs: 1, sm: '0 0 auto' } },
             },
+            '& .dashboard-management-action-group': {
+              width: 'auto',
+              alignItems: 'flex-start',
+              '& > .dashboard-management-action': { flex: '0 0 auto' },
+            },
+            '& .dashboard-management-action': {
+              width: 132,
+              minWidth: 132,
+              height: 42,
+              minHeight: 42,
+              maxHeight: 42,
+            },
           })}
         >
           <Box
@@ -1351,7 +1365,7 @@ return (
                   const ownerHandle = normalizeHandle(
                     stay.ownerDisplayName || stay.ownerUsername || stay.ownerEmail?.split('@')[0] || 'user'
                   );
-                  const ownerLabel = stay.ownerDisplayName || stay.ownerUsername || stay.ownerEmail || 'N/A';
+                  const ownerLabel = stay.ownerEmail || 'N/A';
 
                   return (
                     <Card
@@ -1426,11 +1440,6 @@ return (
                                   <Typography variant="body2" fontWeight={800} noWrap>
                                     {ownerLabel}
                                   </Typography>
-                                  {stay.ownerEmail && stay.ownerEmail !== ownerLabel && (
-                                    <Typography variant="caption" color="text.secondary" noWrap>
-                                      {stay.ownerEmail}
-                                    </Typography>
-                                  )}
                                 </Box>
                               </Box>
                             </Box>
@@ -1824,7 +1833,7 @@ return (
                             </Box>
                           </Stack>
 
-                          <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="stretch">
+                          <Stack className={DASHBOARD_MANAGEMENT_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
                             <AppButton
                               component={Link}
                               href={`/user/${normalizeHandle(entry.displayName || entry.username || entry.email?.split('@')[0] || 'user')}`}
@@ -1853,7 +1862,7 @@ return (
                               </Select>
                             </FormControl>
                             <AppButton
-                              className={DASHBOARD_ACTION_CLASS}
+                              className={`${DASHBOARD_ACTION_CLASS} ${DASHBOARD_MANAGEMENT_ACTION_CLASS}`}
                               variant="contained"
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf || isGuide || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
@@ -1872,7 +1881,7 @@ return (
                               {isGuide ? 'Guide account' : isSaving ? 'Saving...' : 'Update Role'}
                             </AppButton>
                             <AppButton
-                              className={DASHBOARD_ACTION_CLASS}
+                              className={`${DASHBOARD_ACTION_CLASS} ${DASHBOARD_MANAGEMENT_ACTION_CLASS}`}
                               variant="outlined"
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               onClick={() => toggleUserBan(entry.id, !entry.isBanned)}
@@ -1884,7 +1893,7 @@ return (
                               {isUpdatingBan ? 'Saving...' : entry.isBanned ? 'Unban' : 'Ban'}
                             </AppButton>
                             <AppButton
-                              className={DASHBOARD_ACTION_CLASS}
+                              className={`${DASHBOARD_ACTION_CLASS} ${DASHBOARD_MANAGEMENT_ACTION_CLASS}`}
                               variant="outlined"
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               onClick={() => deleteUser(entry.id, displayLabel)}
@@ -1950,10 +1959,10 @@ return (
                             {guide.package_count} active packages · Status: {guide.approval_status}
                           </Typography>
                         </Box>
-                        <Stack className={DASHBOARD_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="stretch">
-                          <AppButton className={DASHBOARD_ACTION_CLASS} disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton>
-                          <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton>
-                          <AppButton className={DASHBOARD_ACTION_CLASS} variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton>
+                        <Stack className={DASHBOARD_MANAGEMENT_ACTION_GROUP_CLASS} direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="flex-start">
+                          <AppButton className={`${DASHBOARD_ACTION_CLASS} ${DASHBOARD_MANAGEMENT_ACTION_CLASS}`} disabled={guide.approval_status === 'approved'} onClick={() => moderateGuide(guide.id, 'approved')}>Approve</AppButton>
+                          <AppButton className={`${DASHBOARD_ACTION_CLASS} ${DASHBOARD_MANAGEMENT_ACTION_CLASS}`} variant="outlined" disabled={guide.approval_status === 'rejected'} onClick={() => moderateGuide(guide.id, 'rejected')}>Reject</AppButton>
+                          <AppButton className={`${DASHBOARD_ACTION_CLASS} ${DASHBOARD_MANAGEMENT_ACTION_CLASS}`} variant="outlined" disabled={guide.approval_status === 'suspended'} onClick={() => moderateGuide(guide.id, 'suspended')}>Suspend</AppButton>
                         </Stack>
                       </Stack>
                     </CardContent>
