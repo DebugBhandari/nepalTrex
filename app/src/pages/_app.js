@@ -6,7 +6,6 @@ import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import AppIconButton from '../components/AppIconButton';
 import { createAppTheme } from '../lib/mui-theme';
-import { CartProvider } from '../contexts/CartContext';
 import './styles.css';
 import 'leaflet/dist/leaflet.css';
 
@@ -30,26 +29,24 @@ function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
   return (
     <>
       <Head>
-        <title>Welcome to web!</title>
+        <title>NepalTrex | Trek routes and stays in Nepal</title>
       </Head>
       <main className="app">
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <SessionProvider session={session}>
-            <CartProvider>
-              <Component {...pageProps} />
-              <Box sx={{ position: 'fixed', right: 16, bottom: 16, zIndex: 1400 }}>
-                <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-                  <AppIconButton
-                    onClick={() => setMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-                    sx={{ boxShadow: '0 8px 20px rgba(2, 12, 27, 0.2)' }}
-                    aria-label="Toggle dark mode"
-                  >
-                    {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-                  </AppIconButton>
-                </Tooltip>
-              </Box>
-            </CartProvider>
+            <Component {...pageProps} />
+            <Box sx={{ position: 'fixed', right: 16, bottom: 16, zIndex: 1400 }}>
+              <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <AppIconButton
+                  onClick={() => setMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+                  sx={{ boxShadow: '0 8px 20px rgba(2, 12, 27, 0.2)' }}
+                  aria-label="Toggle dark mode"
+                >
+                  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+                </AppIconButton>
+              </Tooltip>
+            </Box>
           </SessionProvider>
         </ThemeProvider>
       </main>

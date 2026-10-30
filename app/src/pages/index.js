@@ -16,6 +16,8 @@ import {
   Typography,
 } from '@mui/material';
 import AppsRoundedIcon from '@mui/icons-material/AppsRounded';
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
+import HotelRoundedIcon from '@mui/icons-material/HotelRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import TerrainRoundedIcon from '@mui/icons-material/TerrainRounded';
@@ -332,38 +334,50 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
           {!isFiltering && (
             <Box
               sx={{
+                position: 'relative',
+                overflow: 'hidden',
                 background: gradients.landing,
-                py: { xs: 5, md: 8 },
-                textAlign: 'center',
-                borderRadius: 2,
-                px: 2,
-                mb: 5,
+                py: { xs: 5, md: 7 },
+                borderRadius: 3,
+                px: { xs: 2.5, sm: 4, md: 6 },
+                mb: 6,
+                boxShadow: '0 24px 48px rgba(2, 62, 138, 0.22)',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  width: { xs: 230, md: 370 },
+                  height: { xs: 230, md: 370 },
+                  borderRadius: '50%',
+                  right: { xs: -100, md: 36 },
+                  top: { xs: -110, md: -110 },
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  boxShadow: '0 0 0 28px rgba(255,255,255,0.04), 0 0 0 64px rgba(255,255,255,0.025)',
+                },
               }}
             >
-              <Typography
-                variant="h3"
-                fontWeight={900}
-                sx={{ mb: 1, color: themeColors.snow, fontSize: { xs: '2rem', md: '2.8rem' } }}
-              >
-                Plan your Himalayan trek with confidence
-              </Typography>
-              <Typography variant="h6" sx={{ color: 'rgba(202, 240, 248, 0.86)', maxWidth: 760, mx: 'auto' }}>
-                Discover routes by region, shortlist favorites, and open complete trek pages with route maps and nearby stays.
-              </Typography>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 2.5, justifyContent: 'center' }}>
-                <AppButton href="#treks" variant="contained" size="large">
-                  Explore Treks
-                </AppButton>
-                <AppButton
-                  component={Link}
-                  href="/stays"
-                  variant="outlined"
-                  size="large"
-                  sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.8)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}
-                >
-                  Browse Stays
-                </AppButton>
-              </Stack>
+              <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 780 }}>
+                <Typography variant="overline" sx={{ color: '#90E0EF', letterSpacing: '0.16em', fontWeight: 800 }}>
+                  Nepal, one step closer
+                </Typography>
+                <Typography variant="h1" sx={{ mt: 1, mb: 1.5, color: themeColors.snow, fontSize: { xs: '2.5rem', md: '4.2rem' }, maxWidth: 670 }}>
+                  Build a trek that feels like yours.
+                </Typography>
+                <Typography variant="h6" sx={{ color: 'rgba(202, 240, 248, 0.9)', maxWidth: 670, fontWeight: 400, lineHeight: 1.55 }}>
+                  Explore iconic Himalayan routes, map the journey, and reserve welcoming stays along the way—all in one place.
+                </Typography>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 3.25 }}>
+                  <AppButton href="#treks" size="large" startIcon={<TerrainRoundedIcon />}>
+                    Explore trek routes
+                  </AppButton>
+                  <AppButton component={Link} href="/stays" variant="outlined" size="large" startIcon={<HotelRoundedIcon />} sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                    Find a stay
+                  </AppButton>
+                </Stack>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 3 }} sx={{ mt: 4, color: 'rgba(255,255,255,0.88)' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}><TerrainRoundedIcon fontSize="small" /><Typography variant="body2">Route maps and trail context</Typography></Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}><CalendarMonthRoundedIcon fontSize="small" /><Typography variant="body2">Date-based stay requests</Typography></Box>
+                </Stack>
+              </Box>
             </Box>
           )}
 
@@ -379,9 +393,9 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                     color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
                   })}
                 >
-                  ✨ Featured Stays
+                  Rest stops worth planning for
                 </Typography>
-                <Typography color="text.secondary">Hand-picked accommodations near your favorite treks</Typography>
+                <Typography color="text.secondary">Stay close to the route, request your dates, and let your host confirm the details.</Typography>
               </Box>
 
               <ThumbnailGrid
@@ -399,7 +413,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
 
               <Box sx={{ textAlign: 'center', mt: 4 }}>
                 <AppButton component={Link} href="/stays" variant="outlined" size="large">
-                  Browse All Stays
+                  Explore all stays
                 </AppButton>
               </Box>
             </Box>
@@ -407,10 +421,10 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
 
           <Box id="treks" sx={{ mb: 4 }}>
             <Typography variant="h5" fontWeight={800} sx={{ mb: 0.4 }}>
-              Explore Treks
+              Choose your next route
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2.3 }}>
-              Click any trek image to open route details, map, and nearby stay options.
+              Open any route for the map, elevation context, nearby stays, and a personal trek checklist.
             </Typography>
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} sx={{ mb: 2 }}>

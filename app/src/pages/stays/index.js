@@ -244,7 +244,7 @@ export default function StaysPage({ stays }) {
         <title>Stays | NepalTrex</title>
         <meta
           name="description"
-          content="Browse hotels and homestays across Nepal — featured stays, best deals, Kathmandu city stays, mountain escapes, and lakeside retreats."
+          content="Find welcoming hotels and homestays across Nepal, then send one simple date-based booking request to your host."
         />
       </Head>
 
@@ -262,10 +262,10 @@ export default function StaysPage({ stays }) {
           pb: 0,
         })}
       >
-        <Box sx={{ maxWidth: 560, mx: 'auto', mb: 1.5 }}>
+        <Box sx={{ maxWidth: 680, mx: 'auto', mb: 1.5 }}>
           <TextField
             fullWidth
-            placeholder="Search by name or location…"
+            placeholder="Where are you heading? Search stays or destinations…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             size="small"
@@ -408,6 +408,18 @@ export default function StaysPage({ stays }) {
         })}
       >
         <Container maxWidth="xl">
+          <Box sx={{ mb: 4, display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' }, alignItems: 'end' }}>
+            <Box>
+              <Typography variant="overline" color="primary.main" fontWeight={800} letterSpacing="0.13em">Stay along the way</Typography>
+              <Typography variant="h2" sx={{ mt: 0.35, fontSize: { xs: '2rem', md: '2.7rem' } }}>A good trek starts with a good night.</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1, maxWidth: 650, lineHeight: 1.7 }}>Find a base camp, a quiet mountain lodge, or a city reset. Choose your room and dates, then send one booking request directly to the host.</Typography>
+            </Box>
+            <Box sx={(theme) => ({ p: 2, borderLeft: { md: `2px solid ${theme.palette.primary.main}` }, bgcolor: theme.palette.mode === 'dark' ? 'rgba(72,202,228,0.08)' : 'rgba(0,119,182,0.05)', borderRadius: 1.5 })}>
+              <Typography fontWeight={800}>How it works</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.6 }}>Pick a room → choose dates → send a request → get confirmation from your host.</Typography>
+            </Box>
+          </Box>
+
           {isFiltering ? (
             <>
               <Typography
@@ -437,8 +449,8 @@ export default function StaysPage({ stays }) {
           ) : (
             <>
               <Section
-                title="Featured Stays"
-                subtitle="Hand-picked for outstanding views, unique character, and guest love"
+                title="Traveller favourites"
+                subtitle="Thoughtful places for a calmer start, a better rest, and an easier next day"
                 stays={featured}
                 viewAll={featured.length > 4}
               />
@@ -448,8 +460,8 @@ export default function StaysPage({ stays }) {
               )}
 
               <Section
-                title="Best Deals"
-                subtitle="Limited-time discounts — book before they are gone"
+                title="Special rates"
+                subtitle="Current host-listed rates on selected rooms"
                 stays={deals}
                 viewAll={deals.length > 4}
               />

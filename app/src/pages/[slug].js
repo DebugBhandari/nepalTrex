@@ -45,7 +45,6 @@ import {
   minDistanceToRouteKm,
   parseRouteWaypoints,
 } from '../lib/treks';
-import { useCart } from '../hooks/useCart';
 
 const TrekRouteMap = dynamic(() => import('../components/TrekRouteMap'), {
   ssr: false,
@@ -506,7 +505,6 @@ function ReviewsSection({
 
 function StayDetailView({ stay }) {
   const { status, data: session } = useSession();
-  const { addToCart } = useCart();
   const [loginPrompt, setLoginPrompt] = useState(false);
   const [ownerAlert, setOwnerAlert] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -523,22 +521,6 @@ function StayDetailView({ stay }) {
     error: '',
     success: '',
   });
-
-  const handleAddToCart = (item) => {
-    if (status !== 'authenticated') {
-      setLoginPrompt(true);
-      return;
-    }
-    if (
-      session?.user?.id &&
-      stay.ownerUserId &&
-      session.user.id === stay.ownerUserId
-    ) {
-      setOwnerAlert(true);
-      return;
-    }
-    addToCart(stay, item);
-  };
 
   const handleRequestRoom = (room) => {
     if (status !== 'authenticated') {
@@ -921,7 +903,7 @@ function StayDetailView({ stay }) {
                   >
                     sign in
                   </Link>{' '}
-                  to request a room or place a food order.
+                  to request a room.
                 </Alert>
               )}
 
@@ -1053,14 +1035,14 @@ function StayDetailView({ stay }) {
 
               <Divider sx={{ mb: 4 }} />
 
-              {/* Food Menu */}
+              {/* Meal information */}
               <Box sx={{ mb: 4 }}>
                 <Typography variant="h5" fontWeight={800} sx={{ mb: 2 }}>
-                  Food Menu
+                  Meals at the stay
                 </Typography>
                 {groupedMenu.foods.length === 0 ? (
                   <Typography color="text.secondary">
-                    No food options listed yet.
+                    Ask the host about meals and dietary needs when they confirm your stay.
                   </Typography>
                 ) : (
                   <Box
@@ -1117,13 +1099,7 @@ function StayDetailView({ stay }) {
                             >
                               NPR {Number(item.price).toLocaleString()}
                             </Typography>
-                            <AppButton
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleAddToCart(item)}
-                            >
-                              Add to order
-                            </AppButton>
+                            <Chip size="small" label="Ask host when booking" variant="outlined" />
                           </Box>
                         </CardContent>
                       </Card>
@@ -1177,8 +1153,8 @@ function StayDetailView({ stay }) {
                 color="text.secondary"
                 sx={{ lineHeight: 1.65, mb: 2.25 }}
               >
-                Choose dates and request a room below. Food can still be added
-                to an order separately.
+                Choose a room, add your dates, and send one booking request.
+                The host confirms final availability and any meal arrangements.
               </Typography>
               <AppButton
                 fullWidth
@@ -1188,7 +1164,7 @@ function StayDetailView({ stay }) {
                     ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                 }
               >
-                View rooms
+                Choose a room
               </AppButton>
             </Paper>
           </Box>

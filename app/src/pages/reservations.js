@@ -56,7 +56,7 @@ function ReservationCard({ reservation, onCancel, cancelling }) {
   const canCancel = reservation.status === 'confirmed' || holdIsActive;
 
   return (
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={(theme) => ({ borderRadius: 2.5, overflow: 'hidden', borderColor: reservation.status === 'confirmed' ? theme.palette.success.main : theme.palette.divider })}>
       <CardContent sx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2.5}>
           <Box sx={{ minWidth: 0, flex: 1 }}>
@@ -110,7 +110,7 @@ function ReservationCard({ reservation, onCancel, cancelling }) {
 
           <Stack alignItems={{ xs: 'flex-start', md: 'flex-end' }} spacing={1.25} sx={{ minWidth: { md: 160 } }}>
             <Typography variant="h6" fontWeight={800} color="primary.main">NPR {Number(reservation.totalPrice || 0).toLocaleString()}</Typography>
-            <Typography variant="caption" color="text.secondary">Requested {formatDate(reservation.createdAt)}</Typography>
+              <Typography variant="caption" color="text.secondary">Requested {formatDate(reservation.createdAt)}</Typography>
             {reservation.staySlug && <AppButton component={Link} href={`/stays/${reservation.staySlug}`} variant="outlined" size="small">View stay</AppButton>}
             {canCancel && (
               <AppButton variant="outlined" color="error" size="small" disabled={cancelling} onClick={() => onCancel(reservation)}>
@@ -176,8 +176,9 @@ export default function ReservationsPage() {
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
         <Stack spacing={3}>
           <Box>
-            <Typography variant="h3" component="h1" fontWeight={800}>My Reservations</Typography>
-            <Typography color="text.secondary" sx={{ mt: 0.8 }}>Track your stay requests and see host decisions in one place.</Typography>
+            <Typography variant="overline" color="primary.main" fontWeight={800} letterSpacing="0.13em">Your trip base</Typography>
+            <Typography variant="h2" component="h1" sx={{ mt: 0.35 }}>My stay requests</Typography>
+            <Typography color="text.secondary" sx={{ mt: 0.8, maxWidth: 620 }}>Track requested dates, host decisions, and your upcoming places to rest—all in one clear itinerary.</Typography>
           </Box>
 
           {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
@@ -187,9 +188,9 @@ export default function ReservationsPage() {
           ) : reservations.length === 0 ? (
             <Paper variant="outlined" sx={{ py: 7, px: 3, textAlign: 'center', borderRadius: 2 }}>
               <HotelRoundedIcon color="action" sx={{ fontSize: 44, mb: 1 }} />
-              <Typography variant="h6" fontWeight={800}>No stay reservations yet</Typography>
-              <Typography color="text.secondary" sx={{ mt: 0.7, mb: 2.25 }}>Find a stay, choose your dates, and send a request to the host.</Typography>
-              <AppButton component={Link} href="/stays">Browse stays</AppButton>
+              <Typography variant="h6" fontWeight={800}>Your next rest stop is waiting</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.7, mb: 2.25 }}>Find a stay, choose your dates, and send one booking request to the host.</Typography>
+              <AppButton component={Link} href="/stays">Find a stay</AppButton>
             </Paper>
           ) : (
             <Stack spacing={2}>{reservations.map((reservation) => <ReservationCard key={reservation.id} reservation={reservation} onCancel={cancelReservation} cancelling={cancellingId === reservation.id} />)}</Stack>
