@@ -197,7 +197,6 @@ export const authOptions = {
         token.userId = userRow?.id || user.id;
         token.role = userRow?.role || user.role || token.role || 'user';
         token.isBanned = Boolean(userRow?.is_banned ?? user.isBanned);
-        token.picture = userRow?.profile_image_url || user.image || token.picture;
         token.scopes = scopesForRole(token.role);
       } else if (token?.email) {
         const result = await query(
@@ -247,8 +246,6 @@ export const authOptions = {
 
         if (result.rows[0]?.profile_image_url) {
           session.user.image = result.rows[0].profile_image_url;
-        } else if (token?.picture) {
-          session.user.image = token.picture;
         }
       }
       return session;
