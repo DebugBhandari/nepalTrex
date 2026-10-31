@@ -268,7 +268,7 @@ export default function TrekRouteMap({
         return (
         <Marker
           key={name + '-' + index}
-          center={position}
+          position={position}
           icon={completedWaypoint ? completedWaypointIcon : routeWaypointIcon}
         >
           <Tooltip direction="top" offset={[0, -8]}>
