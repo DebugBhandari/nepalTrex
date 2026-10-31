@@ -37,6 +37,7 @@ import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
+import SiteFooter from '../components/SiteFooter';
 import StayThumbnailCard from '../components/StayThumbnailCard';
 import GuideCard from '../components/GuideCard';
 import {
@@ -1894,24 +1895,6 @@ function TrekDetailView({ trek }) {
             </Box>
           </Paper>
 
-          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
-            <Typography variant="overline" color="text.secondary">
-              Local expertise
-            </Typography>
-            <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
-              Guides who know {trek.region} terrain
-            </Typography>
-            {trek.guidePackages.length === 0 ? (
-              <Typography color="text.secondary">
-                No approved guides with {trek.region} terrain expertise are available yet.
-              </Typography>
-            ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
-                {trek.guidePackages.map((guide) => <GuideCard key={guide.guideId} guide={guide} packageDetails={guide.packageDetails} />)}
-              </Box>
-            )}
-          </Paper>
-
           {status === 'authenticated' && (
             <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
               <Typography variant="overline" color="text.secondary">
@@ -1955,18 +1938,6 @@ function TrekDetailView({ trek }) {
           )}
 
           <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
-            <ReviewsSection
-              initialReviews={trek.reviews || []}
-              initialReviewCount={trek.reviewCount}
-              initialRating={trek.avgRating}
-              targetId={trek.id}
-              targetType="trek"
-              reviewsPageHref={`/reviews/trek/${trek.slug}`}
-              title="Trekker Reviews"
-            />
-          </Paper>
-
-          <Paper sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
             <Typography variant="overline" color="text.secondary">
               Rest along the route
             </Typography>
@@ -2018,7 +1989,41 @@ function TrekDetailView({ trek }) {
               </Box>
             )}
           </Paper>
+
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
+            <Typography variant="overline" color="text.secondary">
+              Local expertise
+            </Typography>
+            <Typography variant="h5" sx={{ mt: 0.25, mb: 0.8 }}>
+              Guides who know {trek.region} terrain
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              Compare approved local guides and packages after choosing where to rest along the route.
+            </Typography>
+            {trek.guidePackages.length === 0 ? (
+              <Typography color="text.secondary">
+                No approved guides with {trek.region} terrain expertise are available yet.
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
+                {trek.guidePackages.map((guide) => <GuideCard key={guide.guideId} guide={guide} packageDetails={guide.packageDetails} />)}
+              </Box>
+            )}
+          </Paper>
+
+          <Paper sx={{ p: { xs: 2, md: 3 }, mb: 4, borderRadius: 2 }}>
+            <ReviewsSection
+              initialReviews={trek.reviews || []}
+              initialReviewCount={trek.reviewCount}
+              initialRating={trek.avgRating}
+              targetId={trek.id}
+              targetType="trek"
+              reviewsPageHref={`/reviews/trek/${trek.slug}`}
+              title="Trekker Reviews"
+            />
+          </Paper>
         </Container>
+        <SiteFooter />
       </Box>
     </>
   );

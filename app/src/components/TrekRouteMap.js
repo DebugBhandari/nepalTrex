@@ -94,21 +94,32 @@ function TrekRouteBounds({ routeGeojson }) {
   const map = useMap();
 
   useEffect(() => {
+    const refreshSize = () => map.invalidateSize({ animate: false });
+    const frame = window.requestAnimationFrame(refreshSize);
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(refreshSize);
+    resizeObserver?.observe(map.getContainer());
+
     const normalized = normalizeGeoJson(routeGeojson);
 
     if (!normalized) {
       map.setView(NEPAL_CENTER, NEPAL_ZOOM);
-      return;
+    } else {
+      const bounds = geoJSON(normalized).getBounds();
+
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [28, 28] });
+      } else {
+        map.setView(NEPAL_CENTER, NEPAL_ZOOM);
+      }
     }
 
-    const bounds = geoJSON(normalized).getBounds();
-
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [28, 28] });
-      return;
-    }
-
-    map.setView(NEPAL_CENTER, NEPAL_ZOOM);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+    };
   }, [map, routeGeojson]);
 
   return null;
@@ -139,8 +150,8 @@ export default function TrekRouteMap({
       scrollWheelZoom
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         subdomains="abcd"
         maxZoom={19}
       />
