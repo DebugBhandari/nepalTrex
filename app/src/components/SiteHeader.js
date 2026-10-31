@@ -47,7 +47,7 @@ export default function SiteHeader() {
       position="sticky"
       elevation={0}
       sx={(theme) => ({
-        bgcolor: theme.palette.mode === 'dark' ? 'rgba(3, 4, 94, 0.86)' : 'rgba(255,255,255,0.9)',
+        bgcolor: theme.palette.mode === 'dark' ? 'rgba(108, 88, 76, 0.86)' : 'rgba(255,255,255,0.9)',
         backdropFilter: 'blur(18px)',
         borderBottom: `1px solid ${theme.palette.divider}`,
       })}
@@ -79,9 +79,9 @@ export default function SiteHeader() {
                 fontSize: 14,
                 fontWeight: isCurrent(href) ? 800 : 600,
                 color: isCurrent(href) ? 'primary.main' : 'text.secondary',
-                bgcolor: isCurrent(href) ? theme.palette.mode === 'dark' ? 'rgba(72,202,228,0.15)' : 'rgba(0,119,182,0.08)' : 'transparent',
+                bgcolor: isCurrent(href) ? theme.palette.mode === 'dark' ? 'rgba(189,205,146,0.15)' : 'rgba(109,128,59,0.08)' : 'transparent',
                 transition: 'all 160ms ease',
-                '&:hover': { color: 'primary.main', bgcolor: theme.palette.mode === 'dark' ? 'rgba(72,202,228,0.12)' : 'rgba(0,119,182,0.06)' },
+                '&:hover': { color: 'primary.main', bgcolor: theme.palette.mode === 'dark' ? 'rgba(189,205,146,0.12)' : 'rgba(109,128,59,0.06)' },
               })}
             >
               {label}
@@ -94,7 +94,7 @@ export default function SiteHeader() {
         {status === 'authenticated' ? (
           <>
             <IconButton onClick={(event) => setUserMenuAnchor(event.currentTarget)} aria-label="Open account menu" sx={{ p: 0.45, ml: 0.25 }}>
-              <Avatar src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'Account'} sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#fff', fontSize: 13, fontWeight: 800 }}>
+              <Avatar src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'Account'} sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#FCFBF6', fontSize: 13, fontWeight: 800 }}>
                 {initialsFromName(session.user?.name || session.user?.email)}
               </Avatar>
             </IconButton>

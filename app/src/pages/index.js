@@ -317,7 +317,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
         sx={(theme) => ({
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(72,202,228,0.3) 0%, transparent 32%), linear-gradient(160deg, #03045E 0%, #023E8A 46%, #0077B6 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(189,205,146,0.3) 0%, transparent 32%), linear-gradient(160deg, #6C584C 0%, #56473D 46%, #6D803B 100%)'
               : theme.palette.background.default,
           minHeight: '100vh',
           pb: 6,
@@ -341,7 +341,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                 borderRadius: 3,
                 px: { xs: 2.5, sm: 4, md: 6 },
                 mb: 6,
-                boxShadow: '0 24px 48px rgba(2, 62, 138, 0.22)',
+                boxShadow: '0 24px 48px rgba(86, 71, 61, 0.22)',
                 '&::after': {
                   content: '""',
                   position: 'absolute',
@@ -356,23 +356,23 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               }}
             >
               <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 780 }}>
-                <Typography variant="overline" sx={{ color: '#90E0EF', letterSpacing: '0.16em', fontWeight: 800 }}>
+                <Typography variant="overline" sx={{ color: '#DDE5B6', letterSpacing: '0.16em', fontWeight: 800 }}>
                   Nepal, one step closer
                 </Typography>
                 <Typography variant="h1" sx={{ mt: 1, mb: 1.5, color: themeColors.snow, fontSize: { xs: '2.5rem', md: '4.2rem' }, maxWidth: 670 }}>
                   Build a trek that feels like yours.
                 </Typography>
-                <Typography variant="h6" sx={{ color: 'rgba(202, 240, 248, 0.9)', maxWidth: 670, fontWeight: 400, lineHeight: 1.55 }}>
+                <Typography variant="h6" sx={{ color: 'rgba(240, 234, 210, 0.9)', maxWidth: 670, fontWeight: 400, lineHeight: 1.55 }}>
                   Explore iconic Himalayan routes, map the journey, and reserve welcoming stays along the way—all in one place.
                 </Typography>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 3.25 }}>
                   <AppButton href="#treks" size="large" startIcon={<TerrainRoundedIcon />}>
                     Explore trek routes
                   </AppButton>
-                  <AppButton component={Link} href="/stays" variant="outlined" size="large" startIcon={<HotelRoundedIcon />} sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <AppButton component={Link} href="/stays" variant="outlined" size="large" startIcon={<HotelRoundedIcon />} sx={{ color: '#FCFBF6', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#FCFBF6', bgcolor: 'rgba(255,255,255,0.1)' } }}>
                     Find a stay
                   </AppButton>
-                  <AppButton component={Link} href="/guides" variant="outlined" size="large" startIcon={<SearchRoundedIcon />} sx={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <AppButton component={Link} href="/guides" variant="outlined" size="large" startIcon={<SearchRoundedIcon />} sx={{ color: '#FCFBF6', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#FCFBF6', bgcolor: 'rgba(255,255,255,0.1)' } }}>
                     Find guides
                   </AppButton>
                 </Stack>
@@ -393,7 +393,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   sx={(theme) => ({
                     mb: 0.5,
                     fontWeight: 800,
-                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                    color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
                   })}
                 >
                   Rest stops worth planning for
@@ -446,7 +446,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   mb: 2.5,
                   background:
                     theme.palette.mode === 'dark'
-                      ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
+                      ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
                       : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(242,251,249,0.96) 100%)',
                 })}
               >
@@ -554,7 +554,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   variant="h5"
                   sx={(theme) => ({
                     mb: 1.25,
-                    color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                    color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
                   })}
                 >
                   {region}
@@ -591,8 +591,8 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               p: { xs: 2.4, md: 3.2 },
               background:
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(130deg, rgba(0,180,216,0.3), rgba(2,62,138,0.96) 55%, rgba(3,4,94,0.96))'
-                  : 'linear-gradient(130deg, rgba(0,180,216,0.14), rgba(255,255,255,0.98) 52%, rgba(202,240,248,0.98))',
+                  ? 'linear-gradient(130deg, rgba(173,193,120,0.3), rgba(86,71,61,0.96) 55%, rgba(108,88,76,0.96))'
+                  : 'linear-gradient(130deg, rgba(173,193,120,0.14), rgba(255,255,255,0.98) 52%, rgba(240,234,210,0.98))',
               border: '1px solid',
               borderColor: 'divider',
             })}
@@ -610,7 +610,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               <Box>
                 <Typography
                   variant="h6"
-                  sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary })}
+                  sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary })}
                 >
                   About NepalTrex
                 </Typography>

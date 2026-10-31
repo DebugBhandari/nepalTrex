@@ -21,7 +21,7 @@ function Stars({ rating }) {
   return (
     <Box sx={{ display: 'flex', gap: 0.3, mt: 0.2 }} aria-label={`${rating} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((star) => (
-        <StarRoundedIcon key={star} sx={{ fontSize: 15, color: star <= rating ? '#00B4D8' : 'text.disabled' }} />
+        <StarRoundedIcon key={star} sx={{ fontSize: 15, color: star <= rating ? '#ADC178' : 'text.disabled' }} />
       ))}
     </Box>
   );

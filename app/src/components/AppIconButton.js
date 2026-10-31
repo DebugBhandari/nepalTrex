@@ -11,7 +11,7 @@ export default function AppIconButton({ sx, tone = 'surface', ...props }) {
         ...(tone === 'primary'
           ? {
               background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              color: '#ffffff',
+              color: theme.palette.primary.contrastText,
               '&:hover': {
                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 74%)`,
               },

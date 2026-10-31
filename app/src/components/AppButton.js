@@ -16,7 +16,7 @@ export default function AppButton({ sx, variant = 'contained', ...props }) {
         ...(variant === 'contained'
           ? {
               background: themeColors.accent,
-              color: '#ffffff',
+              color: themeColors.snow,
               boxShadow: `0 8px 18px ${themeColors.accent}40`,
               '&:hover': {
                 transform: 'translateY(-1px)',

@@ -29,7 +29,7 @@ export default function SignInPage({ csrfToken, providers, error }) {
           py: 6,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(72,202,228,0.3) 0%, transparent 32%), linear-gradient(160deg, #03045E 0%, #023E8A 46%, #0077B6 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(189,205,146,0.3) 0%, transparent 32%), linear-gradient(160deg, #6C584C 0%, #56473D 46%, #6D803B 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -38,11 +38,11 @@ export default function SignInPage({ csrfToken, providers, error }) {
             sx={(theme) => ({
               background:
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
-                  : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(202,240,248,0.98) 100%)',
+                  ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
+                  : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(240,234,210,0.98) 100%)',
               border: '1px solid',
               borderColor: 'divider',
-              boxShadow: '0 24px 44px rgba(2, 62, 138, 0.26)',
+              boxShadow: '0 24px 44px rgba(86, 71, 61, 0.26)',
             })}
           >
             <CardContent sx={{ p: 4 }}>

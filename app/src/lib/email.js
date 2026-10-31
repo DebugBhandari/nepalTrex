@@ -24,7 +24,7 @@ export async function sendPasswordResetEmail(email, resetToken, resetUrl) {
           <h2>Password Reset Request</h2>
           <p>You requested to reset your password for your NepalTrex account.</p>
           <p>Click the link below to reset your password:</p>
-          <a href="${resetLink}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #0077B6; color: #FFFFFF; text-decoration: none; border-radius: 4px; font-weight: bold;">
+          <a href="${resetLink}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #ADC178; color: #433A16; text-decoration: none; border-radius: 4px; font-weight: bold;">
             Reset Password
           </a>
           <p>Or copy and paste this link:</p>
@@ -69,7 +69,7 @@ export async function sendStayOwnershipEmail(email, displayName, stayName, stayS
           <p>Hi ${displayName || 'there'},</p>
           <p>You have been assigned as the owner of <strong>${stayName}</strong> on NepalTrex.</p>
           <p>You can now manage this stay from your dashboard.</p>
-          <a href="${stayUrl}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #0077B6; color: #FFFFFF; text-decoration: none; border-radius: 4px; font-weight: bold;">
+          <a href="${stayUrl}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #ADC178; color: #433A16; text-decoration: none; border-radius: 4px; font-weight: bold;">
             View Stay
           </a>
           <p>Or copy and paste this link:</p>
@@ -111,7 +111,7 @@ export async function sendVerificationEmail(email, verificationToken) {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Welcome to NepalTrex!</h2>
           <p>Thank you for signing up. Please verify your email address to activate your account.</p>
-          <a href="${verificationLink}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #0077B6; color: #FFFFFF; text-decoration: none; border-radius: 4px; font-weight: bold;">
+          <a href="${verificationLink}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #ADC178; color: #433A16; text-decoration: none; border-radius: 4px; font-weight: bold;">
             Verify Email
           </a>
           <p>Or copy and paste this link:</p>

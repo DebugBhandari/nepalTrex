@@ -1,11 +1,11 @@
 import { alpha, createTheme } from '@mui/material/styles';
-import { themeColors } from './theme';
+import { palette as brandPalette, themeColors } from './theme';
 
 export function createAppTheme(mode = 'light') {
   const isDark = mode === 'dark';
   const palette = isDark
-    ? { primary: '#48CAE4', primaryDeep: '#0096C7', secondary: '#90E0EF', bg: '#03045E', paper: '#023E8A', raised: '#0077B6', text: '#CAF0F8', textMuted: '#ADE8F4', border: 'rgba(144, 224, 239, 0.24)' }
-    : { primary: '#0077B6', primaryDeep: '#023E8A', secondary: '#0096C7', bg: '#CAF0F8', paper: '#FFFFFF', raised: '#ADE8F4', text: '#03045E', textMuted: '#023E8A', border: 'rgba(2, 62, 138, 0.18)' };
+    ? { primary: brandPalette.mutedOlive[500], primaryDeep: brandPalette.mutedOlive[300], secondary: brandPalette.fadedCopper[600], bg: brandPalette.ashBrown[500], paper: brandPalette.ashBrown[400], raised: brandPalette.fadedCopper[300], text: brandPalette.vanillaCream[500], textMuted: brandPalette.teaGreen[600], border: 'rgba(221, 229, 182, 0.24)' }
+    : { primary: brandPalette.mutedOlive[300], primaryDeep: brandPalette.mutedOlive[200], secondary: brandPalette.fadedCopper[500], bg: brandPalette.vanillaCream[500], paper: brandPalette.vanillaCream[900], raised: brandPalette.teaGreen[600], text: brandPalette.ashBrown[500], textMuted: brandPalette.ashBrown[400], border: 'rgba(108, 88, 76, 0.18)' };
 
   return createTheme({
     palette: {
@@ -13,14 +13,14 @@ export function createAppTheme(mode = 'light') {
       primary: {
         main: palette.primary,
         dark: palette.primaryDeep,
-        light: '#90E0EF',
-        contrastText: '#ffffff',
+        light: brandPalette.mutedOlive[600],
+        contrastText: brandPalette.vanillaCream[900],
       },
       secondary: {
         main: palette.secondary,
-        dark: '#0077B6',
-        light: '#48CAE4',
-        contrastText: '#03045E',
+        dark: brandPalette.fadedCopper[300],
+        light: brandPalette.fadedCopper[700],
+        contrastText: brandPalette.vanillaCream[900],
       },
       background: {
         default: palette.bg,
@@ -94,7 +94,7 @@ export function createAppTheme(mode = 'light') {
           },
           containedPrimary: {
             background: themeColors.accent,
-            color: '#ffffff',
+            color: themeColors.snow,
             boxShadow: `0 8px 18px ${alpha(themeColors.accent, isDark ? 0.32 : 0.24)}`,
             '&:hover': {
               background: themeColors.deepTeal,
@@ -129,7 +129,7 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: palette.paper,
             color: palette.text,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 12px 30px rgba(0, 4, 94, 0.28)' : '0 10px 28px rgba(2, 62, 138, 0.1)',
+            boxShadow: isDark ? '0 12px 30px rgba(43, 35, 30, 0.34)' : '0 10px 28px rgba(108, 88, 76, 0.1)',
           },
         },
       },
@@ -139,7 +139,7 @@ export function createAppTheme(mode = 'light') {
             borderRadius: 12,
             backgroundColor: palette.paper,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 15px 36px rgba(0, 4, 94, 0.34)' : '0 14px 34px rgba(2, 62, 138, 0.12)',
+            boxShadow: isDark ? '0 15px 36px rgba(43, 35, 30, 0.4)' : '0 14px 34px rgba(108, 88, 76, 0.12)',
           },
         },
       },
@@ -215,7 +215,7 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: palette.paper,
             backgroundImage: `linear-gradient(145deg, ${alpha(palette.primary, isDark ? 0.16 : 0.08)}, transparent 58%)`,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 18px 38px rgba(0, 4, 94, 0.48)' : '0 18px 38px rgba(2, 62, 138, 0.18)',
+            boxShadow: isDark ? '0 18px 38px rgba(43, 35, 30, 0.5)' : '0 18px 38px rgba(108, 88, 76, 0.18)',
             overflow: 'hidden',
           },
         },
@@ -249,7 +249,7 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: palette.paper,
             backgroundImage: `linear-gradient(145deg, ${alpha(palette.primary, isDark ? 0.16 : 0.08)}, transparent 58%)`,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 18px 38px rgba(0, 4, 94, 0.48)' : '0 18px 38px rgba(2, 62, 138, 0.18)',
+            boxShadow: isDark ? '0 18px 38px rgba(43, 35, 30, 0.5)' : '0 18px 38px rgba(108, 88, 76, 0.18)',
           },
         },
       },

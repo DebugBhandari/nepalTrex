@@ -67,14 +67,14 @@ const DASHBOARD_MANAGEMENT_ACTION_GROUP_CLASS = 'dashboard-management-action-gro
 const dashboardCardSx = (theme) => ({
   background:
     theme.palette.mode === 'dark'
-      ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
-      : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(202,240,248,0.5) 100%)',
-  color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+      ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
+      : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(240,234,210,0.5) 100%)',
+  color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
   border: '1px solid',
-  borderColor: theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(2, 62, 138, 0.12)',
+  borderColor: theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(86, 71, 61, 0.12)',
   borderRadius: 3,
   overflow: 'hidden',
-  boxShadow: theme.palette.mode === 'dark' ? '0 16px 32px rgba(0, 4, 94, 0.2)' : '0 14px 30px rgba(2, 62, 138, 0.08)',
+  boxShadow: theme.palette.mode === 'dark' ? '0 16px 32px rgba(0, 4, 94, 0.2)' : '0 14px 30px rgba(86, 71, 61, 0.08)',
 });
 
 function normalizeHandle(value) {
@@ -758,12 +758,12 @@ return (
             p: { xs: 1.25, sm: 2, md: 2.5 },
             background:
               theme.palette.mode === 'dark'
-                ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
-                : 'linear-gradient(145deg, #FFFFFF 0%, #E8FAFD 100%)',
+                ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
+                : 'linear-gradient(145deg, #FCFBF6 0%, #F3EEDA 100%)',
             border: '1px solid',
-            borderColor: theme.palette.mode === 'dark' ? 'rgba(144, 224, 239, 0.26)' : 'rgba(2, 62, 138, 0.13)',
+            borderColor: theme.palette.mode === 'dark' ? 'rgba(221, 229, 182, 0.26)' : 'rgba(86, 71, 61, 0.13)',
             borderRadius: { xs: 2.5, md: 3.5 },
-            boxShadow: theme.palette.mode === 'dark' ? '0 24px 48px rgba(0, 4, 94, 0.28)' : '0 24px 48px rgba(2, 62, 138, 0.12)',
+            boxShadow: theme.palette.mode === 'dark' ? '0 24px 48px rgba(0, 4, 94, 0.28)' : '0 24px 48px rgba(86, 71, 61, 0.12)',
             '& .dashboard-action': {
               minWidth: { xs: '100%', sm: 132 },
               minHeight: 42,
@@ -794,9 +794,9 @@ return (
               py: { xs: 1.25, md: 1.75 },
               borderRadius: 2.5,
               background: theme.palette.mode === 'dark'
-                ? 'linear-gradient(120deg, rgba(72,202,228,0.2), rgba(3,4,94,0.08))'
-                : 'linear-gradient(120deg, rgba(0,119,182,0.13), rgba(72,202,228,0.05))',
-              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(144,224,239,0.18)' : 'rgba(0,119,182,0.12)'}`,
+                ? 'linear-gradient(120deg, rgba(189,205,146,0.2), rgba(108,88,76,0.08))'
+                : 'linear-gradient(120deg, rgba(109,128,59,0.13), rgba(189,205,146,0.05))',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(221,229,182,0.18)' : 'rgba(109,128,59,0.12)'}`,
             })}
           >
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2}>
@@ -827,7 +827,7 @@ return (
               px: 0.5,
               minHeight: 58,
               borderRadius: 2,
-              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(3,4,94,0.3)' : 'rgba(255,255,255,0.7)',
+              backgroundColor: theme.palette.mode === 'dark' ? 'rgba(108,88,76,0.3)' : 'rgba(255,255,255,0.7)',
               border: `1px solid ${theme.palette.divider}`,
               '& .MuiTab-root': { minHeight: 54, px: { xs: 1.5, md: 2.25 } },
             })}
@@ -866,7 +866,7 @@ return (
               </Stack>
 
               {showTrekFilters && (
-                <Paper variant="outlined" sx={(theme) => ({ p: { xs: 1.5, md: 2 }, mb: 2, borderRadius: 2.5, bgcolor: theme.palette.mode === 'dark' ? 'rgba(3,4,94,0.22)' : 'rgba(255,255,255,0.7)' })}>
+                <Paper variant="outlined" sx={(theme) => ({ p: { xs: 1.5, md: 2 }, mb: 2, borderRadius: 2.5, bgcolor: theme.palette.mode === 'dark' ? 'rgba(108,88,76,0.22)' : 'rgba(255,255,255,0.7)' })}>
                   <Stack spacing={1.2}>
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2}>
                       <FormControl size="small" sx={{ minWidth: 170 }}>
@@ -1423,12 +1423,12 @@ return (
                                   border: '1px solid',
                                   borderColor: 'primary.main',
                                   backgroundColor: theme.palette.mode === 'dark'
-                                    ? 'rgba(0, 180, 216, 0.16)'
-                                    : 'rgba(0, 119, 182, 0.1)',
+                                    ? 'rgba(173, 193, 120, 0.16)'
+                                    : 'rgba(109, 128, 59, 0.1)',
                                   '&:hover': {
                                     backgroundColor: theme.palette.mode === 'dark'
-                                      ? 'rgba(0, 180, 216, 0.24)'
-                                      : 'rgba(0, 119, 182, 0.16)',
+                                      ? 'rgba(173, 193, 120, 0.24)'
+                                      : 'rgba(109, 128, 59, 0.16)',
                                   },
                                 })}
                               >
@@ -1764,9 +1764,9 @@ return (
                       sx={(theme) => ({
                         background:
                           theme.palette.mode === 'dark'
-                            ? 'linear-gradient(145deg, rgba(2,62,138,0.96) 0%, rgba(3,4,94,0.96) 100%)'
+                            ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
                             : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                        color: theme.palette.mode === 'dark' ? '#ffffff' : theme.palette.text.primary,
+                        color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
                       })}
                     >
                       <CardContent>
@@ -1867,14 +1867,14 @@ return (
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf || isGuide || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
                               sx={{
-                                background: '#0077B6',
-                                color: '#ffffff',
+                                background: '#6D803B',
+                                color: '#FCFBF6',
                                 '&:hover': {
-                                  background: '#023E8A',
+                                  background: '#56473D',
                                 },
                                 '&.Mui-disabled': {
                                   background: '#94a3b8',
-                                  color: '#ffffff',
+                                  color: '#FCFBF6',
                                 },
                               }}
                             >
@@ -1886,8 +1886,8 @@ return (
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               onClick={() => toggleUserBan(entry.id, !entry.isBanned)}
                               sx={{
-                                color: entry.isBanned ? '#0077B6' : '#023E8A',
-                                borderColor: entry.isBanned ? 'rgba(0, 119, 182, 0.45)' : 'rgba(2, 62, 138, 0.45)',
+                                color: entry.isBanned ? '#6D803B' : '#56473D',
+                                borderColor: entry.isBanned ? 'rgba(109, 128, 59, 0.45)' : 'rgba(86, 71, 61, 0.45)',
                               }}
                             >
                               {isUpdatingBan ? 'Saving...' : entry.isBanned ? 'Unban' : 'Ban'}

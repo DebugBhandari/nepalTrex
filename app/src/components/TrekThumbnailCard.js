@@ -22,9 +22,9 @@ export default function TrekThumbnailCard({ trek }) {
           overflow: 'hidden',
           mb: 1.5,
           '& img': { transition: 'transform 0.35s ease' },
-          boxShadow: '0 10px 24px rgba(2, 62, 138, 0.16)',
+          boxShadow: '0 10px 24px rgba(86, 71, 61, 0.16)',
           '&:hover img': { transform: 'scale(1.055)' },
-          '&::after': { content: '""', position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3, 4, 94, 0.04) 34%, rgba(3, 4, 94, 0.36) 100%)', pointerEvents: 'none' },
+          '&::after': { content: '""', position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(108, 88, 76, 0.04) 34%, rgba(108, 88, 76, 0.36) 100%)', pointerEvents: 'none' },
         }}
       >
         <Box
@@ -60,8 +60,8 @@ export default function TrekThumbnailCard({ trek }) {
               width: 30,
               height: 30,
               borderRadius: 1,
-              bgcolor: '#00B4D8',
-              boxShadow: '0 4px 10px rgba(2, 62, 138, 0.18)',
+              bgcolor: '#ADC178',
+              boxShadow: '0 4px 10px rgba(86, 71, 61, 0.18)',
               display: 'grid',
               placeItems: 'center',
               pointerEvents: 'none',
@@ -84,7 +84,7 @@ export default function TrekThumbnailCard({ trek }) {
             px: 1.25,
             py: 0.5,
             borderRadius: 1,
-            bgcolor: 'rgba(3, 4, 94, 0.78)',
+            bgcolor: 'rgba(108, 88, 76, 0.78)',
             backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             display: 'flex',
@@ -96,12 +96,12 @@ export default function TrekThumbnailCard({ trek }) {
           {Number(trek.reviewCount || 0) > 0 ? (
             <>
               <StarRoundedIcon sx={{ fontSize: 14, color: themeColors.goldSun }} />
-              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+              <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 700, lineHeight: 1 }}>
                 {Number(trek.avgRating).toFixed(1)} ({Number(trek.reviewCount)})
               </Typography>
             </>
           ) : (
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+            <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 600, lineHeight: 1 }}>
               No reviews
             </Typography>
           )}

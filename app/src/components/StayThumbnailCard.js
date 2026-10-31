@@ -33,9 +33,9 @@ export default function StayThumbnailCard({ stay }) {
           overflow: 'hidden',
           mb: 1.5,
           '& img': { transition: 'transform 0.35s ease' },
-            boxShadow: '0 10px 24px rgba(2, 62, 138, 0.16)',
+            boxShadow: '0 10px 24px rgba(86, 71, 61, 0.16)',
           '&:hover img': { transform: 'scale(1.055)' },
-          '&::after': { content: '""', position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3, 4, 94, 0.04) 34%, rgba(3, 4, 94, 0.36) 100%)', pointerEvents: 'none' },
+          '&::after': { content: '""', position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(108, 88, 76, 0.04) 34%, rgba(108, 88, 76, 0.36) 100%)', pointerEvents: 'none' },
         }}
       >
         <Box
@@ -61,8 +61,8 @@ export default function StayThumbnailCard({ stay }) {
               px: 1.25,
               py: 0.5,
               borderRadius: 1,
-            bgcolor: '#00B4D8',
-            boxShadow: '0 4px 10px rgba(2, 62, 138, 0.18)',
+            bgcolor: '#ADC178',
+            boxShadow: '0 4px 10px rgba(86, 71, 61, 0.18)',
               display: 'flex',
               alignItems: 'center',
               gap: 0.4,
@@ -89,7 +89,7 @@ export default function StayThumbnailCard({ stay }) {
               pointerEvents: 'none',
             }}
           >
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+            <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 700, lineHeight: 1 }}>
               Featured
             </Typography>
           </Box>
@@ -103,7 +103,7 @@ export default function StayThumbnailCard({ stay }) {
             px: 1.25,
             py: 0.5,
             borderRadius: 1,
-            bgcolor: 'rgba(3, 4, 94, 0.78)',
+            bgcolor: 'rgba(108, 88, 76, 0.78)',
             backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             display: 'flex',
@@ -113,9 +113,9 @@ export default function StayThumbnailCard({ stay }) {
           }}
         >
           {stay.stayType === 'hotel'
-            ? <HotelRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />
-            : <HomeRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />}
-          <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, textTransform: 'capitalize', lineHeight: 1 }}>
+            ? <HotelRoundedIcon sx={{ fontSize: 13, color: '#FCFBF6' }} />
+            : <HomeRoundedIcon sx={{ fontSize: 13, color: '#FCFBF6' }} />}
+          <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 600, textTransform: 'capitalize', lineHeight: 1 }}>
             {stay.stayType}
           </Typography>
         </Box>
@@ -132,7 +132,7 @@ export default function StayThumbnailCard({ stay }) {
             px: 1.25,
             py: 0.5,
             borderRadius: 1,
-            bgcolor: 'rgba(3, 4, 94, 0.78)',
+            bgcolor: 'rgba(108, 88, 76, 0.78)',
             backdropFilter: 'blur(8px)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             display: 'flex',
@@ -144,12 +144,12 @@ export default function StayThumbnailCard({ stay }) {
           {Number(stay.reviewCount || 0) > 0 ? (
             <>
               <StarRoundedIcon sx={{ fontSize: 14, color: themeColors.goldSun }} />
-              <Typography variant="caption" sx={{ color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+              <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 700, lineHeight: 1 }}>
                 {Number(stay.avgRating).toFixed(1)} ({Number(stay.reviewCount)})
               </Typography>
             </>
           ) : (
-            <Typography variant="caption" sx={{ color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+            <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 600, lineHeight: 1 }}>
               No reviews
             </Typography>
           )}

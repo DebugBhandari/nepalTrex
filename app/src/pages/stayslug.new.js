@@ -99,7 +99,7 @@ export default function StayDetailPage({ stay }) {
           py: 5,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 15% 10%, #27595f 0%, transparent 35%), radial-gradient(circle at 80% -10%, #5f3f1f 0%, transparent 30%), linear-gradient(150deg, #0f2b2d 0%, #173b3f 45%, #08292d 100%)'
+              ? 'radial-gradient(circle at 15% 10%, #ADC178 0%, transparent 35%), radial-gradient(circle at 80% -10%, #A98467 0%, transparent 30%), linear-gradient(150deg, #6C584C 0%, #56473D 45%, #40352E 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -111,8 +111,8 @@ export default function StayDetailPage({ stay }) {
             variant="outlined"
             sx={(theme) => ({
               mb: 2,
-              color: theme.palette.mode === 'dark' ? '#f8f4eb' : theme.palette.text.primary,
-              borderColor: theme.palette.mode === 'dark' ? '#f8f4eb' : 'rgba(148,163,184,0.45)',
+              color: theme.palette.mode === 'dark' ? '#F0EAD2' : theme.palette.text.primary,
+              borderColor: theme.palette.mode === 'dark' ? '#F0EAD2' : 'rgba(108,88,76,0.45)',
             })}
           >
             Back to Home
@@ -123,11 +123,11 @@ export default function StayDetailPage({ stay }) {
               mb: 2,
               background:
                 theme.palette.mode === 'dark'
-                  ? 'linear-gradient(145deg, rgba(19,30,49,0.95) 0%, rgba(11,18,32,0.94) 100%)'
-                  : 'linear-gradient(145deg, rgba(255,255,255,0.99) 0%, rgba(242,251,249,0.98) 100%)',
+                  ? 'linear-gradient(145deg, rgba(64,53,46,0.95) 0%, rgba(43,35,30,0.94) 100%)'
+                  : 'linear-gradient(145deg, rgba(252,251,246,0.99) 0%, rgba(243,238,218,0.98) 100%)',
               border: '1px solid',
               borderColor: 'divider',
-              boxShadow: '0 22px 44px rgba(8, 41, 45, 0.24)',
+              boxShadow: '0 22px 44px rgba(43, 35, 30, 0.24)',
             })}
           >
             <CardMedia component="img" height="340" image={stay.imageUrl || DEFAULT_STAY_IMAGE} alt={stay.name} />

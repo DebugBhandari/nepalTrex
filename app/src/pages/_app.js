@@ -40,7 +40,7 @@ function CustomApp({ Component, pageProps: { session, ...pageProps } }) {
               <Tooltip title={mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
                 <AppIconButton
                   onClick={() => setMode((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-                  sx={{ boxShadow: '0 8px 20px rgba(2, 12, 27, 0.2)' }}
+                  sx={{ boxShadow: '0 8px 20px rgba(43, 35, 30, 0.22)' }}
                   aria-label="Toggle dark mode"
                 >
                   {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}

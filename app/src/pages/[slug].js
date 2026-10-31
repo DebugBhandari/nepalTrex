@@ -129,7 +129,7 @@ function StarRow({ rating, count }) {
           sx={{
             fontSize: 18,
             color:
-              s <= Math.round(Number(rating)) ? '#00B4D8' : 'text.disabled',
+              s <= Math.round(Number(rating)) ? '#ADC178' : 'text.disabled',
           }}
         />
       ))}
@@ -213,7 +213,7 @@ function ReviewForm({
             aria-label={`Set rating to ${star} stars`}
           >
             <StarRoundedIcon
-              sx={{ color: star <= rating ? '#00B4D8' : 'text.disabled' }}
+              sx={{ color: star <= rating ? '#ADC178' : 'text.disabled' }}
             />
           </IconButton>
         ))}
@@ -453,7 +453,7 @@ function ReviewsSection({
                             fontSize: 14,
                             color:
                               star <= review.rating
-                                ? '#00B4D8'
+                                ? '#ADC178'
                                 : 'text.disabled',
                           }}
                         />
@@ -638,7 +638,7 @@ function StayDetailView({ stay }) {
           height: { xs: 300, sm: 420, md: 520 },
           overflow: 'hidden',
           borderRadius: { xs: 0, sm: 2 },
-          boxShadow: '0 22px 54px rgba(2, 62, 138, 0.24)',
+          boxShadow: '0 22px 54px rgba(86, 71, 61, 0.24)',
         }}
       >
         <Box
@@ -658,7 +658,7 @@ function StayDetailView({ stay }) {
             position: 'absolute',
             inset: 0,
             background:
-              'linear-gradient(to top, rgba(3,4,94,0.86) 0%, rgba(3,4,94,0.3) 58%, rgba(3,4,94,0.04) 100%)',
+              'linear-gradient(to top, rgba(108,88,76,0.86) 0%, rgba(108,88,76,0.3) 58%, rgba(108,88,76,0.04) 100%)',
           }}
         />
         {/* Text on hero */}
@@ -689,7 +689,7 @@ function StayDetailView({ stay }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#fff',
+                  color: '#FCFBF6',
                   fontWeight: 600,
                   textTransform: 'capitalize',
                 }}
@@ -699,11 +699,11 @@ function StayDetailView({ stay }) {
             </Box>
             {stay.isFeatured && (
               <Box
-                sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#00B4D8' }}
+                sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#ADC178' }}
               >
                 <Typography
                   variant="caption"
-                  sx={{ color: '#03045E', fontWeight: 800 }}
+                  sx={{ color: '#6C584C', fontWeight: 800 }}
                 >
                   Featured
                 </Typography>
@@ -715,16 +715,16 @@ function StayDetailView({ stay }) {
                   px: 1.4,
                   py: 0.4,
                   borderRadius: 1,
-                  bgcolor: '#0096C7',
+                  bgcolor: '#92AA4E',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
                 }}
               >
-                <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#fff' }} />
+                <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#FCFBF6' }} />
                 <Typography
                   variant="caption"
-                  sx={{ color: '#fff', fontWeight: 700 }}
+                  sx={{ color: '#FCFBF6', fontWeight: 700 }}
                 >
                   {stay.discountPercent}% off
                 </Typography>
@@ -735,7 +735,7 @@ function StayDetailView({ stay }) {
           <Typography
             variant="h3"
             sx={{
-              color: '#fff',
+              color: '#FCFBF6',
               fontWeight: 700,
               lineHeight: 1.1,
               fontSize: { xs: '2rem', sm: '2.7rem', md: '3.4rem' },
@@ -769,10 +769,10 @@ function StayDetailView({ stay }) {
             </Box>
             {stay.avgRating && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                <StarRoundedIcon sx={{ fontSize: 16, color: '#00B4D8' }} />
+                <StarRoundedIcon sx={{ fontSize: 16, color: '#ADC178' }} />
                 <Typography
                   variant="body2"
-                  sx={{ color: '#fff', fontWeight: 700 }}
+                  sx={{ color: '#FCFBF6', fontWeight: 700 }}
                 >
                   {Number(stay.avgRating).toFixed(1)}
                 </Typography>
@@ -795,7 +795,7 @@ function StayDetailView({ stay }) {
           py: { xs: 3.5, md: 6 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.24) 0%, transparent 38%), linear-gradient(160deg, #03045E 0%, #023E8A 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.24) 0%, transparent 38%), linear-gradient(160deg, #6C584C 0%, #56473D 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -811,7 +811,7 @@ function StayDetailView({ stay }) {
               mb: 3.5,
               borderRadius: 2,
               bgcolor: 'background.paper',
-              boxShadow: '0 8px 24px rgba(2, 62, 138, 0.1)',
+              boxShadow: '0 8px 24px rgba(86, 71, 61, 0.1)',
               borderBottom: `1px solid ${theme.palette.divider}`,
             })}
           >
@@ -1610,7 +1610,7 @@ function TrekDetailView({ trek }) {
           py: { xs: 2.5, md: 4.5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.28) 0%, transparent 38%), linear-gradient(160deg, #03045E 0%, #023E8A 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.28) 0%, transparent 38%), linear-gradient(160deg, #6C584C 0%, #56473D 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -1620,7 +1620,7 @@ function TrekDetailView({ trek }) {
               mb: 4,
               overflow: 'hidden',
               borderRadius: { xs: 0, sm: 2 },
-              boxShadow: '0 22px 54px rgba(2, 62, 138, 0.22)',
+              boxShadow: '0 22px 54px rgba(86, 71, 61, 0.22)',
             }}
           >
             <CardMedia

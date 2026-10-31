@@ -150,7 +150,7 @@ export default function TrekRouteMap({
           key="route-layer"
           data={routeGeojson}
           style={{
-            color: '#0077B6',
+            color: '#6D803B',
             weight: 5,
             opacity: 0.9,
           }}
@@ -166,7 +166,7 @@ export default function TrekRouteMap({
             ]}
             radius={9}
             pathOptions={{
-              color: '#ffffff',
+              color: '#FCFBF6',
               fillColor: '#D00000',
               fillOpacity: 1,
               weight: 3,
@@ -207,8 +207,8 @@ export default function TrekRouteMap({
               },
             }}
             pathOptions={{
-              color: isHovered ? '#023E8A' : '#0096C7',
-              fillColor: isHovered ? '#00B4D8' : '#48CAE4',
+              color: isHovered ? '#56473D' : '#92AA4E',
+              fillColor: isHovered ? '#ADC178' : '#BDCD92',
               fillOpacity: 0.92,
               weight: isHovered ? 3 : 2,
             }}
@@ -234,8 +234,8 @@ export default function TrekRouteMap({
           center={[lat, lng]}
           radius={5}
           pathOptions={{
-            color: '#023E8A',
-            fillColor: '#90E0EF',
+            color: '#56473D',
+            fillColor: '#DDE5B6',
             fillOpacity: 1,
             weight: 2,
           }}

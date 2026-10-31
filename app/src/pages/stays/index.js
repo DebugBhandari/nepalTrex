@@ -62,7 +62,7 @@ function HeroStrip({
           variant="h4"
           fontWeight={900}
           sx={{
-            color: dark ? '#03045E' : '#fff',
+            color: dark ? '#6C584C' : '#FCFBF6',
             textShadow: dark ? 'none' : '0 2px 14px rgba(0,0,0,0.3)',
             fontSize: { xs: '1.5rem', md: '2rem' },
             mb: 0.5,
@@ -364,7 +364,7 @@ export default function StaysPage({ stays }) {
             </Typography>
             <Typography
               variant="h6"
-              sx={{ color: 'rgba(202, 240, 248, 0.86)' }}
+              sx={{ color: 'rgba(240, 234, 210, 0.86)' }}
             >
               {staysData.length} unique stays — teahouses, heritage inns, jungle
               camps and city boutiques
@@ -403,7 +403,7 @@ export default function StaysPage({ stays }) {
           py: { xs: 3, md: 5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(0,180,216,0.2) 0%, transparent 38%), linear-gradient(160deg, #03045E 0%, #023E8A 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.2) 0%, transparent 38%), linear-gradient(160deg, #6C584C 0%, #56473D 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -414,7 +414,7 @@ export default function StaysPage({ stays }) {
               <Typography variant="h2" sx={{ mt: 0.35, fontSize: { xs: '2rem', md: '2.7rem' } }}>A good trek starts with a good night.</Typography>
               <Typography color="text.secondary" sx={{ mt: 1, maxWidth: 650, lineHeight: 1.7 }}>Find a base camp, a quiet mountain lodge, or a city reset. Choose your room and dates, then send one booking request directly to the host.</Typography>
             </Box>
-            <Box sx={(theme) => ({ p: 2, borderLeft: { md: `2px solid ${theme.palette.primary.main}` }, bgcolor: theme.palette.mode === 'dark' ? 'rgba(72,202,228,0.08)' : 'rgba(0,119,182,0.05)', borderRadius: 1.5 })}>
+            <Box sx={(theme) => ({ p: 2, borderLeft: { md: `2px solid ${theme.palette.primary.main}` }, bgcolor: theme.palette.mode === 'dark' ? 'rgba(189,205,146,0.08)' : 'rgba(109,128,59,0.05)', borderRadius: 1.5 })}>
               <Typography fontWeight={800}>How it works</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.6 }}>Pick a room → choose dates → send a request → get confirmation from your host.</Typography>
             </Box>
