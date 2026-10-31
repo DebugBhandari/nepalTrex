@@ -2019,7 +2019,7 @@ function TrekDetailView({ trek }) {
               targetId={trek.id}
               targetType="trek"
               reviewsPageHref={`/reviews/trek/${trek.slug}`}
-              title="Trekker Reviews"
+              title="Reviews for this route"
             />
           </Paper>
         </Container>

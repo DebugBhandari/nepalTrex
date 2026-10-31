@@ -51,27 +51,30 @@ export default function TrekThumbnailCard({ trek }) {
         </Box>
 
         {trek.isFeatured && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 12,
-              left: 12,
-              width: 34,
-              height: 34,
-              borderRadius: 1,
-              bgcolor: themeColors.accent,
-              color: themeColors.ink,
-              boxShadow: '0 7px 16px rgba(0, 21, 36, 0.32)',
-              border: '1px solid rgba(255, 251, 246, 0.5)',
-              display: 'grid',
-              placeItems: 'center',
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-            title="Featured trek"
-          >
-            <WorkspacePremiumRoundedIcon sx={{ fontSize: 18, color: 'inherit' }} />
-          </Box>
+          <Tooltip title="Featured trek" arrow>
+            <Box
+              component="span"
+              aria-label="Featured trek"
+              sx={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                width: 34,
+                height: 34,
+                borderRadius: 1,
+                bgcolor: themeColors.accent,
+                color: themeColors.ink,
+                boxShadow: '0 7px 16px rgba(0, 21, 36, 0.32)',
+                border: '1px solid rgba(255, 251, 246, 0.5)',
+                display: 'grid',
+                placeItems: 'center',
+                cursor: 'help',
+                zIndex: 1,
+              }}
+            >
+              <WorkspacePremiumRoundedIcon sx={{ fontSize: 18, color: 'inherit' }} />
+            </Box>
+          </Tooltip>
         )}
 
         <Box
