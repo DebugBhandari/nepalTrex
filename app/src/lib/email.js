@@ -126,3 +126,30 @@ export async function sendVerificationEmail(email, verificationToken) {
     return { success: false, error: error.message };
   }
 }
+
+export async function sendReservationRequestEmail(email, displayName, title, body, href) {
+  const link = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${href}`;
+
+  try {
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'noreply@nepaltrex.com',
+      to: email,
+      subject: title,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>${title}</h2>
+          <p>Hi ${displayName || 'there'},</p>
+          <p>${body}</p>
+          <p>It has also been added to your NepalTrex notifications.</p>
+          <a href="${link}" style="display: inline-block; margin: 20px 0; padding: 10px 20px; background-color: #FF7D00; color: #001524; text-decoration: none; border-radius: 4px; font-weight: bold;">Review request</a>
+          <p style="word-break: break-all; color: #666;">${link}</p>
+        </div>
+      `,
+      text: `${title}\n\nHi ${displayName || 'there'},\n\n${body}\n\nReview request: ${link}`,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to send reservation request email:', error);
+    return { success: false, error: error.message };
+  }
+}

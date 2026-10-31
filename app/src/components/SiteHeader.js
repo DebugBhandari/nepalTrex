@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { signOut, useSession } from 'next-auth/react';
 import {
   AppBar,
   Avatar,
+  Badge,
   Box,
   IconButton,
   Menu,
@@ -19,6 +20,7 @@ import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import SignpostRoundedIcon from '@mui/icons-material/SignpostRounded';
 import HikingRoundedIcon from '@mui/icons-material/HikingRounded';
+import NotificationsRoundedIcon from '@mui/icons-material/NotificationsRounded';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import NepalTrexLogo from './NepalTrexLogo';
 
@@ -37,7 +39,22 @@ export default function SiteHeader() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const isAdmin = ['admin', 'superUser'].includes(session?.user?.role);
+
+  useEffect(() => {
+    if (status !== 'authenticated') { setUnreadNotifications(0); return undefined; }
+    let active = true;
+    const loadUnreadCount = async () => {
+      try {
+        const response = await fetch('/api/notifications');
+        const data = await response.json();
+        if (active && response.ok) setUnreadNotifications(Number(data.unreadCount || 0));
+      } catch { /* Header notifications are non-critical. */ }
+    };
+    loadUnreadCount();
+    return () => { active = false; };
+  }, [status]);
 
   const isCurrent = (href) =>
     href === '/' ? router.pathname === '/' : router.pathname.startsWith(href);
@@ -93,6 +110,9 @@ export default function SiteHeader() {
 
         {status === 'authenticated' ? (
           <>
+            <IconButton component={Link} href="/notifications" aria-label={`Notifications${unreadNotifications ? ` (${unreadNotifications} unread)` : ''}`} sx={{ color: 'text.primary' }}>
+              <Badge badgeContent={unreadNotifications} color="primary" max={99}><NotificationsRoundedIcon /></Badge>
+            </IconButton>
             <IconButton onClick={(event) => setUserMenuAnchor(event.currentTarget)} aria-label="Open account menu" sx={{ p: 0.45, ml: 0.25 }}>
               <Avatar src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'Account'} sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#fffbf6', fontSize: 13, fontWeight: 800 }}>
                 {initialsFromName(session.user?.name || session.user?.email)}
@@ -100,6 +120,7 @@ export default function SiteHeader() {
             </IconButton>
             <Menu anchorEl={userMenuAnchor} open={Boolean(userMenuAnchor)} onClose={() => setUserMenuAnchor(null)} anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} transformOrigin={{ vertical: 'top', horizontal: 'right' }}>
               <MenuItem component={Link} href="/profile" onClick={() => setUserMenuAnchor(null)}><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />My profile</MenuItem>
+              <MenuItem component={Link} href="/notifications" onClick={() => setUserMenuAnchor(null)}><NotificationsRoundedIcon fontSize="small" sx={{ mr: 1 }} />Notifications</MenuItem>
               <MenuItem component={Link} href="/attempts" onClick={() => setUserMenuAnchor(null)}><WorkspacePremiumRoundedIcon fontSize="small" sx={{ mr: 1 }} />My trek achievements</MenuItem>
               <MenuItem component={Link} href="/guides/manage" onClick={() => setUserMenuAnchor(null)}><HikingRoundedIcon fontSize="small" sx={{ mr: 1 }} />Guide workspace</MenuItem>
               {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><HotelRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}

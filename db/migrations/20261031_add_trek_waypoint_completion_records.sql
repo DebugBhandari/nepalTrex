@@ -5,9 +5,20 @@ ALTER TABLE trek_completions
 ALTER TABLE trek_location_records
   ADD COLUMN IF NOT EXISTS is_demo BOOLEAN NOT NULL DEFAULT false;
 
-ALTER TABLE trek_completions
-  ADD CONSTRAINT trek_completions_verification_method_check
-  CHECK (verification_method IN ('live_gps', 'demo')) NOT VALID;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'trek_completions_verification_method_check'
+      AND conrelid = 'trek_completions'::regclass
+  ) THEN
+    ALTER TABLE trek_completions
+      ADD CONSTRAINT trek_completions_verification_method_check
+      CHECK (verification_method IN ('live_gps', 'demo')) NOT VALID;
+  END IF;
+END;
+$$;
 
 CREATE TABLE IF NOT EXISTS trek_waypoint_completions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

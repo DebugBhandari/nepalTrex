@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { pool, query } from '../../../lib/db';
+import { createGuideBookingNotifications, deliverReservationNotificationEmails } from '../../../lib/reservation-notifications';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -25,6 +26,18 @@ export default async function handler(req, res) {
     const multiplier = pkg.price_unit === 'per_person' ? travelers : pkg.price_unit === 'per_day' ? pkg.duration_days : 1;
     const booking = await client.query(`INSERT INTO guide_bookings (guide_package_id,guide_profile_id,customer_user_id,start_date,traveler_count,customer_note,quoted_amount,currency) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`, [pkg.id,pkg.guide_profile_id,session.user.id,startDate,travelers,String(customerNote || '').trim() || null,Number(pkg.price_amount) * multiplier,pkg.currency]);
     await client.query(`INSERT INTO guide_booking_events (guide_booking_id,event_type,next_status,note,actor_user_id) VALUES ($1,'requested','pending',$2,$3)`, [booking.rows[0].id, String(customerNote || '').trim() || null, session.user.id]);
-    await client.query('COMMIT'); return res.status(201).json({ booking: booking.rows[0] });
+    const customerResult = await client.query(`SELECT COALESCE(NULLIF(display_name, ''), NULLIF(username, ''), split_part(email, '@', 1), 'A traveler') AS name FROM users WHERE id = $1`, [session.user.id]);
+    const notifications = await createGuideBookingNotifications(client, {
+      id: booking.rows[0].id,
+      guideUserId: pkg.guide_user_id,
+      packageId: pkg.id,
+      packageTitle: pkg.title,
+      customerName: customerResult.rows[0]?.name || 'A traveler',
+      travelerCount: travelers,
+      startDate,
+    });
+    await client.query('COMMIT');
+    await deliverReservationNotificationEmails(notifications);
+    return res.status(201).json({ booking: booking.rows[0] });
   } catch (error) { await client.query('ROLLBACK'); return res.status(500).json({ error: error.message || 'Failed to request booking' }); } finally { client.release(); }
 }

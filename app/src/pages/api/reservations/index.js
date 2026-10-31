@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { pool, query } from '../../../lib/db';
 import { MAX_RESERVATION_UNITS, parseReservationDates, serializeReservation } from '../../../lib/reservations';
+import { createStayReservationNotifications, deliverReservationNotificationEmails } from '../../../lib/reservation-notifications';
 
 const HOLD_INTERVAL = '24 hours';
 
@@ -112,9 +113,11 @@ export default async function handler(req, res) {
 
       const roomResult = await client.query(
         `
-          SELECT id, stay_id, name, price_per_night, capacity, total_units
-          FROM rooms
-          WHERE id = $1 AND stay_id = $2 AND is_active = true
+          SELECT r.id, r.stay_id, r.name, r.price_per_night, r.capacity, r.total_units,
+                 s.name AS stay_name, s.owner_user_id
+          FROM rooms r
+          JOIN stays s ON s.id = r.stay_id
+          WHERE r.id = $1 AND r.stay_id = $2 AND r.is_active = true
           FOR UPDATE
         `,
         [roomId, stayId]
@@ -193,7 +196,19 @@ export default async function handler(req, res) {
         [reservation.id, session.user.id]
       );
 
+      const notifications = await createStayReservationNotifications(client, {
+        id: reservation.id,
+        stayId: room.stay_id,
+        stayName: room.stay_name,
+        ownerUserId: room.owner_user_id,
+        customerName: customer.name,
+        roomName: room.name,
+        checkInDate: dates.checkInDate,
+        checkOutDate: dates.checkOutDate,
+      });
+
       await client.query('COMMIT');
+      await deliverReservationNotificationEmails(notifications);
       return res.status(201).json({
         reservation: serializeReservation({
           ...reservation,
