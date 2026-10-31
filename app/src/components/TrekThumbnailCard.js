@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import WorkspacePremiumRoundedIcon from '@mui/icons-material/WorkspacePremiumRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded';
 import { getDifficultyLabel, getTrekImage } from '../lib/treks';
 import { themeColors } from '../lib/theme';
 
@@ -50,15 +51,20 @@ export default function TrekThumbnailCard({ trek }) {
           />
         </Box>
 
+        <Box sx={{ position: 'absolute', top: 12, left: 12, display: 'flex', gap: 0.75, zIndex: 1 }}>
+        {trek.isCompleted && (
+          <Tooltip title="Verified trek completed" arrow>
+            <Box component="span" aria-label="Verified trek completed" sx={{ width: 34, height: 34, borderRadius: 1, bgcolor: '#2e7d32', color: '#fff', boxShadow: '0 7px 16px rgba(0, 21, 36, 0.32)', border: '1px solid rgba(255, 251, 246, 0.5)', display: 'grid', placeItems: 'center', cursor: 'help' }}>
+              <VerifiedRoundedIcon sx={{ fontSize: 19 }} />
+            </Box>
+          </Tooltip>
+        )}
         {trek.isFeatured && (
           <Tooltip title="Featured trek" arrow>
             <Box
               component="span"
               aria-label="Featured trek"
               sx={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
                 width: 34,
                 height: 34,
                 borderRadius: 1,
@@ -76,6 +82,7 @@ export default function TrekThumbnailCard({ trek }) {
             </Box>
           </Tooltip>
         )}
+        </Box>
 
         <Box
           component={Link}

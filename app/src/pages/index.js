@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import {
   Alert,
   Box,
@@ -61,6 +62,7 @@ function maxAltitude(trek) {
 }
 
 export default function HomePage({ allTreks, featuredStays = [], dataSource, dataError }) {
+  const { status } = useSession();
   const [treks, setTreks] = useState(allTreks || []);
   const [landingStays, setLandingStays] = useState(featuredStays || []);
   const [selectedRegion, setSelectedRegion] = useState('all');
@@ -70,6 +72,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
   const [showTrekFilters, setShowTrekFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTrekFilter, setActiveTrekFilter] = useState('all');
+  const [completedSlugs, setCompletedSlugs] = useState([]);
 
   useEffect(() => {
     let active = true;
@@ -102,6 +105,17 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setCompletedSlugs([]);
+      return;
+    }
+    fetch('/api/trek-completions')
+      .then((response) => (response.ok ? response.json() : { completions: [] }))
+      .then((data) => setCompletedSlugs((data.completions || []).map((completion) => completion.trekSlug)))
+      .catch(() => setCompletedSlugs([]));
+  }, [status]);
 
   const visibleTreks = treks;
 
@@ -572,7 +586,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   {treks.map((trek) => (
                     <TrekThumbnailCard
                       key={trek.slug}
-                      trek={trek}
+                      trek={{ ...trek, isCompleted: completedSlugs.includes(trek.slug) }}
                     />
                   ))}
                 </ThumbnailGrid>

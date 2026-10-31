@@ -34,6 +34,7 @@ import PlaceIcon from '@mui/icons-material/Place';
 import NearMeRoundedIcon from '@mui/icons-material/NearMeRounded';
 import MyLocationRoundedIcon from '@mui/icons-material/MyLocationRounded';
 import StarRoundedIcon from '@mui/icons-material/StarRounded';
+import VerifiedRoundedIcon from '@mui/icons-material/VerifiedRounded';
 import { query } from '../lib/db';
 import AppButton from '../components/AppButton';
 import SiteHeader from '../components/SiteHeader';
@@ -1373,7 +1374,9 @@ function TrekDetailView({ trek }) {
     success: '',
   });
   const [userLocation, setUserLocation] = useState(null);
+  const [completionState, setCompletionState] = useState({ loading: false, verification: null, completion: null, error: '' });
   const watchIdRef = useRef(null);
+  const lastEvidenceAtRef = useRef(0);
   const routeWaypoints = useMemo(
     () => parseRouteWaypoints(trek.routeGeojson),
     [trek.routeGeojson]
@@ -1446,6 +1449,23 @@ function TrekDetailView({ trek }) {
     };
   }, [status]);
 
+  const loadCompletionState = async () => {
+    if (status !== 'authenticated') return;
+    setCompletionState((current) => ({ ...current, loading: true, error: '' }));
+    try {
+      const response = await fetch(`/api/trek-completions?trekId=${encodeURIComponent(trek.id)}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to check verification progress');
+      setCompletionState({ loading: false, verification: data.verification, completion: data.completion, error: '' });
+    } catch (error) {
+      setCompletionState((current) => ({ ...current, loading: false, error: error.message || 'Unable to check verification progress' }));
+    }
+  };
+
+  useEffect(() => {
+    if (status === 'authenticated') loadCompletionState();
+  }, [status, trek.id]);
+
   useEffect(
     () => () => {
       if (watchIdRef.current !== null && navigator.geolocation)
@@ -1491,6 +1511,18 @@ function TrekDetailView({ trek }) {
       accuracy: position.coords.accuracy,
       updatedAt: position.timestamp,
     });
+    if (Date.now() - lastEvidenceAtRef.current < 45_000) return;
+    lastEvidenceAtRef.current = Date.now();
+    fetch('/api/trek-locations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trekId: trek.id,
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracyM: position.coords.accuracy,
+      }),
+    }).then(() => loadCompletionState()).catch(() => {});
   };
 
   const startAttempt = () => {
@@ -1577,6 +1609,20 @@ function TrekDetailView({ trek }) {
       ...current,
       success: 'Live directions paused. Your attempt remains in history.',
     }));
+  };
+
+  const claimCompletion = async () => {
+    setCompletionState((current) => ({ ...current, loading: true, error: '' }));
+    try {
+      const response = await fetch('/api/trek-completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trekId: trek.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'This route is not verified yet');
+      setCompletionState({ loading: false, verification: data.verification || completionState.verification, completion: data.completion, error: '' });
+    } catch (error) {
+      setCompletionState((current) => ({ ...current, loading: false, error: error.message || 'Unable to claim completion' }));
+    }
   };
 
   const currentTrekAttempts = attempts.filter(
@@ -1689,6 +1735,29 @@ function TrekDetailView({ trek }) {
                   />
                 )}
               </Stack>
+              {status === 'authenticated' && (
+                <Paper variant="outlined" sx={{ mt: 2.5, p: 2, borderRadius: 2, bgcolor: completionState.completion ? 'rgba(46,125,50,0.07)' : 'background.paper' }}>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }} justifyContent="space-between">
+                    <Box>
+                      <Stack direction="row" spacing={0.8} alignItems="center">
+                        <VerifiedRoundedIcon color={completionState.completion ? 'success' : 'action'} />
+                        <Typography fontWeight={800}>Verified trek completion</Typography>
+                      </Stack>
+                      {completionState.completion ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Certificate {completionState.completion.certificate_code} is ready to share.</Typography>
+                      ) : completionState.verification ? (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>GPS evidence: {completionState.verification.verifiedWaypointCount} of {completionState.verification.waypointCount} mapped waypoints verified within 10 km.</Typography>
+                      ) : <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Start live tracking to record GPS evidence at every mapped waypoint.</Typography>}
+                    </Box>
+                    {completionState.completion ? (
+                      <AppButton component="a" href={`/api/trek-completions/${completionState.completion.id}/certificate`} variant="outlined">Download certificate PDF</AppButton>
+                    ) : (
+                      <AppButton disabled={completionState.loading || !completionState.verification?.eligible} onClick={claimCompletion}>Claim verified certificate</AppButton>
+                    )}
+                  </Stack>
+                  {completionState.error && <Alert severity="error" sx={{ mt: 1.5 }}>{completionState.error}</Alert>}
+                </Paper>
+              )}
               <Typography
                 color="text.secondary"
                 sx={{

@@ -71,9 +71,17 @@ export default async function handler(req, res) {
 
   try {
     const result = await query(
-      `INSERT INTO trek_attempts (trek_id, user_id, start_latitude, start_longitude, start_accuracy_m)
-       SELECT id, $2, $3, $4, $5 FROM treks WHERE id = $1
-       RETURNING id, trek_id, user_id, start_latitude, start_longitude, start_accuracy_m, attempted_at`,
+      `WITH trek AS (
+         SELECT id FROM treks WHERE id = $1
+       ), attempt AS (
+         INSERT INTO trek_attempts (trek_id, user_id, start_latitude, start_longitude, start_accuracy_m)
+         SELECT id, $2, $3, $4, $5 FROM trek
+         RETURNING id, trek_id, user_id, start_latitude, start_longitude, start_accuracy_m, attempted_at
+       ), evidence AS (
+         INSERT INTO trek_location_records (trek_id, user_id, latitude, longitude, accuracy_m)
+         SELECT id, $2, $3, $4, $5 FROM trek
+       )
+       SELECT * FROM attempt`,
       [trekId, session.user.id, latitude, longitude, accuracy]
     );
     if (!result.rows[0])
