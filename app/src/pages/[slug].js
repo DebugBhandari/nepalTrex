@@ -1525,6 +1525,106 @@ function TrekDetailView({ trek }) {
     }).then(() => loadCompletionState()).catch(() => {});
   };
 
+  const checkAndRecordCurrentLocation = () => {
+    if (status !== 'authenticated') {
+      router.push(
+        `/auth/signin?callbackUrl=${encodeURIComponent(router.asPath)}`
+      );
+      return;
+    }
+    if (!navigator.geolocation) {
+      setAttemptStatus({
+        loading: false,
+        error: 'Location services are not available in this browser.',
+        success: '',
+      });
+      return;
+    }
+
+    setAttemptStatus({ loading: true, error: '', success: '' });
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          updatedAt: position.timestamp,
+        });
+        try {
+          const response = await fetch('/api/trek-locations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              trekId: trek.id,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracyM: position.coords.accuracy,
+            }),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || 'Unable to check this location');
+
+          await loadCompletionState();
+          if (!data.accuracyEligible) {
+            setAttemptStatus({
+              loading: false,
+              error: `Your GPS accuracy is ${Math.round(position.coords.accuracy)} m. Move to a clearer outdoor area and try again; accuracy must be ${data.maxAccuracyM} m or better to record a successful coordinate.`,
+              success: '',
+            });
+            return;
+          }
+          if (data.newlyCompleted?.length) {
+            const names = data.newlyCompleted
+              .map((index) => routeWaypoints[index]?.place || `Coordinate ${index + 1}`)
+              .join(', ');
+            setAttemptStatus({
+              loading: false,
+              error: '',
+              success: `Coordinate recorded successfully: ${names}.`,
+            });
+            return;
+          }
+
+          const nearest = data.nearestWaypoint;
+          if (
+            nearest &&
+            nearest.distanceM <= data.completionRadiusM &&
+            data.nearestWaypointIsCompleted
+          ) {
+            setAttemptStatus({
+              loading: false,
+              error: '',
+              success: `${nearest.place} was already recorded successfully.`,
+            });
+            return;
+          }
+          const distance = nearest
+            ? `${Math.round(nearest.distanceM)} m from ${nearest.place}`
+            : 'this trek has no mapped coordinates';
+          setAttemptStatus({
+            loading: false,
+            error: '',
+            success: `GPS location saved, but no new mapped coordinate was recorded. You need to be at that place (within ${data.completionRadiusM} m); you are currently ${distance}.`,
+          });
+        } catch (error) {
+          setAttemptStatus({
+            loading: false,
+            error: error.message || 'Unable to check this location',
+            success: '',
+          });
+        }
+      },
+      (error) => {
+        const message =
+          error.code === error.PERMISSION_DENIED
+            ? 'Location permission is required to check and record a mapped coordinate.'
+            : 'We could not determine your location. Please try again outdoors or check location services.';
+        setAttemptStatus({ loading: false, error: message, success: '' });
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 }
+    );
+  };
+
   const startAttempt = () => {
     if (status !== 'authenticated') {
       router.push(
@@ -1748,12 +1848,27 @@ function TrekDetailView({ trek }) {
                       ) : completionState.verification ? (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Live GPS checkpoints: {completionState.verification.verifiedWaypointCount} of {completionState.verification.waypointCount} mapped coordinates completed. Every coordinate must be recorded to finish the route.</Typography>
                       ) : <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Start live tracking to record GPS evidence at every mapped waypoint.</Typography>}
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.8 }}>
+                        Checkpoints record when you are within 250 m of a mapped coordinate with GPS accuracy of 100 m or better.
+                      </Typography>
                     </Box>
-                    {completionState.completion ? (
-                      <AppButton component="a" href={`/api/trek-completions/${completionState.completion.id}/certificate`} variant="outlined">Download certificate PDF</AppButton>
-                    ) : (
-                      <AppButton disabled={completionState.loading || !completionState.verification?.eligible} onClick={claimCompletion}>Claim verified certificate</AppButton>
-                    )}
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ flexShrink: 0 }}>
+                      {!completionState.completion && (
+                        <AppButton
+                          variant="outlined"
+                          startIcon={<MyLocationRoundedIcon />}
+                          onClick={checkAndRecordCurrentLocation}
+                          disabled={attemptStatus.loading}
+                        >
+                          {attemptStatus.loading ? 'Checking location…' : 'Check & record current location'}
+                        </AppButton>
+                      )}
+                      {completionState.completion ? (
+                        <AppButton component="a" href={`/api/trek-completions/${completionState.completion.id}/certificate`} variant="outlined">Download certificate PDF</AppButton>
+                      ) : (
+                        <AppButton disabled={completionState.loading || !completionState.verification?.eligible} onClick={claimCompletion}>Claim verified certificate</AppButton>
+                      )}
+                    </Stack>
                   </Stack>
                   {completionState.error && <Alert severity="error" sx={{ mt: 1.5 }}>{completionState.error}</Alert>}
                 </Paper>
@@ -1941,7 +2056,7 @@ function TrekDetailView({ trek }) {
               Route Map
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-              Hover over a nearby stay card below to highlight it on the map.
+              Use “Check & record current location” above when standing at a mapped waypoint. Completed named waypoints show a check mark on this map.
             </Typography>
             <Box
               sx={(theme) => ({
