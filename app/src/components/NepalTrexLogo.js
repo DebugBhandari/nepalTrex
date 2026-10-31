@@ -58,14 +58,16 @@ export function NepalTrexLogo({ className = '', width = 300 }) {
 
         {/* Main Flag Mountains - Foreground */}
         {/* LEFT: Moon Mountain (Upper Triangle) */}
-        <path d="M50 110 L95 15 L140 110 Z" fill={colors.flagRed} stroke={colors.flagBlue} strokeWidth="9" strokeLinejoin="round" />
+        <path d="M50 110 L95 15 L140 110 Z" fill={colors.flagRed} />
+        <path d="M50 110 L95 15 L140 110" fill="none" stroke={colors.flagBlue} strokeWidth="9" strokeLinejoin="round" />
 
         {/* White Moon Crescent */}
         <circle cx="95" cy="55" r="8" fill="#FFECD1" />
         <circle cx="97.5" cy="55" r="7" fill={colors.cutout} />
 
         {/* RIGHT: Sun Mountain (Lower Triangle) */}
-        <path d="M160 110 L205 15 L250 110 Z" fill={colors.flagRed} stroke={colors.flagBlue} strokeWidth="9" strokeLinejoin="round" />
+        <path d="M160 110 L205 15 L250 110 Z" fill={colors.flagRed} />
+        <path d="M160 110 L205 15 L250 110" fill="none" stroke={colors.flagBlue} strokeWidth="9" strokeLinejoin="round" />
 
         {/* White Sun */}
         <g id="sun">
