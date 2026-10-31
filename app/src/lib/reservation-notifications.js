@@ -73,7 +73,7 @@ export async function createGuideBookingNotifications(client, booking) {
   const recipients = await getRecipients(client, booking.guideUserId);
   const title = `New guide booking for ${booking.packageTitle}`;
   const body = `${booking.customerName} requested ${booking.travelerCount} traveler${Number(booking.travelerCount) === 1 ? '' : 's'} starting ${toDate(booking.startDate)}.`;
-  const href = '/guides/manage';
+  const href = '/notifications';
   const created = await createNotifications(client, {
     recipients,
     notificationKey: `guide-booking-requested:${booking.id}`,
