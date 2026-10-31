@@ -29,6 +29,15 @@ const routeWaypointIcon = divIcon({
   tooltipAnchor: [0, -8],
 });
 
+function toLatLng(latitude, longitude) {
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return null;
+  }
+  return [lat, lng];
+}
+
 function normalizeGeoJson(routeGeojson) {
   if (!routeGeojson) {
     return null;
@@ -53,14 +62,10 @@ function normalizeGeoJson(routeGeojson) {
       Array.isArray(routeGeojson.waypoints)
     ) {
       const coords = routeGeojson.waypoints
-        .filter(
-          ([lat, lng]) =>
-            lat !== '' &&
-            lng !== '' &&
-            !Number.isNaN(Number(lat)) &&
-            !Number.isNaN(Number(lng))
-        )
-        .map(([lat, lng]) => [Number(lng), Number(lat)]);
+        .filter((waypoint) => Array.isArray(waypoint))
+        .map(([lat, lng]) => toLatLng(lat, lng))
+        .filter(Boolean)
+        .map(([lat, lng]) => [lng, lat]);
       if (coords.length < 2) return null;
       return {
         type: 'Feature',
@@ -100,9 +105,11 @@ function extractNamedWaypoints(routeGeojson) {
       : routeGeojson;
   if (!raw || raw.type !== 'RouteWaypoints' || !Array.isArray(raw.waypoints))
     return [];
-  return raw.waypoints.filter(
-    (wp) => Array.isArray(wp) && wp[2] && typeof wp[2] === 'string'
-  );
+  return raw.waypoints.flatMap((waypoint, index) => {
+    if (!Array.isArray(waypoint) || !waypoint[2] || typeof waypoint[2] !== 'string') return [];
+    const position = toLatLng(waypoint[0], waypoint[1]);
+    return position ? [{ index, name: waypoint[2], position }] : [];
+  });
 }
 
 function TrekRouteBounds({ routeGeojson }) {
@@ -161,6 +168,8 @@ export default function TrekRouteMap({
     () => new Map((completedWaypoints || []).filter((waypoint) => waypoint.verified).map((waypoint) => [Number(waypoint.index), waypoint])),
     [completedWaypoints]
   );
+  const userPosition = toLatLng(userLocation?.latitude, userLocation?.longitude);
+  const guidancePosition = toLatLng(guidanceWaypoint?.lat, guidanceWaypoint?.lng);
 
   return (
     <MapContainer
@@ -187,14 +196,9 @@ export default function TrekRouteMap({
           }}
         />
       )}
-      {userLocation &&
-        Number.isFinite(Number(userLocation.latitude)) &&
-        Number.isFinite(Number(userLocation.longitude)) && (
+      {userPosition && (
           <CircleMarker
-            center={[
-              Number(userLocation.latitude),
-              Number(userLocation.longitude),
-            ]}
+            center={userPosition}
             radius={9}
             pathOptions={{
               color: '#fffbf6',
@@ -208,11 +212,11 @@ export default function TrekRouteMap({
             </Tooltip>
           </CircleMarker>
         )}
-      {userLocation && guidanceWaypoint && (
+      {userPosition && guidancePosition && (
         <Polyline
           positions={[
-            [Number(userLocation.latitude), Number(userLocation.longitude)],
-            [Number(guidanceWaypoint.lat), Number(guidanceWaypoint.lng)],
+            userPosition,
+            guidancePosition,
           ]}
           pathOptions={{
             color: '#78290f',
@@ -223,12 +227,13 @@ export default function TrekRouteMap({
         />
       )}
       {nearbyStays.map((stay) => {
-        if (!stay.latitude || !stay.longitude) return null;
+        const position = toLatLng(stay.latitude, stay.longitude);
+        if (!position) return null;
         const isHovered = stay.id === hoveredStayId;
         return (
           <CircleMarker
             key={stay.id}
-            center={[Number(stay.latitude), Number(stay.longitude)]}
+            center={position}
             radius={isHovered ? 11 : 7}
             eventHandlers={{
               click: () => {
@@ -248,8 +253,7 @@ export default function TrekRouteMap({
               <strong>{stay.name}</strong>
               <br />
               <span style={{ fontSize: '0.75em', opacity: 0.8 }}>
-                {Number(stay.latitude).toFixed(5)},{' '}
-                {Number(stay.longitude).toFixed(5)}
+                {position[0].toFixed(5)}, {position[1].toFixed(5)}
               </span>
               <br />
               <span style={{ fontSize: '0.72em', opacity: 0.9 }}>
@@ -259,12 +263,12 @@ export default function TrekRouteMap({
           </CircleMarker>
         );
       })}
-      {namedWaypoints.map(([lat, lng, name], i) => {
-        const completedWaypoint = completedWaypointByIndex.get(i);
+      {namedWaypoints.map(({ index, name, position }) => {
+        const completedWaypoint = completedWaypointByIndex.get(index);
         return (
         <Marker
-          key={name + '-' + i}
-          center={[lat, lng]}
+          key={name + '-' + index}
+          center={position}
           icon={completedWaypoint ? completedWaypointIcon : routeWaypointIcon}
         >
           <Tooltip direction="top" offset={[0, -8]}>
