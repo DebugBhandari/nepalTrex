@@ -2,7 +2,6 @@ import Link from 'next/link';
 import {
   Box,
   Chip,
-  Stack,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -57,18 +56,25 @@ export default function TrekThumbnailCard({ trek }) {
               position: 'absolute',
               top: 12,
               left: 12,
-              width: 30,
-              height: 30,
-              borderRadius: 1,
-              bgcolor: '#15616d',
-              boxShadow: '0 4px 10px rgba(86, 71, 61, 0.18)',
-              display: 'grid',
-              placeItems: 'center',
+              px: 1.15,
+              py: 0.7,
+              borderRadius: 1.25,
+              bgcolor: themeColors.accent,
+              color: themeColors.ink,
+              boxShadow: '0 7px 16px rgba(0, 21, 36, 0.32)',
+              border: '1px solid rgba(255, 251, 246, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
               pointerEvents: 'none',
+              zIndex: 1,
             }}
             title="Featured trek"
           >
-            <WorkspacePremiumRoundedIcon sx={{ fontSize: 18, color: themeColors.ink }} />
+            <WorkspacePremiumRoundedIcon sx={{ fontSize: 18, color: 'inherit' }} />
+            <Typography variant="caption" sx={{ color: 'inherit', fontWeight: 800, lineHeight: 1, letterSpacing: '0.02em' }}>
+              Featured
+            </Typography>
           </Box>
         )}
 
@@ -130,15 +136,18 @@ export default function TrekThumbnailCard({ trek }) {
           {trek.name}
         </Typography>
 
-        <Stack direction="row" spacing={1} sx={{ mb: 1.2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 0.8 }}>
           <Chip label={`${trek.durationDays} days`} size="small" variant="outlined" />
           <Tooltip title={getDifficultyLabel(trek.level)}>
             <Chip label={trek.level} size="small" color="secondary" />
           </Tooltip>
           <Chip label={trek.region || 'Other'} size="small" variant="outlined" />
+        </Box>
+
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, mb: 1.2 }}>
+          <Chip label={`${trek.nearbyStaysCount || 0} stays available`} size="small" variant="outlined" />
           <Chip label={`${trek.availableGuideCount || 0} guides available`} size="small" color="primary" variant="outlined" />
-          <Chip label={`${trek.nearbyStaysCount || 0} nearby stays`} size="small" variant="outlined" />
-        </Stack>
+        </Box>
 
       </Box>
     </Box>
