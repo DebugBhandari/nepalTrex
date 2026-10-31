@@ -19,7 +19,6 @@ import MapRoundedIcon from '@mui/icons-material/MapRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import SignpostRoundedIcon from '@mui/icons-material/SignpostRounded';
 import HikingRoundedIcon from '@mui/icons-material/HikingRounded';
-import AppButton from './AppButton';
 import NepalTrexLogo from './NepalTrexLogo';
 
 function initialsFromName(value) {
@@ -47,7 +46,7 @@ export default function SiteHeader() {
       position="sticky"
       elevation={0}
       sx={(theme) => ({
-        bgcolor: theme.palette.mode === 'dark' ? 'rgba(108, 88, 76, 0.86)' : 'rgba(255,255,255,0.9)',
+        bgcolor: theme.palette.mode === 'dark' ? 'rgba(0, 21, 36, 0.9)' : 'rgba(255, 251, 246, 0.9)',
         backdropFilter: 'blur(18px)',
         borderBottom: `1px solid ${theme.palette.divider}`,
       })}
@@ -79,9 +78,9 @@ export default function SiteHeader() {
                 fontSize: 14,
                 fontWeight: isCurrent(href) ? 800 : 600,
                 color: isCurrent(href) ? 'primary.main' : 'text.secondary',
-                bgcolor: isCurrent(href) ? theme.palette.mode === 'dark' ? 'rgba(189,205,146,0.15)' : 'rgba(109,128,59,0.08)' : 'transparent',
+                bgcolor: isCurrent(href) ? theme.palette.mode === 'dark' ? 'rgba(62, 197, 218, 0.15)' : 'rgba(21, 97, 109, 0.08)' : 'transparent',
                 transition: 'all 160ms ease',
-                '&:hover': { color: 'primary.main', bgcolor: theme.palette.mode === 'dark' ? 'rgba(189,205,146,0.12)' : 'rgba(109,128,59,0.06)' },
+                '&:hover': { color: 'primary.main', bgcolor: theme.palette.mode === 'dark' ? 'rgba(62, 197, 218, 0.12)' : 'rgba(21, 97, 109, 0.06)' },
               })}
             >
               {label}
@@ -109,7 +108,6 @@ export default function SiteHeader() {
         ) : (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography component={Link} href="/auth/signin" variant="body2" sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 700, color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>Sign in</Typography>
-            <AppButton component={Link} href="/auth/signup" size="small">Start planning</AppButton>
           </Box>
         )}
       </Toolbar>
