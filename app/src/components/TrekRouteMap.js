@@ -131,6 +131,7 @@ export default function TrekRouteMap({
   hoveredStayId = null,
   userLocation = null,
   guidanceWaypoint = null,
+  completedWaypoints = [],
 }) {
   const router = useRouter();
   const routeGeojson = useMemo(
@@ -140,6 +141,10 @@ export default function TrekRouteMap({
   const namedWaypoints = useMemo(
     () => extractNamedWaypoints(selectedTrek?.routeGeojson),
     [selectedTrek]
+  );
+  const completedWaypointByIndex = useMemo(
+    () => new Map((completedWaypoints || []).filter((waypoint) => waypoint.verified).map((waypoint) => [Number(waypoint.index), waypoint])),
+    [completedWaypoints]
   );
 
   return (
@@ -239,23 +244,27 @@ export default function TrekRouteMap({
           </CircleMarker>
         );
       })}
-      {namedWaypoints.map(([lat, lng, name], i) => (
+      {namedWaypoints.map(([lat, lng, name], i) => {
+        const completedWaypoint = completedWaypointByIndex.get(i);
+        return (
         <CircleMarker
           key={name + '-' + i}
           center={[lat, lng]}
-          radius={5}
+          radius={completedWaypoint ? 9 : 5}
           pathOptions={{
-            color: '#00111d',
-            fillColor: '#bfecf3',
+            color: completedWaypoint ? '#fffbf6' : '#00111d',
+            fillColor: completedWaypoint ? '#d4a017' : '#bfecf3',
             fillOpacity: 1,
             weight: 2,
           }}
         >
           <Tooltip direction="top" offset={[0, -8]}>
-            {name}
+            <strong>{completedWaypoint ? '♛ ' : ''}{name}</strong>
+            {completedWaypoint?.completedAt && <><br /><span>Completed {new Date(completedWaypoint.completedAt).toLocaleString()}</span></>}
           </Tooltip>
         </CircleMarker>
-      ))}
+        );
+      })}
     </MapContainer>
   );
 }

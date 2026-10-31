@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { query } from '../../../lib/db';
-import { COMPLETION_RADIUS_KM, createCertificateCode, evaluateTrekCompletion } from '../../../lib/trek-completions';
+import { createCertificateCode, evaluateTrekCompletion } from '../../../lib/trek-completions';
 
 function serializeCompletion(row) {
   return {
@@ -12,18 +12,23 @@ function serializeCompletion(row) {
     completedAt: row.completed_at,
     certificateCode: row.certificate_code,
     waypointCount: Number(row.waypoint_count),
+    isDemo: Boolean(row.is_demo),
   };
 }
 
 async function getTrekAndEvidence(trekId, userId) {
-  const [trekResult, locationResult] = await Promise.all([
+  const [trekResult, locationResult, waypointResult] = await Promise.all([
     query('SELECT id, name, route_geojson FROM treks WHERE id = $1 LIMIT 1', [trekId]),
     query(`SELECT latitude, longitude, accuracy_m
       FROM trek_location_records
       WHERE trek_id = $1 AND user_id = $2
       ORDER BY recorded_at ASC`, [trekId, userId]),
+    query(`SELECT waypoint_index, waypoint_name, completed_at, distance_m, is_demo
+      FROM trek_waypoint_completions
+      WHERE trek_id = $1 AND user_id = $2
+      ORDER BY waypoint_index ASC`, [trekId, userId]),
   ]);
-  return { trek: trekResult.rows[0], records: locationResult.rows };
+  return { trek: trekResult.rows[0], records: locationResult.rows, completedWaypoints: waypointResult.rows };
 }
 
 export default async function handler(req, res) {
@@ -33,11 +38,11 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const trekId = typeof req.query.trekId === 'string' ? req.query.trekId : null;
     if (trekId) {
-      const { trek, records } = await getTrekAndEvidence(trekId, session.user.id);
+      const { trek, records, completedWaypoints } = await getTrekAndEvidence(trekId, session.user.id);
       if (!trek) return res.status(404).json({ error: 'Trek not found' });
-      const verification = evaluateTrekCompletion(trek.route_geojson, records);
+      const verification = evaluateTrekCompletion(trek.route_geojson, records, completedWaypoints);
       const completion = await query(
-        `SELECT id, trek_id, completed_at, certificate_code, waypoint_count
+        `SELECT id, trek_id, completed_at, certificate_code, waypoint_count, is_demo
          FROM trek_completions WHERE trek_id = $1 AND user_id = $2 LIMIT 1`,
         [trekId, session.user.id]
       );
@@ -60,28 +65,28 @@ export default async function handler(req, res) {
 
   try {
     const existing = await query(
-      `SELECT id, trek_id, completed_at, certificate_code, waypoint_count
+      `SELECT id, trek_id, completed_at, certificate_code, waypoint_count, is_demo
        FROM trek_completions WHERE trek_id = $1 AND user_id = $2 LIMIT 1`,
       [trekId, session.user.id]
     );
     if (existing.rows[0]) return res.status(200).json({ completion: existing.rows[0], alreadyCompleted: true });
 
-    const { trek, records } = await getTrekAndEvidence(trekId, session.user.id);
+    const { trek, records, completedWaypoints } = await getTrekAndEvidence(trekId, session.user.id);
     if (!trek) return res.status(404).json({ error: 'Trek not found' });
-    const verification = evaluateTrekCompletion(trek.route_geojson, records);
+    const verification = evaluateTrekCompletion(trek.route_geojson, records, completedWaypoints);
     if (!verification.eligible) {
       return res.status(409).json({
-        error: `Record GPS evidence within ${COMPLETION_RADIUS_KM} km of every mapped waypoint before claiming this certificate.`,
+        error: 'Record live GPS evidence at every mapped coordinate before claiming this certificate.',
         verification,
       });
     }
 
     const inserted = await query(
-      `INSERT INTO trek_completions (trek_id, user_id, verification_radius_km, waypoint_count, certificate_code)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO trek_completions (trek_id, user_id, verification_radius_km, waypoint_count, certificate_code, verification_method, is_demo)
+       VALUES ($1, $2, 0.25, $3, $4, 'live_gps', false)
        ON CONFLICT (user_id, trek_id) DO UPDATE SET trek_id = EXCLUDED.trek_id
        RETURNING id, trek_id, completed_at, certificate_code, waypoint_count`,
-      [trekId, session.user.id, COMPLETION_RADIUS_KM, verification.waypointCount, createCertificateCode()]
+      [trekId, session.user.id, verification.waypointCount, createCertificateCode()]
     );
     return res.status(201).json({ completion: inserted.rows[0], verification });
   } catch (error) {

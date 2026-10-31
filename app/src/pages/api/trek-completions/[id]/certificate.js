@@ -1,46 +1,74 @@
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../lib/auth-options';
 import { query } from '../../../../lib/db';
+import { parseRouteWaypoints } from '../../../../lib/treks';
 
 function escapePdfText(value) {
   return String(value || '').replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
 }
 
-function buildCertificatePdf({ recipientName, trekName, completedAt, certificateCode }) {
+function routeBackground(waypoints, completedWaypoints) {
+  if (!waypoints.length) return '';
+  const lats = waypoints.map((waypoint) => waypoint.lat);
+  const lngs = waypoints.map((waypoint) => waypoint.lng);
+  const minLat = Math.min(...lats); const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs); const maxLng = Math.max(...lngs);
+  const latSpan = Math.max(maxLat - minLat, 0.01); const lngSpan = Math.max(maxLng - minLng, 0.01);
+  const point = (waypoint) => [88 + ((waypoint.lng - minLng) / lngSpan) * 616, 164 + ((waypoint.lat - minLat) / latSpan) * 220];
+  const completionByIndex = new Map(completedWaypoints.map((waypoint) => [Number(waypoint.waypoint_index), waypoint]));
+  const [firstX, firstY] = point(waypoints[0]);
+  const commands = ['q 0.96 0.98 0.97 rg 68 144 656 260 re f', '0.56 0.67 0.63 RG 2 w', `${firstX.toFixed(1)} ${firstY.toFixed(1)} m`];
+  waypoints.slice(1).forEach((waypoint) => { const [x, y] = point(waypoint); commands.push(`${x.toFixed(1)} ${y.toFixed(1)} l`); });
+  commands.push('S');
+  waypoints.forEach((waypoint, index) => {
+    const [x, y] = point(waypoint); const completed = completionByIndex.has(index);
+    commands.push(completed ? '0.83 0.63 0.06 rg' : '0.15 0.38 0.42 rg');
+    commands.push(`${(x - 3).toFixed(1)} ${(y - 3).toFixed(1)} 6 6 re f`);
+    if (completed) {
+      commands.push('0.75 0.49 0.02 RG 1.2 w');
+      commands.push(`${(x - 6).toFixed(1)} ${(y + 7).toFixed(1)} m ${(x - 3).toFixed(1)} ${(y + 13).toFixed(1)} l ${x.toFixed(1)} ${(y + 7).toFixed(1)} l ${(x + 3).toFixed(1)} ${(y + 13).toFixed(1)} l ${(x + 6).toFixed(1)} ${(y + 7).toFixed(1)} l ${x.toFixed(1)} ${(y - 3).toFixed(1)} l h S`);
+    }
+  });
+  commands.push('Q');
+  return commands.join('\n');
+}
+
+function buildPdf({ recipientName, trekName, completedAt, certificateCode, isDemo, waypoints, completedWaypoints }) {
   const completionDate = new Intl.DateTimeFormat('en', { dateStyle: 'long' }).format(new Date(completedAt));
-  const lines = [
-    'q', '0.03 0.12 0.18 rg', '0 0 792 612 re f',
-    '0.08 0.45 0.48 rg', '42 42 708 528 re S',
-    '0.96 0.75 0.25 rg', '60 60 672 492 re S',
-    'BT /F1 20 Tf 312 520 Td (NEPAL TREX) Tj ET',
-    'BT /F2 34 Tf 0.96 0.75 0.25 rg 230 445 Td (CERTIFICATE OF COMPLETION) Tj ET',
-    'BT /F1 15 Tf 0.88 0.92 0.91 rg 300 398 Td (This proudly recognizes) Tj ET',
-    `BT /F2 28 Tf 1 1 1 rg 0 0 0 rg 0.96 0.75 0.25 rg 80 350 Td (${escapePdfText(recipientName)}) Tj ET`,
-    'BT /F1 15 Tf 0.88 0.92 0.91 rg 250 305 Td (for verified completion of) Tj ET',
-    `BT /F2 27 Tf 1 1 1 rg 96 258 Td (${escapePdfText(trekName)}) Tj ET`,
-    `BT /F1 13 Tf 0.88 0.92 0.91 rg 262 205 Td (Verified ${escapePdfText(completionDate)}) Tj ET`,
-    `BT /F1 11 Tf 0.88 0.92 0.91 rg 250 94 Td (Certificate ${escapePdfText(certificateCode)}) Tj ET`,
-    'BT /F1 10 Tf 0.88 0.92 0.91 rg 132 72 Td (GPS evidence recorded within 10 km of every mapped route waypoint.) Tj ET',
+  const map = routeBackground(waypoints, completedWaypoints);
+  const records = completedWaypoints.map((waypoint, index) => `${index + 1}. ${waypoint.waypoint_name} — ${new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(waypoint.completed_at))}`);
+  const pageOne = [
+    'q 0.02 0.10 0.15 rg 0 0 792 612 re f Q', map,
+    'BT /F2 19 Tf 0.96 0.75 0.25 rg 320 555 Td (NEPAL TREX) Tj ET',
+    `BT /F2 30 Tf 1 1 1 rg 190 500 Td (${escapePdfText(isDemo ? 'DEMO COMPLETION CERTIFICATE' : 'CERTIFICATE OF COMPLETION')}) Tj ET`,
+    'BT /F1 14 Tf 0.88 0.92 0.91 rg 302 462 Td (Awarded to) Tj ET',
+    `BT /F2 27 Tf 0.96 0.75 0.25 rg 105 425 Td (${escapePdfText(recipientName)}) Tj ET`,
+    `BT /F2 24 Tf 1 1 1 rg 115 115 Td (${escapePdfText(trekName)}) Tj ET`,
+    `BT /F1 12 Tf 0.88 0.92 0.91 rg 250 83 Td (Completed ${escapePdfText(completionDate)}  |  ${escapePdfText(certificateCode)}) Tj ET`,
+    `BT /F1 10 Tf 0.88 0.92 0.91 rg 182 64 Td (${escapePdfText(isDemo ? 'Demo route records — not live GPS verification.' : 'Every mapped coordinate recorded with live GPS. Gold crowns mark completed coordinates.')}) Tj ET`,
   ].join('\n');
+  const pageTwoLines = ['BT /F2 25 Tf 0.02 0.10 0.15 rg 64 548 Td (Completed coordinate records) Tj ET', `BT /F1 11 Tf 0.16 0.24 0.28 rg 64 523 Td (${escapePdfText(trekName)} — ${escapePdfText(certificateCode)}) Tj ET`];
+  records.forEach((record, index) => {
+    const column = Math.floor(index / 17); const row = index % 17;
+    pageTwoLines.push(`BT /F1 10 Tf 0.08 0.18 0.21 rg ${64 + column * 350} ${490 - row * 24} Td (${escapePdfText(record)}) Tj ET`);
+  });
+  const pageTwo = pageTwoLines.join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
-    `<< /Length ${Buffer.byteLength(lines, 'utf8')} >>\nstream\n${lines}\nendstream`,
+    '<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> /Contents 6 0 R >>',
+    `<< /Length ${Buffer.byteLength(pageOne)} >>\nstream\n${pageOne}\nendstream`,
+    `<< /Length ${Buffer.byteLength(pageTwo)} >>\nstream\n${pageTwo}\nendstream`,
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
   ];
-  let pdf = '%PDF-1.4\n';
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(pdf, 'utf8'));
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-  const xref = Buffer.byteLength(pdf, 'utf8');
+  let pdf = '%PDF-1.4\n'; const offsets = [0];
+  objects.forEach((object, index) => { offsets.push(Buffer.byteLength(pdf)); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
+  const xref = Buffer.byteLength(pdf);
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   offsets.slice(1).forEach((offset) => { pdf += `${String(offset).padStart(10, '0')} 00000 n \n`; });
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return Buffer.from(pdf, 'utf8');
+  return Buffer.from(`${pdf}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
 }
 
 export default async function handler(req, res) {
@@ -48,21 +76,17 @@ export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
   const result = await query(
-    `SELECT c.*, t.name AS trek_name, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS recipient_name
+    `SELECT c.*, t.name AS trek_name, t.route_geojson, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS recipient_name
      FROM trek_completions c JOIN treks t ON t.id = c.trek_id JOIN users u ON u.id = c.user_id
-     WHERE c.id = $1 AND c.user_id = $2 LIMIT 1`,
-    [req.query.id, session.user.id]
+     WHERE c.id = $1 AND c.user_id = $2 LIMIT 1`, [req.query.id, session.user.id]
   );
   const completion = result.rows[0];
   if (!completion) return res.status(404).json({ error: 'Certificate not found' });
+  const waypointResult = await query(
+    `SELECT waypoint_index, waypoint_name, completed_at, is_demo FROM trek_waypoint_completions
+     WHERE trek_id = $1 AND user_id = $2 ORDER BY waypoint_index`, [completion.trek_id, session.user.id]
+  );
   const filename = `NepalTrex-${completion.trek_name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')}-certificate.pdf`;
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.setHeader('Cache-Control', 'private, no-store');
-  return res.status(200).send(buildCertificatePdf({
-    recipientName: completion.recipient_name,
-    trekName: completion.trek_name,
-    completedAt: completion.completed_at,
-    certificateCode: completion.certificate_code,
-  }));
+  res.setHeader('Content-Type', 'application/pdf'); res.setHeader('Content-Disposition', `attachment; filename="${filename}"`); res.setHeader('Cache-Control', 'private, no-store');
+  return res.status(200).send(buildPdf({ recipientName: completion.recipient_name, trekName: completion.trek_name, completedAt: completion.completed_at, certificateCode: completion.certificate_code, isDemo: completion.is_demo, waypoints: parseRouteWaypoints(completion.route_geojson), completedWaypoints: waypointResult.rows }));
 }

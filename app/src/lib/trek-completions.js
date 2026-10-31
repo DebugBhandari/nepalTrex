@@ -1,10 +1,10 @@
 import crypto from 'crypto';
 import { haversineKm, parseRouteWaypoints } from './treks';
 
-export const COMPLETION_RADIUS_KM = 10;
-export const MAX_LOCATION_ACCURACY_M = 5_000;
+export const WAYPOINT_COMPLETION_RADIUS_M = 250;
+export const MAX_LOCATION_ACCURACY_M = 100;
 
-export function evaluateTrekCompletion(routeGeojson, locationRows) {
+export function evaluateTrekCompletion(routeGeojson, locationRows, completedWaypoints = []) {
   const waypoints = parseRouteWaypoints(routeGeojson);
   const usableRecords = (locationRows || []).filter((record) => {
     const latitude = Number(record.latitude);
@@ -16,15 +16,23 @@ export function evaluateTrekCompletion(routeGeojson, locationRows) {
       Number.isFinite(accuracy) && accuracy <= MAX_LOCATION_ACCURACY_M;
   });
 
-  const matchedWaypoints = waypoints.map((waypoint) => {
+  const completedByIndex = new Map(completedWaypoints.map((waypoint) => [Number(waypoint.waypoint_index), waypoint]));
+  const matchedWaypoints = waypoints.map((waypoint, waypointIndex) => {
+    const completed = completedByIndex.get(waypointIndex);
     const closestDistanceKm = usableRecords.reduce((closest, record) => Math.min(
       closest,
       haversineKm(waypoint.lat, waypoint.lng, Number(record.latitude), Number(record.longitude))
     ), Number.POSITIVE_INFINITY);
     return {
-      place: waypoint.place || 'Route waypoint',
-      verified: closestDistanceKm <= COMPLETION_RADIUS_KM,
+      index: waypointIndex,
+      place: waypoint.place || `Coordinate ${waypointIndex + 1}`,
+      latitude: waypoint.lat,
+      longitude: waypoint.lng,
+      verified: Boolean(completed),
       closestDistanceKm: Number.isFinite(closestDistanceKm) ? closestDistanceKm : null,
+      completedAt: completed?.completed_at || null,
+      distanceM: completed?.distance_m === undefined ? null : Number(completed.distance_m),
+      isDemo: Boolean(completed?.is_demo),
     };
   });
 

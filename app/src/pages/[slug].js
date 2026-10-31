@@ -1511,7 +1511,7 @@ function TrekDetailView({ trek }) {
       accuracy: position.coords.accuracy,
       updatedAt: position.timestamp,
     });
-    if (Date.now() - lastEvidenceAtRef.current < 45_000) return;
+    if (Date.now() - lastEvidenceAtRef.current < 10_000) return;
     lastEvidenceAtRef.current = Date.now();
     fetch('/api/trek-locations', {
       method: 'POST',
@@ -1746,7 +1746,7 @@ function TrekDetailView({ trek }) {
                       {completionState.completion ? (
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Certificate {completionState.completion.certificate_code} is ready to share.</Typography>
                       ) : completionState.verification ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>GPS evidence: {completionState.verification.verifiedWaypointCount} of {completionState.verification.waypointCount} mapped waypoints verified within 10 km.</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Live GPS checkpoints: {completionState.verification.verifiedWaypointCount} of {completionState.verification.waypointCount} mapped coordinates completed. Every coordinate must be recorded to finish the route.</Typography>
                       ) : <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Start live tracking to record GPS evidence at every mapped waypoint.</Typography>}
                     </Box>
                     {completionState.completion ? (
@@ -1960,6 +1960,7 @@ function TrekDetailView({ trek }) {
                 hoveredStayId={hoveredStayId}
                 userLocation={userLocation}
                 guidanceWaypoint={guidanceWaypoint}
+                completedWaypoints={completionState.verification?.matchedWaypoints || []}
               />
             </Box>
           </Paper>

@@ -69,7 +69,7 @@ export default function AttemptsPage() {
               <Stack spacing={1.5}>
                 {completions.map((completion) => (
                   <Card key={completion.id} sx={{ borderRadius: 2, bgcolor: 'rgba(46,125,50,0.08)' }}>
-                    <CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ sm: 'center' }}><Box><Stack direction="row" spacing={0.75} alignItems="center"><WorkspacePremiumRoundedIcon color="success" /><Typography variant="h6" fontWeight={800}>{completion.trekName}</Typography></Stack><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Verified {new Date(completion.completedAt).toLocaleDateString()} · {completion.certificateCode}</Typography></Box><AppButton component="a" href={`/api/trek-completions/${completion.id}/certificate`} variant="outlined">Download PDF</AppButton></Stack></CardContent>
+                    <CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ sm: 'center' }}><Box><Stack direction="row" spacing={0.75} alignItems="center"><WorkspacePremiumRoundedIcon color="success" /><Typography variant="h6" fontWeight={800}>{completion.trekName}</Typography></Stack><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{completion.isDemo ? 'Demo completion' : 'Live GPS verified'} · {new Date(completion.completedAt).toLocaleDateString()} · {completion.certificateCode}</Typography></Box><AppButton component="a" href={`/api/trek-completions/${completion.id}/certificate`} variant="outlined">Download PDF</AppButton></Stack></CardContent>
                   </Card>
                 ))}
               </Stack>
