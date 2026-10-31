@@ -14,6 +14,7 @@ import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import SiteHeader from '../../components/SiteHeader';
+import SiteFooter from '../../components/SiteFooter';
 import StayThumbnailCard from '../../components/StayThumbnailCard';
 import ThumbnailGrid from '../../components/ThumbnailGrid';
 import { gradients, themeColors } from '../../lib/theme';
@@ -628,6 +629,7 @@ export default function StaysPage({ stays }) {
             </>
           )}
         </Container>
+        <SiteFooter />
       </Box>
     </>
   );

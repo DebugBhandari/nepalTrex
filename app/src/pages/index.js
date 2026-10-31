@@ -23,6 +23,7 @@ import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import TerrainRoundedIcon from '@mui/icons-material/TerrainRounded';
 import { FEATURED_TREKS } from '@org/types';
 import AppButton from '../components/AppButton';
+import SiteFooter from '../components/SiteFooter';
 import SiteHeader from '../components/SiteHeader';
 import StayThumbnailCard from '../components/StayThumbnailCard';
 import TrekThumbnailCard from '../components/TrekThumbnailCard';
@@ -585,59 +586,8 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
             )}
           </Box>
 
-          <Paper
-            id="about"
-            sx={(theme) => ({
-              p: { xs: 2.4, md: 3.2 },
-              background:
-                theme.palette.mode === 'dark'
-                  ? 'linear-gradient(130deg, rgba(173,193,120,0.3), rgba(86,71,61,0.96) 55%, rgba(108,88,76,0.96))'
-                  : 'linear-gradient(130deg, rgba(173,193,120,0.14), rgba(255,255,255,0.98) 52%, rgba(240,234,210,0.98))',
-              border: '1px solid',
-              borderColor: 'divider',
-            })}
-          >
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 2,
-                gridTemplateColumns: {
-                  xs: '1fr',
-                  md: '2fr 1fr 1fr',
-                },
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#fffbf6' : theme.palette.text.primary })}
-                >
-                  About NepalTrex
-                </Typography>
-                <Typography color="text.secondary" sx={{ mt: 0.6, maxWidth: 460 }}>
-                  NepalTrex helps international trekkers compare routes, understand elevation and pacing, and find suitable stays around each trekking corridor in Nepal. Trusted planning companion for comparing routes, managing your shortlist, and preparing with confidence.
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 0.7, fontWeight: 700 }}>
-                  Contact
-                </Typography>
-                <Typography color="text.secondary">buddhavtrex@gmail.com</Typography>
-                <Typography color="text.secondary">Chitwan, Nepal</Typography>
-                <Typography color="text.secondary" sx={{ mt: 1 }}>bhandarideepakdev@gmail.com</Typography>
-                <Typography color="text.secondary">Helsinki, Finland</Typography>
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 0.7, fontWeight: 700 }}>
-                  Explore
-                </Typography>
-                <Typography color="text.secondary">Everest Region</Typography>
-                <Typography color="text.secondary">Annapurna Region</Typography>
-                <Typography color="text.secondary">Langtang Region</Typography>
-              </Box>
-            </Box>
-          </Paper>
         </Container>
+        <SiteFooter />
       </Box>
     </>
   );

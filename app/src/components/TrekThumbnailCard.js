@@ -56,25 +56,21 @@ export default function TrekThumbnailCard({ trek }) {
               position: 'absolute',
               top: 12,
               left: 12,
-              px: 1.15,
-              py: 0.7,
-              borderRadius: 1.25,
+              width: 34,
+              height: 34,
+              borderRadius: 1,
               bgcolor: themeColors.accent,
               color: themeColors.ink,
               boxShadow: '0 7px 16px rgba(0, 21, 36, 0.32)',
               border: '1px solid rgba(255, 251, 246, 0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
+              display: 'grid',
+              placeItems: 'center',
               pointerEvents: 'none',
               zIndex: 1,
             }}
             title="Featured trek"
           >
             <WorkspacePremiumRoundedIcon sx={{ fontSize: 18, color: 'inherit' }} />
-            <Typography variant="caption" sx={{ color: 'inherit', fontWeight: 800, lineHeight: 1, letterSpacing: '0.02em' }}>
-              Featured
-            </Typography>
           </Box>
         )}
 
