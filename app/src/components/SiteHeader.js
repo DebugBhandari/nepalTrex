@@ -94,7 +94,7 @@ export default function SiteHeader() {
         {status === 'authenticated' ? (
           <>
             <IconButton onClick={(event) => setUserMenuAnchor(event.currentTarget)} aria-label="Open account menu" sx={{ p: 0.45, ml: 0.25 }}>
-              <Avatar src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'Account'} sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#FCFBF6', fontSize: 13, fontWeight: 800 }}>
+              <Avatar src={session.user?.image || undefined} alt={session.user?.name || session.user?.email || 'Account'} sx={{ width: 34, height: 34, bgcolor: 'primary.main', color: '#fffbf6', fontSize: 13, fontWeight: 800 }}>
                 {initialsFromName(session.user?.name || session.user?.email)}
               </Avatar>
             </IconButton>

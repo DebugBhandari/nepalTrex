@@ -60,7 +60,7 @@ export default function TrekThumbnailCard({ trek }) {
               width: 30,
               height: 30,
               borderRadius: 1,
-              bgcolor: '#ADC178',
+              bgcolor: '#15616d',
               boxShadow: '0 4px 10px rgba(86, 71, 61, 0.18)',
               display: 'grid',
               placeItems: 'center',
@@ -96,12 +96,12 @@ export default function TrekThumbnailCard({ trek }) {
           {Number(trek.reviewCount || 0) > 0 ? (
             <>
               <StarRoundedIcon sx={{ fontSize: 14, color: themeColors.goldSun }} />
-              <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 700, lineHeight: 1 }}>
+              <Typography variant="caption" sx={{ color: '#fffbf6', fontWeight: 700, lineHeight: 1 }}>
                 {Number(trek.avgRating).toFixed(1)} ({Number(trek.reviewCount)})
               </Typography>
             </>
           ) : (
-            <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 600, lineHeight: 1 }}>
+            <Typography variant="caption" sx={{ color: '#fffbf6', fontWeight: 600, lineHeight: 1 }}>
               No reviews
             </Typography>
           )}

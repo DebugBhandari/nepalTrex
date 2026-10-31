@@ -4,8 +4,8 @@ import { palette as brandPalette, themeColors } from './theme';
 export function createAppTheme(mode = 'light') {
   const isDark = mode === 'dark';
   const palette = isDark
-    ? { primary: brandPalette.mutedOlive[500], primaryDeep: brandPalette.mutedOlive[300], secondary: brandPalette.fadedCopper[600], bg: brandPalette.ashBrown[500], paper: brandPalette.ashBrown[400], raised: brandPalette.fadedCopper[300], text: brandPalette.vanillaCream[500], textMuted: brandPalette.teaGreen[600], border: 'rgba(221, 229, 182, 0.24)' }
-    : { primary: brandPalette.mutedOlive[300], primaryDeep: brandPalette.mutedOlive[200], secondary: brandPalette.fadedCopper[500], bg: brandPalette.vanillaCream[500], paper: brandPalette.vanillaCream[900], raised: brandPalette.teaGreen[600], text: brandPalette.ashBrown[500], textMuted: brandPalette.ashBrown[400], border: 'rgba(108, 88, 76, 0.18)' };
+    ? { primary: brandPalette.stormyTeal[600], primaryDeep: brandPalette.stormyTeal[400], secondary: brandPalette.vividTangerine[600], bg: brandPalette.inkBlack.DEFAULT, paper: brandPalette.inkBlack[400], raised: brandPalette.inkBlack[300], text: brandPalette.papayaWhip.DEFAULT, textMuted: brandPalette.stormyTeal[800], border: 'rgba(191, 236, 243, 0.24)' }
+    : { primary: brandPalette.stormyTeal.DEFAULT, primaryDeep: brandPalette.stormyTeal[300], secondary: brandPalette.vividTangerine.DEFAULT, bg: brandPalette.papayaWhip.DEFAULT, paper: brandPalette.papayaWhip[900], raised: brandPalette.papayaWhip[700], text: brandPalette.inkBlack.DEFAULT, textMuted: brandPalette.inkBlack[600], border: 'rgba(0, 21, 36, 0.18)' };
 
   return createTheme({
     palette: {
@@ -13,14 +13,14 @@ export function createAppTheme(mode = 'light') {
       primary: {
         main: palette.primary,
         dark: palette.primaryDeep,
-        light: brandPalette.mutedOlive[600],
-        contrastText: brandPalette.vanillaCream[900],
+        light: brandPalette.stormyTeal[700],
+        contrastText: brandPalette.papayaWhip[900],
       },
       secondary: {
         main: palette.secondary,
-        dark: brandPalette.fadedCopper[300],
-        light: brandPalette.fadedCopper[700],
-        contrastText: brandPalette.vanillaCream[900],
+        dark: brandPalette.vividTangerine[300],
+        light: brandPalette.vividTangerine[700],
+        contrastText: brandPalette.inkBlack.DEFAULT,
       },
       background: {
         default: palette.bg,
@@ -215,7 +215,7 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: palette.paper,
             backgroundImage: `linear-gradient(145deg, ${alpha(palette.primary, isDark ? 0.16 : 0.08)}, transparent 58%)`,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 18px 38px rgba(43, 35, 30, 0.5)' : '0 18px 38px rgba(108, 88, 76, 0.18)',
+            boxShadow: isDark ? '0 18px 38px rgba(0, 4, 7, 0.5)' : '0 18px 38px rgba(0, 21, 36, 0.18)',
             overflow: 'hidden',
           },
         },
@@ -249,7 +249,7 @@ export function createAppTheme(mode = 'light') {
             backgroundColor: palette.paper,
             backgroundImage: `linear-gradient(145deg, ${alpha(palette.primary, isDark ? 0.16 : 0.08)}, transparent 58%)`,
             border: `1px solid ${palette.border}`,
-            boxShadow: isDark ? '0 18px 38px rgba(43, 35, 30, 0.5)' : '0 18px 38px rgba(108, 88, 76, 0.18)',
+            boxShadow: isDark ? '0 18px 38px rgba(0, 4, 7, 0.5)' : '0 18px 38px rgba(0, 21, 36, 0.18)',
           },
         },
       },

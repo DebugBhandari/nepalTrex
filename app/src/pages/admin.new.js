@@ -289,7 +289,7 @@ export default function AdminPage({ user, initialStays }) {
             background:
               theme.palette.mode === 'dark'
                 ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
-                : 'linear-gradient(145deg, #FCFBF6 0%, #F0EAD2 100%)',
+                : 'linear-gradient(145deg, #fffbf6 0%, #ffecd1 100%)',
           })}
         >
           <Typography variant="h4">Manage Your Hotels and Homestays</Typography>

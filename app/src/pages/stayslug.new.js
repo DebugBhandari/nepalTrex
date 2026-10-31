@@ -99,7 +99,7 @@ export default function StayDetailPage({ stay }) {
           py: 5,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 15% 10%, #ADC178 0%, transparent 35%), radial-gradient(circle at 80% -10%, #A98467 0%, transparent 30%), linear-gradient(150deg, #6C584C 0%, #56473D 45%, #40352E 100%)'
+              ? 'radial-gradient(circle at 15% 10%, #15616d 0%, transparent 35%), radial-gradient(circle at 80% -10%, #ff7d00 0%, transparent 30%), linear-gradient(150deg, #001524 0%, #00111d 45%, #471809 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -111,8 +111,8 @@ export default function StayDetailPage({ stay }) {
             variant="outlined"
             sx={(theme) => ({
               mb: 2,
-              color: theme.palette.mode === 'dark' ? '#F0EAD2' : theme.palette.text.primary,
-              borderColor: theme.palette.mode === 'dark' ? '#F0EAD2' : 'rgba(108,88,76,0.45)',
+              color: theme.palette.mode === 'dark' ? '#ffecd1' : theme.palette.text.primary,
+              borderColor: theme.palette.mode === 'dark' ? '#ffecd1' : 'rgba(108,88,76,0.45)',
             })}
           >
             Back to Home

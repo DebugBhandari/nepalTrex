@@ -61,7 +61,7 @@ export default function StayThumbnailCard({ stay }) {
               px: 1.25,
               py: 0.5,
               borderRadius: 1,
-            bgcolor: '#ADC178',
+            bgcolor: '#15616d',
             boxShadow: '0 4px 10px rgba(86, 71, 61, 0.18)',
               display: 'flex',
               alignItems: 'center',
@@ -89,7 +89,7 @@ export default function StayThumbnailCard({ stay }) {
               pointerEvents: 'none',
             }}
           >
-            <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 700, lineHeight: 1 }}>
+            <Typography variant="caption" sx={{ color: '#fffbf6', fontWeight: 700, lineHeight: 1 }}>
               Featured
             </Typography>
           </Box>
@@ -113,9 +113,9 @@ export default function StayThumbnailCard({ stay }) {
           }}
         >
           {stay.stayType === 'hotel'
-            ? <HotelRoundedIcon sx={{ fontSize: 13, color: '#FCFBF6' }} />
-            : <HomeRoundedIcon sx={{ fontSize: 13, color: '#FCFBF6' }} />}
-          <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 600, textTransform: 'capitalize', lineHeight: 1 }}>
+            ? <HotelRoundedIcon sx={{ fontSize: 13, color: '#fffbf6' }} />
+            : <HomeRoundedIcon sx={{ fontSize: 13, color: '#fffbf6' }} />}
+          <Typography variant="caption" sx={{ color: '#fffbf6', fontWeight: 600, textTransform: 'capitalize', lineHeight: 1 }}>
             {stay.stayType}
           </Typography>
         </Box>
@@ -144,12 +144,12 @@ export default function StayThumbnailCard({ stay }) {
           {Number(stay.reviewCount || 0) > 0 ? (
             <>
               <StarRoundedIcon sx={{ fontSize: 14, color: themeColors.goldSun }} />
-              <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 700, lineHeight: 1 }}>
+              <Typography variant="caption" sx={{ color: '#fffbf6', fontWeight: 700, lineHeight: 1 }}>
                 {Number(stay.avgRating).toFixed(1)} ({Number(stay.reviewCount)})
               </Typography>
             </>
           ) : (
-            <Typography variant="caption" sx={{ color: '#FCFBF6', fontWeight: 600, lineHeight: 1 }}>
+            <Typography variant="caption" sx={{ color: '#fffbf6', fontWeight: 600, lineHeight: 1 }}>
               No reviews
             </Typography>
           )}

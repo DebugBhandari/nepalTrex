@@ -6,22 +6,22 @@ export function NepalTrexLogo({ className = '', width = 300 }) {
   const height = width * 0.45;
   const colors = isDark
     ? {
-      far: '#DDE5B6',
-      farAlt: '#E4EAC6',
-      mid: '#BDCD92',
-      midDeep: '#ADC178',
-      flagBlue: '#DDE5B6',
-      flagRed: '#A98467',
-      cutout: '#56473D',
+      far: '#7ED9E7',
+      farAlt: '#BFECF3',
+      mid: '#3EC5DA',
+      midDeep: '#2199AB',
+      flagBlue: '#7ED9E7',
+      flagRed: '#FF9633',
+      cutout: '#00111D',
     }
     : {
-      far: '#DDE5B6',
-      farAlt: '#E4EAC6',
-      mid: '#ADC178',
-      midDeep: '#92AA4E',
-      flagBlue: '#6D803B',
-      flagRed: '#A98467',
-      cutout: '#F0EAD2',
+      far: '#7ED9E7',
+      farAlt: '#BFECF3',
+      mid: '#3EC5DA',
+      midDeep: '#15616D',
+      flagBlue: '#15616D',
+      flagRed: '#FF7D00',
+      cutout: '#FFECD1',
     };
 
   return (
@@ -62,7 +62,7 @@ export function NepalTrexLogo({ className = '', width = 300 }) {
         <path d="M55 110 L95 23 L135 110 Z" fill={colors.flagRed} />
 
         {/* White Moon Crescent */}
-        <circle cx="95" cy="55" r="8" fill="#F0EAD2" />
+        <circle cx="95" cy="55" r="8" fill="#FFECD1" />
         <circle cx="97.5" cy="55" r="7" fill={colors.cutout} />
 
         {/* RIGHT: Sun Mountain (Lower Triangle) */}
@@ -71,9 +71,9 @@ export function NepalTrexLogo({ className = '', width = 300 }) {
 
         {/* White Sun */}
         <g id="sun">
-          <circle cx="205" cy="55" r="8" fill="#F0EAD2" />
-          <path d="M205 45 L205 41 M205 69 L205 65 M215 55 L219 55 M191 55 L195 55" stroke="#F0EAD2" strokeWidth="2" strokeLinecap="round" />
-          <path d="M210.5 49.5 L213.5 46.5 M199.5 60.5 L196.5 63.5 M210.5 60.5 L213.5 63.5 M199.5 49.5 L196.5 46.5" stroke="#F0EAD2" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="205" cy="55" r="8" fill="#FFECD1" />
+          <path d="M205 45 L205 41 M205 69 L205 65 M215 55 L219 55 M191 55 L195 55" stroke="#FFECD1" strokeWidth="2" strokeLinecap="round" />
+          <path d="M210.5 49.5 L213.5 46.5 M199.5 60.5 L196.5 63.5 M210.5 60.5 L213.5 63.5 M199.5 49.5 L196.5 46.5" stroke="#FFECD1" strokeWidth="2" strokeLinecap="round" />
         </g>
       </g>
     </svg>

@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
           py: 6,
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(189,205,146,0.3) 0%, transparent 32%), linear-gradient(160deg, #6C584C 0%, #56473D 46%, #6D803B 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(189,205,146,0.3) 0%, transparent 32%), linear-gradient(160deg, #001524 0%, #00111d 46%, #15616d 100%)'
               : theme.palette.background.default,
         })}
       >

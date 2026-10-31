@@ -62,7 +62,7 @@ function HeroStrip({
           variant="h4"
           fontWeight={900}
           sx={{
-            color: dark ? '#6C584C' : '#FCFBF6',
+            color: dark ? '#001524' : '#fffbf6',
             textShadow: dark ? 'none' : '0 2px 14px rgba(0,0,0,0.3)',
             fontSize: { xs: '1.5rem', md: '2rem' },
             mb: 0.5,
@@ -403,7 +403,7 @@ export default function StaysPage({ stays }) {
           py: { xs: 3, md: 5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.2) 0%, transparent 38%), linear-gradient(160deg, #6C584C 0%, #56473D 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.2) 0%, transparent 38%), linear-gradient(160deg, #001524 0%, #00111d 100%)'
               : theme.palette.background.default,
         })}
       >

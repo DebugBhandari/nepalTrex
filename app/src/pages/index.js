@@ -317,7 +317,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
         sx={(theme) => ({
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(189,205,146,0.3) 0%, transparent 32%), linear-gradient(160deg, #6C584C 0%, #56473D 46%, #6D803B 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.34) 0%, transparent 38%), radial-gradient(circle at 82% -6%, rgba(189,205,146,0.3) 0%, transparent 32%), linear-gradient(160deg, #001524 0%, #00111d 46%, #15616d 100%)'
               : theme.palette.background.default,
           minHeight: '100vh',
           pb: 6,
@@ -356,7 +356,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               }}
             >
               <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 780 }}>
-                <Typography variant="overline" sx={{ color: '#DDE5B6', letterSpacing: '0.16em', fontWeight: 800 }}>
+                <Typography variant="overline" sx={{ color: '#bfecf3', letterSpacing: '0.16em', fontWeight: 800 }}>
                   Nepal, one step closer
                 </Typography>
                 <Typography variant="h1" sx={{ mt: 1, mb: 1.5, color: themeColors.snow, fontSize: { xs: '2.5rem', md: '4.2rem' }, maxWidth: 670 }}>
@@ -369,10 +369,10 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   <AppButton href="#treks" size="large" startIcon={<TerrainRoundedIcon />}>
                     Explore trek routes
                   </AppButton>
-                  <AppButton component={Link} href="/stays" variant="outlined" size="large" startIcon={<HotelRoundedIcon />} sx={{ color: '#FCFBF6', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#FCFBF6', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <AppButton component={Link} href="/stays" variant="outlined" size="large" startIcon={<HotelRoundedIcon />} sx={{ color: '#fffbf6', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#fffbf6', bgcolor: 'rgba(255,255,255,0.1)' } }}>
                     Find a stay
                   </AppButton>
-                  <AppButton component={Link} href="/guides" variant="outlined" size="large" startIcon={<SearchRoundedIcon />} sx={{ color: '#FCFBF6', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#FCFBF6', bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <AppButton component={Link} href="/guides" variant="outlined" size="large" startIcon={<SearchRoundedIcon />} sx={{ color: '#fffbf6', borderColor: 'rgba(255,255,255,0.72)', '&:hover': { borderColor: '#fffbf6', bgcolor: 'rgba(255,255,255,0.1)' } }}>
                     Find guides
                   </AppButton>
                 </Stack>
@@ -393,7 +393,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   sx={(theme) => ({
                     mb: 0.5,
                     fontWeight: 800,
-                    color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
+                    color: theme.palette.mode === 'dark' ? '#fffbf6' : theme.palette.text.primary,
                   })}
                 >
                   Rest stops worth planning for
@@ -554,7 +554,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
                   variant="h5"
                   sx={(theme) => ({
                     mb: 1.25,
-                    color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
+                    color: theme.palette.mode === 'dark' ? '#fffbf6' : theme.palette.text.primary,
                   })}
                 >
                   {region}
@@ -610,7 +610,7 @@ export default function HomePage({ allTreks, featuredStays = [], dataSource, dat
               <Box>
                 <Typography
                   variant="h6"
-                  sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary })}
+                  sx={(theme) => ({ color: theme.palette.mode === 'dark' ? '#fffbf6' : theme.palette.text.primary })}
                 >
                   About NepalTrex
                 </Typography>

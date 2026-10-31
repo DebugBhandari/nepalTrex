@@ -1,36 +1,36 @@
-// NepalTrex's vanilla cream, tea green, muted olive, faded copper, and ash brown palette.
+// NepalTrex brand palette. Numeric stops are provided for consistent UI states.
 export const palette = {
-  vanillaCream: { 100: '#433A16', 200: '#87752D', 300: '#C3AB4A', 400: '#D9CA8E', 500: '#F0EAD2', 600: '#F3EEDA', 700: '#F6F2E3', 800: '#F9F6ED', 900: '#FCFBF6' },
-  teaGreen: { 100: '#363D16', 200: '#6D792C', 300: '#A3B642', 400: '#C1CF7B', 500: '#DDE5B6', 600: '#E4EAC6', 700: '#EBF0D4', 800: '#F2F5E3', 900: '#F8FAF1' },
-  mutedOlive: { 100: '#242B14', 200: '#495527', 300: '#6D803B', 400: '#92AA4E', 500: '#ADC178', 600: '#BDCD92', 700: '#CED9AD', 800: '#DEE6C9', 900: '#EFF2E4' },
-  fadedCopper: { 100: '#231A13', 200: '#453427', 300: '#684E3A', 400: '#8A684E', 500: '#A98467', 600: '#BA9C84', 700: '#CBB4A3', 800: '#DCCDC2', 900: '#EEE6E0' },
-  ashBrown: { 100: '#15120F', 200: '#2B231E', 300: '#40352E', 400: '#56473D', 500: '#6C584C', 600: '#927867', 700: '#AE998C', 800: '#C9BBB3', 900: '#E4DDD9' },
+  inkBlack: { DEFAULT: '#001524', 100: '#000407', 200: '#00080E', 300: '#000C15', 400: '#00111D', 500: '#001524', 600: '#004C83', 700: '#0083E1', 800: '#41B0FF', 900: '#A0D7FF' },
+  stormyTeal: { DEFAULT: '#15616D', 100: '#041315', 200: '#08262B', 300: '#0C3940', 400: '#104C56', 500: '#15616D', 600: '#2199AB', 700: '#3EC5DA', 800: '#7ED9E7', 900: '#BFECF3' },
+  papayaWhip: { DEFAULT: '#FFECD1', 100: '#5D3600', 200: '#BA6C00', 300: '#FF9F17', 400: '#FFC574', 500: '#FFECD1', 600: '#FFF0DA', 700: '#FFF4E3', 800: '#FFF7ED', 900: '#FFFBF6' },
+  vividTangerine: { DEFAULT: '#FF7D00', 100: '#331900', 200: '#663100', 300: '#994A00', 400: '#CC6300', 500: '#FF7D00', 600: '#FF9633', 700: '#FFB066', 800: '#FFCA99', 900: '#FFE5CC' },
+  brandy: { DEFAULT: '#78290F', 100: '#180803', 200: '#2F1006', 300: '#471809', 400: '#5E200C', 500: '#78290F', 600: '#B93F17', 700: '#E66235', 800: '#EE9679', 900: '#F7CBBC' },
 };
 
 export const themeColors = {
-  deepTeal: palette.ashBrown[400],
-  midTeal: palette.fadedCopper[400],
-  goldSun: palette.mutedOlive[500],
-  snow: palette.vanillaCream[500],
-  ink: palette.ashBrown[500],
-  moss: palette.mutedOlive[300],
-  card: palette.vanillaCream[900],
-  primary: palette.mutedOlive[500],
-  secondary: palette.fadedCopper[500],
-  dark: palette.ashBrown[500],
-  light: palette.vanillaCream[500],
-  accent: palette.ashBrown[400],
-  success: palette.mutedOlive[300],
-  warning: palette.fadedCopper[500],
-  error: palette.fadedCopper[300],
-  info: palette.teaGreen[300],
+  deepTeal: palette.inkBlack.DEFAULT,
+  midTeal: palette.stormyTeal.DEFAULT,
+  goldSun: palette.vividTangerine.DEFAULT,
+  snow: palette.papayaWhip.DEFAULT,
+  ink: palette.inkBlack.DEFAULT,
+  moss: palette.stormyTeal.DEFAULT,
+  card: palette.papayaWhip[900],
+  primary: palette.stormyTeal.DEFAULT,
+  secondary: palette.vividTangerine.DEFAULT,
+  dark: palette.inkBlack.DEFAULT,
+  light: palette.papayaWhip.DEFAULT,
+  accent: palette.vividTangerine.DEFAULT,
+  success: palette.stormyTeal[600],
+  warning: palette.vividTangerine.DEFAULT,
+  error: palette.brandy.DEFAULT,
+  info: palette.inkBlack[700],
 };
 
 // Gradients
 export const gradients = {
-  landing: 'radial-gradient(circle at 14% 8%, #ADC178 0%, transparent 34%), radial-gradient(circle at 88% -8%, #DDE5B6 0%, transparent 30%), linear-gradient(150deg, #6C584C 0%, #A98467 46%, #6D803B 100%)',
-  authCard: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.midTeal} 100%)`,
-  heroSection: 'linear-gradient(135deg, rgba(108, 88, 76, 0.8), rgba(109, 128, 59, 0.58))',
+  landing: `radial-gradient(circle at 14% 8%, ${palette.stormyTeal[700]} 0%, transparent 34%), radial-gradient(circle at 88% -8%, ${palette.papayaWhip[400]} 0%, transparent 30%), linear-gradient(150deg, ${palette.inkBlack.DEFAULT} 0%, ${palette.stormyTeal.DEFAULT} 46%, ${palette.vividTangerine.DEFAULT} 100%)`,
+  authCard: `linear-gradient(135deg, ${themeColors.moss} 0%, ${themeColors.accent} 100%)`,
+  heroSection: 'linear-gradient(135deg, rgba(0, 21, 36, 0.84), rgba(21, 97, 109, 0.7))',
 };
 
 // Typography Scales

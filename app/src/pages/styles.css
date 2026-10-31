@@ -1,35 +1,35 @@
 :root {
-  --bg-deep: #f0ead2;
-  --bg-mid: #e4eac6;
-  --sun: #6d803b;
-  --snow: #fcfbf6;
-  --ink: #6c584c;
-  --moss: #92aa4e;
-  --on-primary: #fcfbf6;
-  --card: #fcfbf6;
-  --page-bg: radial-gradient(circle at 8% -10%, rgba(189, 205, 146, 0.38), transparent 30%), radial-gradient(circle at 90% 2%, rgba(173, 193, 120, 0.22), transparent 25%), linear-gradient(160deg, #f0ead2 0%, #e4eac6 100%);
-  --text-primary: #6c584c;
-  --text-muted: rgba(86, 71, 61, 0.8);
-  --outline: rgba(86, 71, 61, 0.22);
-  --soft-bg: rgba(109, 128, 59, 0.1);
-  --hero-bg: linear-gradient(135deg, rgba(221, 229, 182, 0.9), rgba(240, 234, 210, 0.86));
-  --section-bg: rgba(252, 251, 246, 0.84);
-  --panel-border: rgba(86, 71, 61, 0.16);
+  --bg-deep: #ffecd1;
+  --bg-mid: #fff0da;
+  --sun: #ff7d00;
+  --snow: #fffbf6;
+  --ink: #001524;
+  --moss: #15616d;
+  --on-primary: #001524;
+  --card: #fffbf6;
+  --page-bg: radial-gradient(circle at 8% -10%, rgba(62, 197, 218, 0.26), transparent 30%), radial-gradient(circle at 90% 2%, rgba(255, 125, 0, 0.18), transparent 25%), linear-gradient(160deg, #ffecd1 0%, #fff0da 100%);
+  --text-primary: #001524;
+  --text-muted: rgba(0, 21, 36, 0.76);
+  --outline: rgba(0, 21, 36, 0.22);
+  --soft-bg: rgba(21, 97, 109, 0.1);
+  --hero-bg: linear-gradient(135deg, rgba(191, 236, 243, 0.9), rgba(255, 236, 209, 0.86));
+  --section-bg: rgba(255, 251, 246, 0.84);
+  --panel-border: rgba(0, 21, 36, 0.16);
 }
 
 body[data-theme='dark'] {
-  --bg-deep: #6c584c;
-  --bg-mid: #56473d;
-  --snow: #f0ead2;
-  --card: #56473d;
-  --page-bg: radial-gradient(circle at 12% 5%, rgba(173, 193, 120, 0.28) 0%, transparent 30%), radial-gradient(circle at 88% -8%, rgba(189, 205, 146, 0.2) 0%, transparent 28%), linear-gradient(155deg, #6c584c 0%, #56473d 58%, #6d803b 100%);
-  --text-primary: #f0ead2;
-  --text-muted: rgba(228, 234, 198, 0.82);
-  --outline: rgba(221, 229, 182, 0.28);
-  --soft-bg: rgba(189, 205, 146, 0.14);
-  --hero-bg: linear-gradient(135deg, rgba(109, 128, 59, 0.62), rgba(86, 71, 61, 0.72));
-  --section-bg: rgba(86, 71, 61, 0.84);
-  --panel-border: rgba(221, 229, 182, 0.22);
+  --bg-deep: #001524;
+  --bg-mid: #00111d;
+  --snow: #ffecd1;
+  --card: #00111d;
+  --page-bg: radial-gradient(circle at 12% 5%, rgba(33, 153, 171, 0.3) 0%, transparent 30%), radial-gradient(circle at 88% -8%, rgba(255, 125, 0, 0.2) 0%, transparent 28%), linear-gradient(155deg, #001524 0%, #00111d 58%, #104c56 100%);
+  --text-primary: #ffecd1;
+  --text-muted: rgba(191, 236, 243, 0.82);
+  --outline: rgba(191, 236, 243, 0.28);
+  --soft-bg: rgba(33, 153, 171, 0.16);
+  --hero-bg: linear-gradient(135deg, rgba(21, 97, 109, 0.68), rgba(0, 21, 36, 0.78));
+  --section-bg: rgba(0, 17, 29, 0.86);
+  --panel-border: rgba(191, 236, 243, 0.22);
 }
 
 * {
@@ -88,7 +88,7 @@ a {
   pointer-events: none;
   background-image: linear-gradient(
       35deg,
-      rgba(173, 193, 120, 0.1) 25%,
+      rgba(62, 197, 218, 0.1) 25%,
       transparent 25%
     ),
     linear-gradient(-35deg, rgba(255, 255, 255, 0.04) 20%, transparent 20%);
@@ -285,7 +285,7 @@ a {
   background: rgba(11, 31, 42, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 6px;
-  color: #f0ead2;
+  color: #ffecd1;
   font-family: 'Space Grotesk', sans-serif;
   font-size: 0.78rem;
   font-weight: 600;
@@ -311,8 +311,8 @@ a {
 }
 
 .region-pills span {
-  background: rgba(173, 193, 120, 0.16);
-  border: 1px solid rgba(109, 128, 59, 0.4);
+  background: rgba(21, 97, 109, 0.16);
+  border: 1px solid rgba(21, 97, 109, 0.4);
   color: var(--text-primary);
   border-radius: 8px;
   padding: 0.45rem 0.75rem;
@@ -350,22 +350,22 @@ a {
 }
 
 .map-links a:hover {
-  background: rgba(173, 193, 120, 0.2);
+  background: rgba(21, 97, 109, 0.2);
 }
 
 .callout {
   background: linear-gradient(
     120deg,
-    rgba(173, 193, 120, 0.2),
-    rgba(109, 128, 59, 0.46)
+    rgba(21, 97, 109, 0.2),
+    rgba(255, 125, 0, 0.46)
   );
 }
 
-[style*='background: #adc178'],
-[style*='background-color: #adc178'],
-[style*='background:#adc178'],
-[style*='background-color:#adc178'] {
-  color: #433a16;
+[style*='background: #ff7d00'],
+[style*='background-color: #ff7d00'],
+[style*='background:#ff7d00'],
+[style*='background-color:#ff7d00'] {
+  color: #001524;
 }
 
 .site-footer {

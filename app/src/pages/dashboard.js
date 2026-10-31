@@ -69,7 +69,7 @@ const dashboardCardSx = (theme) => ({
     theme.palette.mode === 'dark'
       ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
       : 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(240,234,210,0.5) 100%)',
-  color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
+  color: theme.palette.mode === 'dark' ? '#fffbf6' : theme.palette.text.primary,
   border: '1px solid',
   borderColor: theme.palette.mode === 'dark' ? 'rgba(232, 240, 247, 0.22)' : 'rgba(86, 71, 61, 0.12)',
   borderRadius: 3,
@@ -759,7 +759,7 @@ return (
             background:
               theme.palette.mode === 'dark'
                 ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
-                : 'linear-gradient(145deg, #FCFBF6 0%, #F3EEDA 100%)',
+                : 'linear-gradient(145deg, #fffbf6 0%, #fff0da 100%)',
             border: '1px solid',
             borderColor: theme.palette.mode === 'dark' ? 'rgba(221, 229, 182, 0.26)' : 'rgba(86, 71, 61, 0.13)',
             borderRadius: { xs: 2.5, md: 3.5 },
@@ -1766,7 +1766,7 @@ return (
                           theme.palette.mode === 'dark'
                             ? 'linear-gradient(145deg, rgba(86,71,61,0.96) 0%, rgba(108,88,76,0.96) 100%)'
                             : 'linear-gradient(145deg, rgba(255,251,245,0.98) 0%, rgba(250,244,236,0.96) 100%)',
-                        color: theme.palette.mode === 'dark' ? '#FCFBF6' : theme.palette.text.primary,
+                        color: theme.palette.mode === 'dark' ? '#fffbf6' : theme.palette.text.primary,
                       })}
                     >
                       <CardContent>
@@ -1867,14 +1867,14 @@ return (
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf || isGuide || currentDraft === entry.role}
                               onClick={() => saveUserRole(entry.id)}
                               sx={{
-                                background: '#6D803B',
-                                color: '#FCFBF6',
+                                background: '#15616d',
+                                color: '#fffbf6',
                                 '&:hover': {
-                                  background: '#56473D',
+                                  background: '#00111d',
                                 },
                                 '&.Mui-disabled': {
                                   background: '#94a3b8',
-                                  color: '#FCFBF6',
+                                  color: '#fffbf6',
                                 },
                               }}
                             >
@@ -1886,7 +1886,7 @@ return (
                               disabled={isSaving || isUpdatingBan || isDeleting || isSelf}
                               onClick={() => toggleUserBan(entry.id, !entry.isBanned)}
                               sx={{
-                                color: entry.isBanned ? '#6D803B' : '#56473D',
+                                color: entry.isBanned ? '#15616d' : '#00111d',
                                 borderColor: entry.isBanned ? 'rgba(109, 128, 59, 0.45)' : 'rgba(86, 71, 61, 0.45)',
                               }}
                             >

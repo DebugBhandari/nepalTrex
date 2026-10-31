@@ -129,7 +129,7 @@ function StarRow({ rating, count }) {
           sx={{
             fontSize: 18,
             color:
-              s <= Math.round(Number(rating)) ? '#ADC178' : 'text.disabled',
+              s <= Math.round(Number(rating)) ? '#15616d' : 'text.disabled',
           }}
         />
       ))}
@@ -213,7 +213,7 @@ function ReviewForm({
             aria-label={`Set rating to ${star} stars`}
           >
             <StarRoundedIcon
-              sx={{ color: star <= rating ? '#ADC178' : 'text.disabled' }}
+              sx={{ color: star <= rating ? '#15616d' : 'text.disabled' }}
             />
           </IconButton>
         ))}
@@ -453,7 +453,7 @@ function ReviewsSection({
                             fontSize: 14,
                             color:
                               star <= review.rating
-                                ? '#ADC178'
+                                ? '#15616d'
                                 : 'text.disabled',
                           }}
                         />
@@ -689,7 +689,7 @@ function StayDetailView({ stay }) {
               <Typography
                 variant="caption"
                 sx={{
-                  color: '#FCFBF6',
+                  color: '#fffbf6',
                   fontWeight: 600,
                   textTransform: 'capitalize',
                 }}
@@ -699,11 +699,11 @@ function StayDetailView({ stay }) {
             </Box>
             {stay.isFeatured && (
               <Box
-                sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#ADC178' }}
+                sx={{ px: 1.4, py: 0.4, borderRadius: 1, bgcolor: '#15616d' }}
               >
                 <Typography
                   variant="caption"
-                  sx={{ color: '#6C584C', fontWeight: 800 }}
+                  sx={{ color: '#001524', fontWeight: 800 }}
                 >
                   Featured
                 </Typography>
@@ -715,16 +715,16 @@ function StayDetailView({ stay }) {
                   px: 1.4,
                   py: 0.4,
                   borderRadius: 1,
-                  bgcolor: '#92AA4E',
+                  bgcolor: '#3ec5da',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
                 }}
               >
-                <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#FCFBF6' }} />
+                <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#fffbf6' }} />
                 <Typography
                   variant="caption"
-                  sx={{ color: '#FCFBF6', fontWeight: 700 }}
+                  sx={{ color: '#fffbf6', fontWeight: 700 }}
                 >
                   {stay.discountPercent}% off
                 </Typography>
@@ -735,7 +735,7 @@ function StayDetailView({ stay }) {
           <Typography
             variant="h3"
             sx={{
-              color: '#FCFBF6',
+              color: '#fffbf6',
               fontWeight: 700,
               lineHeight: 1.1,
               fontSize: { xs: '2rem', sm: '2.7rem', md: '3.4rem' },
@@ -769,10 +769,10 @@ function StayDetailView({ stay }) {
             </Box>
             {stay.avgRating && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
-                <StarRoundedIcon sx={{ fontSize: 16, color: '#ADC178' }} />
+                <StarRoundedIcon sx={{ fontSize: 16, color: '#15616d' }} />
                 <Typography
                   variant="body2"
-                  sx={{ color: '#FCFBF6', fontWeight: 700 }}
+                  sx={{ color: '#fffbf6', fontWeight: 700 }}
                 >
                   {Number(stay.avgRating).toFixed(1)}
                 </Typography>
@@ -795,7 +795,7 @@ function StayDetailView({ stay }) {
           py: { xs: 3.5, md: 6 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.24) 0%, transparent 38%), linear-gradient(160deg, #6C584C 0%, #56473D 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.24) 0%, transparent 38%), linear-gradient(160deg, #001524 0%, #00111d 100%)'
               : theme.palette.background.default,
         })}
       >
@@ -1610,7 +1610,7 @@ function TrekDetailView({ trek }) {
           py: { xs: 2.5, md: 4.5 },
           background:
             theme.palette.mode === 'dark'
-              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.28) 0%, transparent 38%), linear-gradient(160deg, #6C584C 0%, #56473D 100%)'
+              ? 'radial-gradient(circle at 18% 12%, rgba(173,193,120,0.28) 0%, transparent 38%), linear-gradient(160deg, #001524 0%, #00111d 100%)'
               : theme.palette.background.default,
         })}
       >
