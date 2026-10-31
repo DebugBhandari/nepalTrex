@@ -298,6 +298,38 @@ a {
   display: none;
 }
 
+.nepaltrex-completed-waypoint-icon,
+.nepaltrex-route-waypoint-icon {
+  background: transparent;
+  border: 0;
+}
+
+.nepaltrex-completed-waypoint-icon span {
+  align-items: center;
+  background: #2e7d32;
+  border: 2px solid #fffbf6;
+  border-radius: 50%;
+  box-shadow: 0 2px 7px rgba(0, 21, 36, 0.42);
+  color: #fff;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  height: 16px;
+  justify-content: center;
+  line-height: 1;
+  width: 16px;
+}
+
+.nepaltrex-route-waypoint-icon span {
+  background: #bfecf3;
+  border: 2px solid #00111d;
+  border-radius: 50%;
+  display: block;
+  height: 6px;
+  width: 6px;
+}
+
 .split {
   display: grid;
   gap: 1rem;

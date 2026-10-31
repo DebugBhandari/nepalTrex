@@ -25,8 +25,9 @@ function routeBackground(waypoints, completedWaypoints) {
     commands.push(completed ? '0.83 0.63 0.06 rg' : '0.15 0.38 0.42 rg');
     commands.push(`${(x - 3).toFixed(1)} ${(y - 3).toFixed(1)} 6 6 re f`);
     if (completed) {
-      commands.push('0.75 0.49 0.02 RG 1.2 w');
-      commands.push(`${(x - 6).toFixed(1)} ${(y + 7).toFixed(1)} m ${(x - 3).toFixed(1)} ${(y + 13).toFixed(1)} l ${x.toFixed(1)} ${(y + 7).toFixed(1)} l ${(x + 3).toFixed(1)} ${(y + 13).toFixed(1)} l ${(x + 6).toFixed(1)} ${(y + 7).toFixed(1)} l ${x.toFixed(1)} ${(y - 3).toFixed(1)} l h S`);
+      const completedOn = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(completed.completed_at));
+      const label = `${waypoint.place || `Coordinate ${index + 1}`} - ${completedOn}`;
+      commands.push(`BT /F1 7 Tf 0.05 0.26 0.10 rg ${(x + 5).toFixed(1)} ${(y + 7).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`);
     }
   });
   commands.push('Q');

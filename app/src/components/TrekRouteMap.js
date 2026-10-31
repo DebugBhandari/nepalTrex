@@ -1,10 +1,11 @@
 import { useEffect, useMemo } from 'react';
-import { geoJSON } from 'leaflet';
+import { divIcon, geoJSON } from 'leaflet';
 import { useRouter } from 'next/router';
 import {
   CircleMarker,
   GeoJSON,
   MapContainer,
+  Marker,
   Polyline,
   TileLayer,
   Tooltip,
@@ -13,6 +14,20 @@ import {
 
 const NEPAL_CENTER = [28.2, 84.1];
 const NEPAL_ZOOM = 7;
+const completedWaypointIcon = divIcon({
+  className: 'nepaltrex-completed-waypoint-icon',
+  html: '<span aria-hidden="true">✓</span>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  tooltipAnchor: [0, -12],
+});
+const routeWaypointIcon = divIcon({
+  className: 'nepaltrex-route-waypoint-icon',
+  html: '<span aria-hidden="true"></span>',
+  iconSize: [10, 10],
+  iconAnchor: [5, 5],
+  tooltipAnchor: [0, -8],
+});
 
 function normalizeGeoJson(routeGeojson) {
   if (!routeGeojson) {
@@ -247,22 +262,16 @@ export default function TrekRouteMap({
       {namedWaypoints.map(([lat, lng, name], i) => {
         const completedWaypoint = completedWaypointByIndex.get(i);
         return (
-        <CircleMarker
+        <Marker
           key={name + '-' + i}
           center={[lat, lng]}
-          radius={completedWaypoint ? 9 : 5}
-          pathOptions={{
-            color: completedWaypoint ? '#fffbf6' : '#00111d',
-            fillColor: completedWaypoint ? '#d4a017' : '#bfecf3',
-            fillOpacity: 1,
-            weight: 2,
-          }}
+          icon={completedWaypoint ? completedWaypointIcon : routeWaypointIcon}
         >
           <Tooltip direction="top" offset={[0, -8]}>
-            <strong>{completedWaypoint ? '♛ ' : ''}{name}</strong>
+            <strong>{completedWaypoint ? 'Completed · ' : ''}{name}</strong>
             {completedWaypoint?.completedAt && <><br /><span>Completed {new Date(completedWaypoint.completedAt).toLocaleString()}</span></>}
           </Tooltip>
-        </CircleMarker>
+        </Marker>
         );
       })}
     </MapContainer>
