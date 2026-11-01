@@ -35,13 +35,15 @@ function routeBackground(waypoints, completedWaypoints) {
     mapBox.y + ((waypoint.lat - minLat) / latSpan) * mapBox.height,
   ];
   const completionByIndex = new Map(
-    completedWaypoints.map((waypoint) => [Number(waypoint.waypoint_index), waypoint])
+    completedWaypoints.map((waypoint) => [
+      Number(waypoint.waypoint_index),
+      waypoint,
+    ])
   );
   const [firstX, firstY] = point(waypoints[0]);
   const commands = [
     'q',
-    '/GS1 gs',
-    '0.16 0.48 0.44 RG 3 w',
+    '0.2 0.88 0.78 RG 3.5 w',
     `${firstX.toFixed(1)} ${firstY.toFixed(1)} m`,
   ];
 
@@ -54,26 +56,39 @@ function routeBackground(waypoints, completedWaypoints) {
   waypoints.forEach((waypoint, index) => {
     const [x, y] = point(waypoint);
     const completed = completionByIndex.get(index);
-    commands.push(completed ? '0.78 0.55 0.04 rg' : '0.12 0.38 0.43 rg');
-    commands.push(`${(x - (completed ? 4 : 2.5)).toFixed(1)} ${(y - (completed ? 4 : 2.5)).toFixed(1)} ${completed ? 8 : 5} ${completed ? 8 : 5} re f`);
+    commands.push(completed ? '1 0.68 0.12 rg' : '0.24 0.9 0.82 rg');
+    commands.push(
+      `${(x - (completed ? 4 : 2.5)).toFixed(1)} ${(
+        y - (completed ? 4 : 2.5)
+      ).toFixed(1)} ${completed ? 8 : 5} ${completed ? 8 : 5} re f`
+    );
 
     if (completed) {
-      const place = completed.waypoint_name || waypoint.place || `Coordinate ${index + 1}`;
+      const place =
+        completed.waypoint_name || waypoint.place || `Coordinate ${index + 1}`;
       const completedOn = formatDate(
         completed.completed_at,
         { dateStyle: 'medium' },
         'Date unavailable'
       );
       const label = `${place} - ${completedOn}`;
-      const labelWidth = Math.min(Math.max(label.length * 4.1 + 16, 104), 210);
-      const labelX = Math.min(x + 9, 760 - labelWidth);
+      const labelWidth = Math.min(Math.max(label.length * 5 + 20, 120), 250);
+      const labelX = Math.min(x + 9, 766 - labelWidth);
       const labelY = Math.min(y + 7, 574);
       commands.push(
         '1 1 1 rg',
-        `${labelX.toFixed(1)} ${(labelY - 3).toFixed(1)} ${labelWidth.toFixed(1)} 14 re f`,
+        `${labelX.toFixed(1)} ${(labelY - 4).toFixed(1)} ${labelWidth.toFixed(
+          1
+        )} 18 re f`,
         '0.08 0.29 0.22 RG 1.4 w',
-        `${(x - 2).toFixed(1)} ${(y - 0.5).toFixed(1)} m ${(x + 0.5).toFixed(1)} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(1)} l S`,
-        `BT /F1 7 Tf 0.03 0.22 0.14 rg ${(labelX + 5).toFixed(1)} ${(labelY + 1).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
+        `${(x - 2).toFixed(1)} ${(y - 0.5).toFixed(1)} m ${(x + 0.5).toFixed(
+          1
+        )} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(
+          1
+        )} l S`,
+        `BT /F1 9 Tf 0.03 0.22 0.14 rg ${(labelX + 7).toFixed(1)} ${(
+          labelY + 2
+        ).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
       );
     }
   });
@@ -81,28 +96,45 @@ function routeBackground(waypoints, completedWaypoints) {
   return commands.join('\n');
 }
 
-function buildPdf({ recipientName, trekName, completedAt, certificateCode, isDemo, waypoints, completedWaypoints }) {
+function buildPdf({
+  recipientName,
+  trekName,
+  completedAt,
+  certificateCode,
+  isDemo,
+  waypoints,
+  completedWaypoints,
+}) {
   const completionDate = formatDate(completedAt, { dateStyle: 'long' });
   const map = routeBackground(waypoints, completedWaypoints);
   const page = [
-    'q 1 1 1 rg 0 0 792 612 re f Q',
+    'q 0.035 0.075 0.105 rg 0 0 792 612 re f Q',
     map,
-    'q 1 1 1 rg 116 178 560 263 re f Q',
-    '0.02 0.10 0.15 RG 1 w 116 178 560 263 re S',
-    'BT /F2 19 Tf 0.05 0.32 0.29 rg 321 401 Td (NEPAL TREX) Tj ET',
-    `BT /F2 28 Tf 0.02 0.10 0.15 rg 173 358 Td (${escapePdfText(isDemo ? 'DEMO COMPLETION CERTIFICATE' : 'CERTIFICATE OF COMPLETION')}) Tj ET`,
-    'BT /F1 13 Tf 0.16 0.24 0.28 rg 302 328 Td (Awarded to) Tj ET',
-    `BT /F2 27 Tf 0.78 0.49 0.04 rg 145 292 Td (${escapePdfText(recipientName)}) Tj ET`,
-    `BT /F2 22 Tf 0.02 0.10 0.15 rg 154 245 Td (${escapePdfText(trekName)}) Tj ET`,
-    `BT /F1 12 Tf 0.16 0.24 0.28 rg 236 216 Td (Completed ${escapePdfText(completionDate)} | ${escapePdfText(certificateCode)}) Tj ET`,
-    `BT /F1 9 Tf 0.16 0.24 0.28 rg 169 194 Td (${escapePdfText(isDemo ? 'Demo route records - not live GPS verification.' : 'Background route map shows completed checkpoints with their completion dates.')}) Tj ET`,
+    'BT /F2 19 Tf 0.3 0.95 0.83 rg 321 401 Td (NEPAL TREX) Tj ET',
+    `BT /F2 28 Tf 1 1 1 rg 173 358 Td (${escapePdfText(
+      isDemo ? 'TREK COMPLETION CERTIFICATE' : 'TREK COMPLETION CERTIFICATE'
+    )}) Tj ET`,
+    'BT /F1 13 Tf 0.78 0.86 0.88 rg 302 328 Td (Awarded to) Tj ET',
+    `BT /F2 27 Tf 1 0.72 0.2 rg 145 292 Td (${escapePdfText(
+      recipientName
+    )}) Tj ET`,
+    `BT /F2 22 Tf 1 1 1 rg 154 245 Td (${escapePdfText(
+      trekName
+    )}) Tj ET`,
+    `BT /F1 12 Tf 0.78 0.86 0.88 rg 236 216 Td (Completed ${escapePdfText(
+      completionDate
+    )} | ${escapePdfText(certificateCode)}) Tj ET`,
+    `BT /F1 9 Tf 0.66 0.76 0.8 rg 169 194 Td (${escapePdfText(
+      isDemo
+        ? 'Demo route records - not live GPS verification.'
+        : 'Background route map shows completed checkpoints with their completion dates.'
+    )}) Tj ET`,
   ].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /ExtGState << /GS1 5 0 R >> /Font << /F1 6 0 R /F2 7 0 R >> >> /Contents 4 0 R >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
     `<< /Length ${Buffer.byteLength(page)} >>\nstream\n${page}\nendstream`,
-    '<< /Type /ExtGState /ca 0.13 /CA 0.13 >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
   ];
@@ -117,15 +149,21 @@ function buildPdf({ recipientName, trekName, completedAt, certificateCode, isDem
   offsets.slice(1).forEach((offset) => {
     pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
   });
-  return Buffer.from(`${pdf}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return Buffer.from(
+    `${pdf}trailer\n<< /Size ${
+      objects.length + 1
+    } /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
+  );
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'GET')
+    return res.status(405).json({ error: 'Method not allowed' });
 
   try {
     const session = await getServerSession(req, res, authOptions);
-    if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
+    if (!session?.user?.id)
+      return res.status(401).json({ error: 'Authentication required' });
     const result = await query(
       `SELECT c.*, t.name AS trek_name, t.route_geojson,
         COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS recipient_name
@@ -137,7 +175,8 @@ export default async function handler(req, res) {
       [req.query.id, session.user.id]
     );
     const completion = result.rows[0];
-    if (!completion) return res.status(404).json({ error: 'Certificate not found' });
+    if (!completion)
+      return res.status(404).json({ error: 'Certificate not found' });
 
     const waypointResult = await query(
       `SELECT waypoint_index, waypoint_name, waypoint_latitude, waypoint_longitude,
@@ -167,6 +206,10 @@ export default async function handler(req, res) {
     return res.status(200).send(pdf);
   } catch (error) {
     console.error('Unable to generate trek completion certificate', error);
-    return res.status(500).json({ error: 'Unable to generate this certificate. Please try again.' });
+    return res
+      .status(500)
+      .json({
+        error: 'Unable to generate this certificate. Please try again.',
+      });
   }
 }
