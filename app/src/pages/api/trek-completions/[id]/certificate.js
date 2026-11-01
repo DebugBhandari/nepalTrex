@@ -36,7 +36,7 @@ function routeBackground(waypoints, completedWaypoints) {
   const maxLng = Math.max(...lngs);
   const latSpan = Math.max(maxLat - minLat, 0.01);
   const lngSpan = Math.max(maxLng - minLng, 0.01);
-  const mapBox = { x: 424, y: 22, width: 344, height: 238 };
+  const mapBox = { x: 412, y: 34, width: 344, height: 238 };
   const point = (waypoint) => [
     mapBox.x + ((waypoint.lng - minLng) / lngSpan) * mapBox.width,
     mapBox.y + ((waypoint.lat - minLat) / latSpan) * mapBox.height,
@@ -195,25 +195,25 @@ function buildPdf({
   const page = [
     'q 0.035 0.075 0.105 rg 0 0 792 612 re f Q',
     map,
-    certificateText('CERTIFICATE OF COMPLETION', 34, '1 0.49 0', 42, 552, 390),
-    certificateText('This proudly recognizes', 22, '0.49 0.85 0.91', 42, 501, 390, 'F1'),
-    certificateText(recipientName, 40, '1 0.93 0.82', 42, 451, 390),
+    certificateText('CERTIFICATE OF COMPLETION', 34, '1 0.49 0', 56, 542, 390),
+    certificateText('This proudly recognizes', 22, '0.49 0.85 0.91', 56, 494, 390, 'F1'),
+    certificateText(recipientName, 40, '1 0.93 0.82', 56, 444, 390),
     certificateText(
       'for verified completion of',
       22,
       '0.49 0.85 0.91',
-      42,
-      408,
+      56,
+      401,
       390,
       'F1'
     ),
-    certificateText(trekName, 31, '1 0.49 0', 42, 359, 390),
+    certificateText(trekName, 31, '1 0.49 0', 56, 352, 390),
     certificateText(
       `Verified ${completionDate}`,
       22,
       '1 0.93 0.82',
-      42,
-      312,
+      56,
+      305,
       390,
       'F1'
     ),
@@ -221,13 +221,14 @@ function buildPdf({
       `Certificate ${certificateCode}`,
       19,
       '0.49 0.85 0.91',
-      42,
-      273,
+      56,
+      266,
       390,
       'F1'
     ),
-    certificateText(evidenceText, 15, '0.75 0.92 0.95', 42, 237, 390, 'F1'),
-    'q 0.55 0 0 0.55 42 46 cm /Logo Do Q',
+    certificateText(evidenceText, 15, '0.75 0.92 0.95', 56, 230, 390, 'F1'),
+    'q 0.55 0 0 0.55 56 52 cm /Logo Do Q',
+    certificateText('Certified by', 14, '0.75 0.92 0.95', 98, 31, 165, 'F1'),
   ].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
