@@ -82,56 +82,58 @@ function routeBackground(waypoints, completedWaypoints) {
         { dateStyle: 'medium' },
         'Date unavailable'
       );
-      const label = `${place} - ${completedOn}`;
+      const labelLines = [place, completedOn];
       const labelWidth = Math.min(
-        Math.max(label.length * 3.9 + 14, 96),
+        Math.max(...labelLines.map((line) => line.length * 4.2 + 16), 96),
         mapBox.width - 12
       );
-      const labelHeight = 18;
-      const positions = [
-        [x + 9, y - 4],
-        [x - labelWidth - 9, y - 4],
-        [x - labelWidth / 2, y + 10],
-        [x - labelWidth / 2, y - labelHeight - 9],
-      ].map(([candidateX, candidateY]) => ({
-        x: Math.max(
-          mapBox.x + 4,
-          Math.min(candidateX, mapBox.x + mapBox.width - labelWidth - 4)
-        ),
-        y: Math.max(
-          mapBox.y + 4,
-          Math.min(candidateY, mapBox.y + mapBox.height - labelHeight - 4)
-        ),
-      }));
-      const labelBox = positions
-        .map((candidate) => {
-          const overlap = labels.reduce((total, previous) => {
-            const overlapWidth = Math.max(
-              0,
-              Math.min(
-                candidate.x + labelWidth,
-                previous.x + previous.width
-              ) - Math.max(candidate.x, previous.x)
-            );
-            const overlapHeight = Math.max(
-              0,
-              Math.min(
-                candidate.y + labelHeight,
-                previous.y + previous.height
-              ) - Math.max(candidate.y, previous.y)
-            );
-            return total + overlapWidth * overlapHeight;
-          }, 0);
-          return { ...candidate, overlap };
-        })
-        .sort((a, b) => a.overlap - b.overlap)[0];
+      const labelHeight = 20;
+      const candidates = [];
+      for (
+        let candidateY = mapBox.y + 4;
+        candidateY <= mapBox.y + mapBox.height - labelHeight - 4;
+        candidateY += 4
+      ) {
+        for (
+          let candidateX = mapBox.x + 4;
+          candidateX <= mapBox.x + mapBox.width - labelWidth - 4;
+          candidateX += 4
+        ) {
+          const overlapsLabel = labels.some(
+            (previous) =>
+              candidateX < previous.x + previous.width &&
+              candidateX + labelWidth > previous.x &&
+              candidateY < previous.y + previous.height &&
+              candidateY + labelHeight > previous.y
+          );
+          if (!overlapsLabel) {
+            candidates.push({
+              x: candidateX,
+              y: candidateY,
+              distance:
+                (candidateX + labelWidth / 2 - x) ** 2 +
+                (candidateY + labelHeight / 2 - y) ** 2,
+            });
+          }
+        }
+      }
+      if (!candidates.length) {
+        throw new Error(
+          `Unable to place checkpoint label without overlap: ${place}`
+        );
+      }
+      const labelBox = candidates.sort((a, b) => a.distance - b.distance)[0];
       labels.push({
         x: labelBox.x,
         y: labelBox.y,
         width: labelWidth,
         height: labelHeight,
       });
-      const fontSize = Math.min(8, (labelWidth - 12) / (label.length * 0.53));
+      const fontSize = Math.min(
+        8,
+        (labelWidth - 12) /
+          (Math.max(...labelLines.map((line) => line.length)) * 0.53)
+      );
       commands.push(
         'q',
         '/GS1 gs',
@@ -140,15 +142,16 @@ function routeBackground(waypoints, completedWaypoints) {
           1
         )} ${labelHeight} re f`,
         'Q',
-        '0.08 0.29 0.22 RG 1.4 w',
-        `${(x - 2).toFixed(1)} ${(y - 0.5).toFixed(1)} m ${(x + 0.5).toFixed(
-          1
-        )} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(
-          1
-        )} l S`,
-        `BT /F2 ${fontSize.toFixed(1)} Tf 1 1 1 rg ${(labelBox.x + 6).toFixed(
-          1
-        )} ${(labelBox.y + 5).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
+          `BT /F2 ${fontSize.toFixed(1)} Tf 1 1 1 rg ${(labelBox.x + 6).toFixed(
+            1
+          )} ${(labelBox.y + 12).toFixed(1)} Td (${escapePdfText(
+            labelLines[0]
+          )}) Tj ET`,
+          `BT /F2 ${fontSize.toFixed(1)} Tf 1 1 1 rg ${(labelBox.x + 6).toFixed(
+            1
+          )} ${(labelBox.y + 2).toFixed(1)} Td (${escapePdfText(
+            labelLines[1]
+          )}) Tj ET`
       );
     }
   });
@@ -227,8 +230,8 @@ function buildPdf({
       'F1'
     ),
     certificateText(evidenceText, 15, '0.75 0.92 0.95', 56, 230, 390, 'F1'),
-    'q 0.55 0 0 0.55 56 52 cm /Logo Do Q',
-    certificateText('Certified by', 14, '0.75 0.92 0.95', 98, 31, 165, 'F1'),
+    'q 0.55 0 0 0.55 90 108 cm /Logo Do Q',
+    certificateText('Certified by', 14, '0.75 0.92 0.95', 132, 91, 165, 'F1'),
   ].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
