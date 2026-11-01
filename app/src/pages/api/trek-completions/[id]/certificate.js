@@ -18,13 +18,6 @@ function formatDate(value, options, fallback = 'Date unavailable') {
   return new Intl.DateTimeFormat('en', options).format(date);
 }
 
-function coordinateLabel(latitude, longitude) {
-  const lat = Number(latitude);
-  const lng = Number(longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return 'coordinates unavailable';
-  return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-}
-
 function routeBackground(waypoints, completedWaypoints) {
   if (!waypoints.length) return '';
 
@@ -36,7 +29,7 @@ function routeBackground(waypoints, completedWaypoints) {
   const maxLng = Math.max(...lngs);
   const latSpan = Math.max(maxLat - minLat, 0.01);
   const lngSpan = Math.max(maxLng - minLng, 0.01);
-  const mapBox = { x: 54, y: 128, width: 684, height: 330 };
+  const mapBox = { x: 26, y: 22, width: 740, height: 568 };
   const point = (waypoint) => [
     mapBox.x + ((waypoint.lng - minLng) / lngSpan) * mapBox.width,
     mapBox.y + ((waypoint.lat - minLat) / latSpan) * mapBox.height,
@@ -47,11 +40,8 @@ function routeBackground(waypoints, completedWaypoints) {
   const [firstX, firstY] = point(waypoints[0]);
   const commands = [
     'q',
-    '0.93 0.97 0.95 rg',
-    `${mapBox.x} ${mapBox.y} ${mapBox.width} ${mapBox.height} re f`,
-    '0.76 0.85 0.82 RG 0.5 w',
-    `${mapBox.x} ${mapBox.y} ${mapBox.width} ${mapBox.height} re S`,
-    '0.35 0.56 0.50 RG 3 w',
+    '/GS1 gs',
+    '0.16 0.48 0.44 RG 3 w',
     `${firstX.toFixed(1)} ${firstY.toFixed(1)} m`,
   ];
 
@@ -64,14 +54,26 @@ function routeBackground(waypoints, completedWaypoints) {
   waypoints.forEach((waypoint, index) => {
     const [x, y] = point(waypoint);
     const completed = completionByIndex.get(index);
-    commands.push(completed ? '0.83 0.63 0.06 rg' : '0.12 0.38 0.43 rg');
+    commands.push(completed ? '0.78 0.55 0.04 rg' : '0.12 0.38 0.43 rg');
     commands.push(`${(x - (completed ? 4 : 2.5)).toFixed(1)} ${(y - (completed ? 4 : 2.5)).toFixed(1)} ${completed ? 8 : 5} ${completed ? 8 : 5} re f`);
 
     if (completed) {
       const place = completed.waypoint_name || waypoint.place || `Coordinate ${index + 1}`;
-      const label = `${place} | ${coordinateLabel(waypoint.lat, waypoint.lng)}`;
+      const completedOn = formatDate(
+        completed.completed_at,
+        { dateStyle: 'medium' },
+        'Date unavailable'
+      );
+      const label = `${place} - ${completedOn}`;
+      const labelWidth = Math.min(Math.max(label.length * 4.1 + 16, 104), 210);
+      const labelX = Math.min(x + 9, 760 - labelWidth);
+      const labelY = Math.min(y + 7, 574);
       commands.push(
-        `BT /F1 7 Tf 0.03 0.22 0.14 rg ${(x + 6).toFixed(1)} ${(y + 7).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
+        '1 1 1 rg',
+        `${labelX.toFixed(1)} ${(labelY - 3).toFixed(1)} ${labelWidth.toFixed(1)} 14 re f`,
+        '0.08 0.29 0.22 RG 1.4 w',
+        `${(x - 2).toFixed(1)} ${(y - 0.5).toFixed(1)} m ${(x + 0.5).toFixed(1)} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(1)} l S`,
+        `BT /F1 7 Tf 0.03 0.22 0.14 rg ${(labelX + 5).toFixed(1)} ${(labelY + 1).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
       );
     }
   });
@@ -82,56 +84,25 @@ function routeBackground(waypoints, completedWaypoints) {
 function buildPdf({ recipientName, trekName, completedAt, certificateCode, isDemo, waypoints, completedWaypoints }) {
   const completionDate = formatDate(completedAt, { dateStyle: 'long' });
   const map = routeBackground(waypoints, completedWaypoints);
-  const records = completedWaypoints.map((waypoint, index) => {
-    const mappedCoordinates = coordinateLabel(waypoint.waypoint_latitude, waypoint.waypoint_longitude);
-    const recordedCoordinates = coordinateLabel(waypoint.recorded_latitude, waypoint.recorded_longitude);
-    const completedOn = formatDate(
-      waypoint.completed_at,
-      { dateStyle: 'medium', timeStyle: 'short' }
-    );
-    return [
-      `${index + 1}. ${waypoint.waypoint_name || `Coordinate ${Number(waypoint.waypoint_index) + 1}`}`,
-      `Mapped: ${mappedCoordinates}`,
-      `Recorded: ${recordedCoordinates} | ${completedOn}`,
-    ];
-  });
-  const pageOne = [
-    'q 0.02 0.10 0.15 rg 0 0 792 612 re f Q',
+  const page = [
+    'q 1 1 1 rg 0 0 792 612 re f Q',
     map,
-    'BT /F2 19 Tf 0.96 0.75 0.25 rg 320 570 Td (NEPAL TREX) Tj ET',
-    `BT /F2 28 Tf 1 1 1 rg 172 525 Td (${escapePdfText(isDemo ? 'DEMO COMPLETION CERTIFICATE' : 'CERTIFICATE OF COMPLETION')}) Tj ET`,
-    'BT /F1 13 Tf 0.88 0.92 0.91 rg 302 495 Td (Awarded to) Tj ET',
-    `BT /F2 27 Tf 0.96 0.75 0.25 rg 105 462 Td (${escapePdfText(recipientName)}) Tj ET`,
-    `BT /F2 22 Tf 1 1 1 rg 115 82 Td (${escapePdfText(trekName)}) Tj ET`,
-    `BT /F1 12 Tf 0.88 0.92 0.91 rg 250 58 Td (Completed ${escapePdfText(completionDate)} | ${escapePdfText(certificateCode)}) Tj ET`,
-    `BT /F1 9 Tf 0.88 0.92 0.91 rg 144 40 Td (${escapePdfText(isDemo ? 'Demo route records - not live GPS verification.' : 'Gold stops are completed coordinates. The route map is shown as this certificate background.')}) Tj ET`,
+    'q 1 1 1 rg 116 178 560 263 re f Q',
+    '0.02 0.10 0.15 RG 1 w 116 178 560 263 re S',
+    'BT /F2 19 Tf 0.05 0.32 0.29 rg 321 401 Td (NEPAL TREX) Tj ET',
+    `BT /F2 28 Tf 0.02 0.10 0.15 rg 173 358 Td (${escapePdfText(isDemo ? 'DEMO COMPLETION CERTIFICATE' : 'CERTIFICATE OF COMPLETION')}) Tj ET`,
+    'BT /F1 13 Tf 0.16 0.24 0.28 rg 302 328 Td (Awarded to) Tj ET',
+    `BT /F2 27 Tf 0.78 0.49 0.04 rg 145 292 Td (${escapePdfText(recipientName)}) Tj ET`,
+    `BT /F2 22 Tf 0.02 0.10 0.15 rg 154 245 Td (${escapePdfText(trekName)}) Tj ET`,
+    `BT /F1 12 Tf 0.16 0.24 0.28 rg 236 216 Td (Completed ${escapePdfText(completionDate)} | ${escapePdfText(certificateCode)}) Tj ET`,
+    `BT /F1 9 Tf 0.16 0.24 0.28 rg 169 194 Td (${escapePdfText(isDemo ? 'Demo route records - not live GPS verification.' : 'Background route map shows completed checkpoints with their completion dates.')}) Tj ET`,
   ].join('\n');
-  const pageTwoLines = [
-    'BT /F2 25 Tf 0.02 0.10 0.15 rg 64 554 Td (Completed coordinate records) Tj ET',
-    `BT /F1 11 Tf 0.16 0.24 0.28 rg 64 529 Td (${escapePdfText(trekName)} | ${escapePdfText(certificateCode)}) Tj ET`,
-  ];
-  records.forEach((record, index) => {
-    const row = index % 13;
-    const column = Math.floor(index / 13);
-    const x = 58 + column * 370;
-    const y = 495 - row * 36;
-    record.forEach((line, lineIndex) => {
-      pageTwoLines.push(
-        `BT /F1 ${lineIndex === 0 ? 10 : 8} Tf 0.08 0.18 0.21 rg ${x} ${y - lineIndex * 10} Td (${escapePdfText(line)}) Tj ET`
-      );
-    });
-  });
-  if (!records.length) {
-    pageTwoLines.push('BT /F1 11 Tf 0.16 0.24 0.28 rg 64 485 Td (No completed coordinate records are available.) Tj ET');
-  }
-  const pageTwo = pageTwoLines.join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> /Contents 5 0 R >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 7 0 R /F2 8 0 R >> >> /Contents 6 0 R >>',
-    `<< /Length ${Buffer.byteLength(pageOne)} >>\nstream\n${pageOne}\nendstream`,
-    `<< /Length ${Buffer.byteLength(pageTwo)} >>\nstream\n${pageTwo}\nendstream`,
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /ExtGState << /GS1 5 0 R >> /Font << /F1 6 0 R /F2 7 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${Buffer.byteLength(page)} >>\nstream\n${page}\nendstream`,
+    '<< /Type /ExtGState /ca 0.13 /CA 0.13 >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
   ];
