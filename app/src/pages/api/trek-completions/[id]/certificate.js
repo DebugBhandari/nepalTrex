@@ -101,7 +101,7 @@ function routeBackground(waypoints, completedWaypoints) {
         )} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(
           1
         )} l S`,
-        `BT /F2 10 Tf 0.03 0.22 0.14 rg ${(labelX + 7).toFixed(1)} ${(
+        `BT /F2 10 Tf 0.9 1 0.94 rg ${(labelX + 7).toFixed(1)} ${(
           labelY + 2
         ).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
       );
@@ -151,7 +151,7 @@ function buildPdf({
   const page = [
     'q 0.035 0.075 0.105 rg 0 0 792 612 re f Q',
     map,
-    'q 0.6 0 0 0.6 306 504 cm /Logo Do Q',
+    'q 0.4 0 0 0.4 336 524 cm /Logo Do Q',
     centeredText('CERTIFICATE OF COMPLETION', 34, '0.98 0.78 0.35', 452),
     centeredText('This proudly recognizes', 22, '0.48 0.91 0.88', 406),
     centeredText(recipientName, 40, '1 1 1', 363),
@@ -184,7 +184,7 @@ function buildPdf({
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
     '<< /Type /ExtGState /ca 0.12 /CA 0.12 >>',
-    `<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 160 60] /Resources << /Font << /F2 6 0 R >> >> /Length ${Buffer.byteLength(
+    `<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 300 135] /Resources << /Font << /F2 6 0 R >> >> /Length ${Buffer.byteLength(
       logo
     )} >>\nstream\n${logo}\nendstream`,
   ];
