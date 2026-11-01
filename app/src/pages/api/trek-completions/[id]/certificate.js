@@ -18,13 +18,11 @@ function formatDate(value, options, fallback = 'Date unavailable') {
   return new Intl.DateTimeFormat('en', options).format(date);
 }
 
-function centeredText(text, fontSize, color, y, font = 'F2') {
-  const fittedFontSize = Math.min(fontSize, 744 / (text.length * 0.56));
-  const estimatedWidth = text.length * fittedFontSize * 0.56;
-  const x = Math.max((792 - estimatedWidth) / 2, 24);
-  return `BT /${font} ${fittedFontSize.toFixed(1)} Tf ${color} rg ${x.toFixed(
-    1
-  )} ${y} Td (${escapePdfText(text)}) Tj ET`;
+function certificateText(text, fontSize, color, x, y, maxWidth, font = 'F2') {
+  const fittedFontSize = Math.min(fontSize, maxWidth / (text.length * 0.56));
+  return `BT /${font} ${fittedFontSize.toFixed(1)} Tf ${color} rg ${x} ${y} Td (${escapePdfText(
+    text
+  )}) Tj ET`;
 }
 
 function routeBackground(waypoints, completedWaypoints) {
@@ -38,11 +36,12 @@ function routeBackground(waypoints, completedWaypoints) {
   const maxLng = Math.max(...lngs);
   const latSpan = Math.max(maxLat - minLat, 0.01);
   const lngSpan = Math.max(maxLng - minLng, 0.01);
-  const mapBox = { x: 26, y: 22, width: 740, height: 568 };
+  const mapBox = { x: 424, y: 22, width: 344, height: 238 };
   const point = (waypoint) => [
     mapBox.x + ((waypoint.lng - minLng) / lngSpan) * mapBox.width,
     mapBox.y + ((waypoint.lat - minLat) / latSpan) * mapBox.height,
   ];
+  const labels = [];
   const completionByIndex = new Map(
     completedWaypoints.map((waypoint) => [
       Number(waypoint.waypoint_index),
@@ -84,16 +83,62 @@ function routeBackground(waypoints, completedWaypoints) {
         'Date unavailable'
       );
       const label = `${place} - ${completedOn}`;
-      const labelWidth = Math.min(Math.max(label.length * 5 + 20, 120), 250);
-      const labelX = Math.min(x + 9, 766 - labelWidth);
-      const labelY = Math.min(y + 7, 574);
+      const labelWidth = Math.min(
+        Math.max(label.length * 3.9 + 14, 96),
+        mapBox.width - 12
+      );
+      const labelHeight = 18;
+      const positions = [
+        [x + 9, y - 4],
+        [x - labelWidth - 9, y - 4],
+        [x - labelWidth / 2, y + 10],
+        [x - labelWidth / 2, y - labelHeight - 9],
+      ].map(([candidateX, candidateY]) => ({
+        x: Math.max(
+          mapBox.x + 4,
+          Math.min(candidateX, mapBox.x + mapBox.width - labelWidth - 4)
+        ),
+        y: Math.max(
+          mapBox.y + 4,
+          Math.min(candidateY, mapBox.y + mapBox.height - labelHeight - 4)
+        ),
+      }));
+      const labelBox = positions
+        .map((candidate) => {
+          const overlap = labels.reduce((total, previous) => {
+            const overlapWidth = Math.max(
+              0,
+              Math.min(
+                candidate.x + labelWidth,
+                previous.x + previous.width
+              ) - Math.max(candidate.x, previous.x)
+            );
+            const overlapHeight = Math.max(
+              0,
+              Math.min(
+                candidate.y + labelHeight,
+                previous.y + previous.height
+              ) - Math.max(candidate.y, previous.y)
+            );
+            return total + overlapWidth * overlapHeight;
+          }, 0);
+          return { ...candidate, overlap };
+        })
+        .sort((a, b) => a.overlap - b.overlap)[0];
+      labels.push({
+        x: labelBox.x,
+        y: labelBox.y,
+        width: labelWidth,
+        height: labelHeight,
+      });
+      const fontSize = Math.min(8, (labelWidth - 12) / (label.length * 0.53));
       commands.push(
         'q',
         '/GS1 gs',
         '1 1 1 rg',
-        `${labelX.toFixed(1)} ${(labelY - 4).toFixed(1)} ${labelWidth.toFixed(
+        `${labelBox.x.toFixed(1)} ${labelBox.y.toFixed(1)} ${labelWidth.toFixed(
           1
-        )} 18 re f`,
+        )} ${labelHeight} re f`,
         'Q',
         '0.08 0.29 0.22 RG 1.4 w',
         `${(x - 2).toFixed(1)} ${(y - 0.5).toFixed(1)} m ${(x + 0.5).toFixed(
@@ -101,13 +146,12 @@ function routeBackground(waypoints, completedWaypoints) {
         )} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(
           1
         )} l S`,
-        `BT /F2 10 Tf 0.9 1 0.94 rg ${(labelX + 7).toFixed(1)} ${(
-          labelY + 2
-        ).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
+        `BT /F2 ${fontSize.toFixed(1)} Tf 1 1 1 rg ${(labelBox.x + 6).toFixed(
+          1
+        )} ${(labelBox.y + 5).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
       );
     }
   });
-  commands.push('Q');
   return commands.join('\n');
 }
 
@@ -151,30 +195,39 @@ function buildPdf({
   const page = [
     'q 0.035 0.075 0.105 rg 0 0 792 612 re f Q',
     map,
-    'q 0.4 0 0 0.4 336 524 cm /Logo Do Q',
-    centeredText('CERTIFICATE OF COMPLETION', 34, '0.98 0.78 0.35', 452),
-    centeredText('This proudly recognizes', 22, '0.48 0.91 0.88', 406),
-    centeredText(recipientName, 40, '1 1 1', 363),
-    centeredText(
+    certificateText('CERTIFICATE OF COMPLETION', 34, '1 0.49 0', 42, 552, 390),
+    certificateText('This proudly recognizes', 22, '0.49 0.85 0.91', 42, 501, 390, 'F1'),
+    certificateText(recipientName, 40, '1 0.93 0.82', 42, 451, 390),
+    certificateText(
       'for verified completion of',
       22,
-      '0.48 0.91 0.88',
-      321
+      '0.49 0.85 0.91',
+      42,
+      408,
+      390,
+      'F1'
     ),
-    centeredText(trekName, 31, '1 0.78 0.38', 278),
-    centeredText(
+    certificateText(trekName, 31, '1 0.49 0', 42, 359, 390),
+    certificateText(
       `Verified ${completionDate}`,
       22,
-      '0.82 0.94 0.97',
-      235
+      '1 0.93 0.82',
+      42,
+      312,
+      390,
+      'F1'
     ),
-    centeredText(
+    certificateText(
       `Certificate ${certificateCode}`,
       19,
-      '0.48 0.91 0.88',
-      203
+      '0.49 0.85 0.91',
+      42,
+      273,
+      390,
+      'F1'
     ),
-    centeredText(evidenceText, 15, '0.82 0.88 0.9', 165),
+    certificateText(evidenceText, 15, '0.75 0.92 0.95', 42, 237, 390, 'F1'),
+    'q 0.55 0 0 0.55 42 46 cm /Logo Do Q',
   ].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
