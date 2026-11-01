@@ -18,6 +18,15 @@ function formatDate(value, options, fallback = 'Date unavailable') {
   return new Intl.DateTimeFormat('en', options).format(date);
 }
 
+function centeredText(text, fontSize, color, y, font = 'F2') {
+  const fittedFontSize = Math.min(fontSize, 744 / (text.length * 0.53));
+  const estimatedWidth = text.length * fittedFontSize * 0.53;
+  const x = Math.max((792 - estimatedWidth) / 2, 24);
+  return `BT /${font} ${fittedFontSize.toFixed(1)} Tf ${color} rg ${x.toFixed(
+    1
+  )} ${y} Td (${escapePdfText(text)}) Tj ET`;
+}
+
 function routeBackground(waypoints, completedWaypoints) {
   if (!waypoints.length) return '';
 
@@ -43,6 +52,7 @@ function routeBackground(waypoints, completedWaypoints) {
   const [firstX, firstY] = point(waypoints[0]);
   const commands = [
     'q',
+    '/GS1 gs',
     '0.2 0.88 0.78 RG 3.5 w',
     `${firstX.toFixed(1)} ${firstY.toFixed(1)} m`,
   ];
@@ -51,17 +61,19 @@ function routeBackground(waypoints, completedWaypoints) {
     const [x, y] = point(waypoint);
     commands.push(`${x.toFixed(1)} ${y.toFixed(1)} l`);
   });
-  commands.push('S');
+  commands.push('S', 'Q');
 
   waypoints.forEach((waypoint, index) => {
     const [x, y] = point(waypoint);
     const completed = completionByIndex.get(index);
+    commands.push('q', '/GS1 gs');
     commands.push(completed ? '1 0.68 0.12 rg' : '0.24 0.9 0.82 rg');
     commands.push(
       `${(x - (completed ? 4 : 2.5)).toFixed(1)} ${(
         y - (completed ? 4 : 2.5)
       ).toFixed(1)} ${completed ? 8 : 5} ${completed ? 8 : 5} re f`
     );
+    commands.push('Q');
 
     if (completed) {
       const place =
@@ -107,36 +119,53 @@ function buildPdf({
 }) {
   const completionDate = formatDate(completedAt, { dateStyle: 'long' });
   const map = routeBackground(waypoints, completedWaypoints);
+  const evidenceText = isDemo
+    ? 'Demo route records - not live GPS verification.'
+    : 'GPS evidence recorded within 10 km of every mapped route waypoint.';
+  const logo =
+    'q 0.25 0.76 0.78 rg 8 12 m 30 42 l 52 12 l f 0.55 0.91 0.9 rg 34 12 m 63 51 l 92 12 l f 0.16 0.55 0.68 rg 74 12 m 104 46 l 134 12 l f 0.08 0.33 0.56 rg 112 12 m 135 38 l 158 12 l f 0.86 0.93 0.98 rg 20 24 m 30 42 l 38 30 l 30 33 l f 48 32 m 63 51 l 73 37 l 64 40 l f 90 28 m 104 46 l 114 34 l 105 36 l f 0.87 0.2 0.28 rg 47 12 m 63 43 l 79 12 l f 0.03 0.22 0.42 RG 1.8 w 47 12 m 63 43 l 79 12 l S 0.87 0.2 0.28 rg 82 12 m 99 39 l 116 12 l f 0.03 0.22 0.42 RG 1.8 w 82 12 m 99 39 l 116 12 l S 1 1 1 rg 64 27 3 3 re f 99 23 3 3 re f BT /F2 17 Tf 0.88 0.95 1 rg 14 0 Td (NepalTrex) Tj ET Q';
   const page = [
     'q 0.035 0.075 0.105 rg 0 0 792 612 re f Q',
     map,
-    'BT /F2 19 Tf 0.3 0.95 0.83 rg 321 401 Td (NEPAL TREX) Tj ET',
-    `BT /F2 28 Tf 1 1 1 rg 173 358 Td (${escapePdfText(
-      isDemo ? 'TREK COMPLETION CERTIFICATE' : 'TREK COMPLETION CERTIFICATE'
-    )}) Tj ET`,
-    'BT /F1 13 Tf 0.78 0.86 0.88 rg 302 328 Td (Awarded to) Tj ET',
-    `BT /F2 27 Tf 1 0.72 0.2 rg 145 292 Td (${escapePdfText(
-      recipientName
-    )}) Tj ET`,
-    `BT /F2 22 Tf 1 1 1 rg 154 245 Td (${escapePdfText(
-      trekName
-    )}) Tj ET`,
-    `BT /F1 12 Tf 0.78 0.86 0.88 rg 236 216 Td (Completed ${escapePdfText(
-      completionDate
-    )} | ${escapePdfText(certificateCode)}) Tj ET`,
-    `BT /F1 9 Tf 0.66 0.76 0.8 rg 169 194 Td (${escapePdfText(
-      isDemo
-        ? 'Demo route records - not live GPS verification.'
-        : 'Background route map shows completed checkpoints with their completion dates.'
-    )}) Tj ET`,
+    'q 1 0 0 1 316 486 cm /Logo Do Q',
+    centeredText('CERTIFICATE OF COMPLETION', 27, '0.98 0.78 0.35', 438),
+    centeredText('This proudly recognizes', 17, '0.48 0.91 0.88', 397, 'F1'),
+    centeredText(recipientName, 31, '1 1 1', 357),
+    centeredText(
+      'for verified completion of',
+      17,
+      '0.48 0.91 0.88',
+      322,
+      'F1'
+    ),
+    centeredText(trekName, 25, '1 0.78 0.38', 286),
+    centeredText(
+      `Verified ${completionDate}`,
+      18,
+      '0.82 0.94 0.97',
+      246,
+      'F1'
+    ),
+    centeredText(
+      `Certificate ${certificateCode}`,
+      14,
+      '0.48 0.91 0.88',
+      218,
+      'F1'
+    ),
+    centeredText(evidenceText, 11, '0.82 0.88 0.9', 184, 'F1'),
   ].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /ExtGState << /GS1 7 0 R >> /Font << /F1 5 0 R /F2 6 0 R >> /XObject << /Logo 8 0 R >> >> /Contents 4 0 R >>',
     `<< /Length ${Buffer.byteLength(page)} >>\nstream\n${page}\nendstream`,
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>',
+    '<< /Type /ExtGState /ca 0.12 /CA 0.12 >>',
+    `<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 160 60] /Resources << /Font << /F2 6 0 R >> >> /Length ${Buffer.byteLength(
+      logo
+    )} >>\nstream\n${logo}\nendstream`,
   ];
   let pdf = '%PDF-1.4\n';
   const offsets = [0];
