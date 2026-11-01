@@ -36,7 +36,7 @@ function routeBackground(waypoints, completedWaypoints) {
   const maxLng = Math.max(...lngs);
   const latSpan = Math.max(maxLat - minLat, 0.01);
   const lngSpan = Math.max(maxLng - minLng, 0.01);
-  const mapBox = { x: 412, y: 34, width: 344, height: 238 };
+  const mapBox = { x: 412, y: 34, width: 344, height: 260 };
   const point = (waypoint) => [
     mapBox.x + ((waypoint.lng - minLng) / lngSpan) * mapBox.width,
     mapBox.y + ((waypoint.lat - minLat) / latSpan) * mapBox.height,
@@ -51,7 +51,6 @@ function routeBackground(waypoints, completedWaypoints) {
   const [firstX, firstY] = point(waypoints[0]);
   const commands = [
     'q',
-    '/GS1 gs',
     '0.2 0.88 0.78 RG 3.5 w',
     `${firstX.toFixed(1)} ${firstY.toFixed(1)} m`,
   ];
@@ -65,7 +64,7 @@ function routeBackground(waypoints, completedWaypoints) {
   waypoints.forEach((waypoint, index) => {
     const [x, y] = point(waypoint);
     const completed = completionByIndex.get(index);
-    commands.push('q', '/GS1 gs');
+    commands.push('q');
     commands.push(completed ? '1 0.68 0.12 rg' : '0.24 0.9 0.82 rg');
     commands.push(
       `${(x - (completed ? 4 : 2.5)).toFixed(1)} ${(
