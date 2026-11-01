@@ -362,7 +362,22 @@ function ReviewsSection({
             {title}
           </Typography>
           {rating ? (
-            <Box component={Link} href={reviewsPageHref} sx={{ display: 'inline-flex', color: 'inherit', textDecoration: 'none', borderRadius: 1, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } }} aria-label={`View all ${title.toLowerCase()}`}>
+            <Box
+              component={Link}
+              href={reviewsPageHref}
+              sx={{
+                display: 'inline-flex',
+                color: 'inherit',
+                textDecoration: 'none',
+                borderRadius: 1,
+                '&:focus-visible': {
+                  outline: '2px solid',
+                  outlineColor: 'primary.main',
+                  outlineOffset: 2,
+                },
+              }}
+              aria-label={`View all ${title.toLowerCase()}`}
+            >
               <StarRow rating={rating} count={reviewCount} />
             </Box>
           ) : (
@@ -723,7 +738,9 @@ function StayDetailView({ stay }) {
                   gap: 0.5,
                 }}
               >
-                <LocalOfferRoundedIcon sx={{ fontSize: 13, color: '#fffbf6' }} />
+                <LocalOfferRoundedIcon
+                  sx={{ fontSize: 13, color: '#fffbf6' }}
+                />
                 <Typography
                   variant="caption"
                   sx={{ color: '#fffbf6', fontWeight: 700 }}
@@ -1047,7 +1064,8 @@ function StayDetailView({ stay }) {
                 </Typography>
                 {groupedMenu.foods.length === 0 ? (
                   <Typography color="text.secondary">
-                    Ask the host about meals and dietary needs when they confirm your stay.
+                    Ask the host about meals and dietary needs when they confirm
+                    your stay.
                   </Typography>
                 ) : (
                   <Box
@@ -1104,7 +1122,11 @@ function StayDetailView({ stay }) {
                             >
                               NPR {Number(item.price).toLocaleString()}
                             </Typography>
-                            <Chip size="small" label="Ask host when booking" variant="outlined" />
+                            <Chip
+                              size="small"
+                              label="Ask host when booking"
+                              variant="outlined"
+                            />
                           </Box>
                         </CardContent>
                       </Card>
@@ -1158,8 +1180,8 @@ function StayDetailView({ stay }) {
                 color="text.secondary"
                 sx={{ lineHeight: 1.65, mb: 2.25 }}
               >
-                Choose a room, add your dates, and send one booking request.
-                The host confirms final availability and any meal arrangements.
+                Choose a room, add your dates, and send one booking request. The
+                host confirms final availability and any meal arrangements.
               </Typography>
               <AppButton
                 fullWidth
@@ -1374,7 +1396,12 @@ function TrekDetailView({ trek }) {
     success: '',
   });
   const [userLocation, setUserLocation] = useState(null);
-  const [completionState, setCompletionState] = useState({ loading: false, verification: null, completion: null, error: '' });
+  const [completionState, setCompletionState] = useState({
+    loading: false,
+    verification: null,
+    completion: null,
+    error: '',
+  });
   const watchIdRef = useRef(null);
   const lastEvidenceAtRef = useRef(0);
   const routeWaypoints = useMemo(
@@ -1453,12 +1480,24 @@ function TrekDetailView({ trek }) {
     if (status !== 'authenticated') return;
     setCompletionState((current) => ({ ...current, loading: true, error: '' }));
     try {
-      const response = await fetch(`/api/trek-completions?trekId=${encodeURIComponent(trek.id)}`);
+      const response = await fetch(
+        `/api/trek-completions?trekId=${encodeURIComponent(trek.id)}`
+      );
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Unable to check verification progress');
-      setCompletionState({ loading: false, verification: data.verification, completion: data.completion, error: '' });
+      if (!response.ok)
+        throw new Error(data.error || 'Unable to check verification progress');
+      setCompletionState({
+        loading: false,
+        verification: data.verification,
+        completion: data.completion,
+        error: '',
+      });
     } catch (error) {
-      setCompletionState((current) => ({ ...current, loading: false, error: error.message || 'Unable to check verification progress' }));
+      setCompletionState((current) => ({
+        ...current,
+        loading: false,
+        error: error.message || 'Unable to check verification progress',
+      }));
     }
   };
 
@@ -1522,7 +1561,9 @@ function TrekDetailView({ trek }) {
         longitude: position.coords.longitude,
         accuracyM: position.coords.accuracy,
       }),
-    }).then(() => loadCompletionState()).catch(() => {});
+    })
+      .then(() => loadCompletionState())
+      .catch(() => {});
   };
 
   const checkAndRecordCurrentLocation = () => {
@@ -1562,20 +1603,28 @@ function TrekDetailView({ trek }) {
             }),
           });
           const data = await response.json();
-          if (!response.ok) throw new Error(data.error || 'Unable to check this location');
+          if (!response.ok)
+            throw new Error(data.error || 'Unable to check this location');
 
           await loadCompletionState();
           if (!data.accuracyEligible) {
             setAttemptStatus({
               loading: false,
-              error: `Your GPS accuracy is ${Math.round(position.coords.accuracy)} m. Move to a clearer outdoor area and try again; accuracy must be ${data.maxAccuracyM} m or better to record a successful coordinate.`,
+              error: `Your GPS accuracy is ${Math.round(
+                position.coords.accuracy
+              )} m. Move to a clearer outdoor area and try again; accuracy must be ${
+                data.maxAccuracyM
+              } m or better to record a successful coordinate.`,
               success: '',
             });
             return;
           }
           if (data.newlyCompleted?.length) {
             const names = data.newlyCompleted
-              .map((index) => routeWaypoints[index]?.place || `Coordinate ${index + 1}`)
+              .map(
+                (index) =>
+                  routeWaypoints[index]?.place || `Coordinate ${index + 1}`
+              )
               .join(', ');
             setAttemptStatus({
               loading: false,
@@ -1715,13 +1764,25 @@ function TrekDetailView({ trek }) {
     setCompletionState((current) => ({ ...current, loading: true, error: '' }));
     try {
       const response = await fetch('/api/trek-completions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ trekId: trek.id }),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trekId: trek.id }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'This route is not verified yet');
-      setCompletionState({ loading: false, verification: data.verification || completionState.verification, completion: data.completion, error: '' });
+      if (!response.ok)
+        throw new Error(data.error || 'This route is not verified yet');
+      setCompletionState({
+        loading: false,
+        verification: data.verification || completionState.verification,
+        completion: data.completion,
+        error: '',
+      });
     } catch (error) {
-      setCompletionState((current) => ({ ...current, loading: false, error: error.message || 'Unable to claim completion' }));
+      setCompletionState((current) => ({
+        ...current,
+        loading: false,
+        error: error.message || 'Unable to claim completion',
+      }));
     }
   };
 
@@ -1836,23 +1897,80 @@ function TrekDetailView({ trek }) {
                 )}
               </Stack>
               {status === 'authenticated' && (
-                <Paper variant="outlined" sx={{ mt: 2.5, p: 2, borderRadius: 2, bgcolor: completionState.completion ? 'rgba(46,125,50,0.07)' : 'background.paper' }}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }} justifyContent="space-between">
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    mt: 2.5,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: completionState.completion
+                      ? 'rgba(46,125,50,0.07)'
+                      : 'background.paper',
+                  }}
+                >
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1.5}
+                    alignItems={{ sm: 'center' }}
+                    justifyContent="space-between"
+                  >
                     <Box>
                       <Stack direction="row" spacing={0.8} alignItems="center">
-                        <VerifiedRoundedIcon color={completionState.completion ? 'success' : 'action'} />
-                        <Typography fontWeight={800}>Verified trek completion</Typography>
+                        <VerifiedRoundedIcon
+                          color={
+                            completionState.completion ? 'success' : 'action'
+                          }
+                        />
+                        <Typography fontWeight={800}>
+                          Verified trek completion
+                        </Typography>
                       </Stack>
                       {completionState.completion ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Certificate {completionState.completion.certificate_code} is ready to share.</Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 0.5 }}
+                        >
+                          Certificate{' '}
+                          {completionState.completion.certificate_code} is ready
+                          to share.
+                        </Typography>
                       ) : completionState.verification ? (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Live GPS checkpoints: {completionState.verification.verifiedWaypointCount} of {completionState.verification.waypointCount} mapped coordinates completed. Every coordinate must be recorded to finish the route.</Typography>
-                      ) : <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Start live tracking to record GPS evidence at every mapped waypoint.</Typography>}
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.8 }}>
-                        Checkpoints record when you are within 250 m of a mapped coordinate with GPS accuracy of 100 m or better.
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 0.5 }}
+                        >
+                          Live GPS checkpoints:{' '}
+                          {completionState.verification.verifiedWaypointCount}{' '}
+                          of {completionState.verification.waypointCount} mapped
+                          coordinates completed. Every coordinate must be
+                          recorded to finish the route.
+                        </Typography>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 0.5 }}
+                        >
+                          Start live tracking to record GPS evidence at every
+                          mapped waypoint.
+                        </Typography>
+                      )}
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: 'block', mt: 0.8 }}
+                      >
+                        Checkpoints record when you are within 250 m of a mapped
+                        coordinate with GPS accuracy of 100 m or better.
                       </Typography>
                     </Box>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ flexShrink: 0 }}>
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={1}
+                      sx={{ flexShrink: 0 }}
+                    >
                       {!completionState.completion && (
                         <AppButton
                           variant="outlined"
@@ -1860,17 +1978,39 @@ function TrekDetailView({ trek }) {
                           onClick={checkAndRecordCurrentLocation}
                           disabled={attemptStatus.loading}
                         >
-                          {attemptStatus.loading ? 'Checking location…' : 'Check & record current location'}
+                          {attemptStatus.loading
+                            ? 'Checking location…'
+                            : 'Check & record current location'}
                         </AppButton>
                       )}
                       {completionState.completion ? (
-                        <AppButton component="a" href={`/api/trek-completions/${completionState.completion.id}/certificate`} variant="outlined">Download certificate PDF</AppButton>
+                        <AppButton
+                          component="a"
+                          href={`/api/trek-completions/${completionState.completion.id}/certificate`}
+                          variant="outlined"
+                          sx={{ height: '40px' }}
+                        >
+                          Download certificate PDF
+                        </AppButton>
                       ) : (
-                        <AppButton disabled={completionState.loading || !completionState.verification?.eligible} onClick={claimCompletion}>Claim verified certificate</AppButton>
+                        <AppButton
+                          disabled={
+                            completionState.loading ||
+                            !completionState.verification?.eligible
+                          }
+                          onClick={claimCompletion}
+                          sx={{ height: '40px' }}
+                        >
+                          Claim verified certificate
+                        </AppButton>
                       )}
                     </Stack>
                   </Stack>
-                  {completionState.error && <Alert severity="error" sx={{ mt: 1.5 }}>{completionState.error}</Alert>}
+                  {completionState.error && (
+                    <Alert severity="error" sx={{ mt: 1.5 }}>
+                      {completionState.error}
+                    </Alert>
+                  )}
                 </Paper>
               )}
               <Typography
@@ -2019,7 +2159,12 @@ function TrekDetailView({ trek }) {
             {[
               ['Duration', `${trek.durationDays} days`],
               ['Difficulty', trek.level],
-              ['Route stops', routeWaypoints.length ? `${routeWaypoints.length} mapped waypoints` : 'Route details pending'],
+              [
+                'Route stops',
+                routeWaypoints.length
+                  ? `${routeWaypoints.length} mapped waypoints`
+                  : 'Route details pending',
+              ],
               [
                 'Elevation',
                 trek.elevationMinM && trek.elevationMaxM
@@ -2056,7 +2201,9 @@ function TrekDetailView({ trek }) {
               Route Map
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-              Use “Check & record current location” above when standing at a mapped waypoint. Completed named waypoints show a check mark on this map.
+              Use “Check & record current location” above when standing at a
+              mapped waypoint. Completed named waypoints show a check mark on
+              this map.
             </Typography>
             <Box
               sx={(theme) => ({
@@ -2075,7 +2222,9 @@ function TrekDetailView({ trek }) {
                 hoveredStayId={hoveredStayId}
                 userLocation={userLocation}
                 guidanceWaypoint={guidanceWaypoint}
-                completedWaypoints={completionState.verification?.matchedWaypoints || []}
+                completedWaypoints={
+                  completionState.verification?.matchedWaypoints || []
+                }
               />
             </Box>
           </Paper>
@@ -2146,7 +2295,7 @@ function TrekDetailView({ trek }) {
                   gridTemplateColumns: {
                     xs: '1fr',
                     sm: 'repeat(2, minmax(0, 1fr))',
-                md: 'repeat(4, minmax(0, 1fr))',
+                    md: 'repeat(4, minmax(0, 1fr))',
                   },
                 }}
               >
@@ -2183,15 +2332,32 @@ function TrekDetailView({ trek }) {
               Guides who know {trek.region} terrain
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
-              Compare approved local guides and packages after choosing where to rest along the route.
+              Compare approved local guides and packages after choosing where to
+              rest along the route.
             </Typography>
             {trek.guidePackages.length === 0 ? (
               <Typography color="text.secondary">
-                No approved guides with {trek.region} terrain expertise are available yet.
+                No approved guides with {trek.region} terrain expertise are
+                available yet.
               </Typography>
             ) : (
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' }, gap: 2 }}>
-                {trek.guidePackages.map((guide) => <GuideCard key={guide.guideId} guide={guide} packageDetails={guide.packageDetails} />)}
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    md: 'repeat(2, minmax(0, 1fr))',
+                  },
+                  gap: 2,
+                }}
+              >
+                {trek.guidePackages.map((guide) => (
+                  <GuideCard
+                    key={guide.guideId}
+                    guide={guide}
+                    packageDetails={guide.packageDetails}
+                  />
+                ))}
               </Box>
             )}
           </Paper>
@@ -2243,9 +2409,10 @@ export async function getServerSideProps(context) {
     const row = trekResult.rows[0];
     const routeWaypoints = parseRouteWaypoints(row.route_geojson);
 
-    const [stayRows, reviews, reviewSummary, guidePackageRows] = await Promise.all([
-      query(
-        `
+    const [stayRows, reviews, reviewSummary, guidePackageRows] =
+      await Promise.all([
+        query(
+          `
         SELECT
           s.id, s.name, s.slug, s.stay_type, s.location, s.description, s.image_url, s.contact_phone,
           s.price_per_night, s.is_featured, s.discount_percent, s.latitude, s.longitude,
@@ -2261,11 +2428,14 @@ export async function getServerSideProps(context) {
         WHERE s.latitude IS NOT NULL AND s.longitude IS NOT NULL
         GROUP BY s.id
       `
-      ),
-      getReviews('trek', row.id, 4),
-      getReviewSummary('trek', row.id),
-      query(`SELECT gp.id AS guide_id, gp.slug AS guide_slug, gp.headline, gp.bio, gp.home_region, gp.languages, gp.years_experience, gp.profile_image_url, p.title, p.summary, p.duration_days, p.price_amount, p.price_unit, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name, COALESCE(review_summary.avg_rating, 0)::numeric(3,1) AS avg_rating, COALESCE(review_summary.review_count, 0)::int AS review_count FROM guide_profiles gp JOIN users u ON u.id=gp.user_id LEFT JOIN LATERAL (SELECT id, title, summary, duration_days, price_amount, price_unit, trek_id, region, created_at FROM guide_packages WHERE guide_profile_id=gp.id AND is_active=true ORDER BY CASE WHEN trek_id=$1 THEN 0 WHEN lower(trim(region))=lower(trim($2)) THEN 1 ELSE 2 END, created_at DESC LIMIT 1) p ON true LEFT JOIN LATERAL (SELECT ROUND(AVG(r.rating)::numeric, 1) AS avg_rating, COUNT(r.id)::int AS review_count FROM reviews r WHERE r.target_type='guide' AND r.target_id=gp.id) review_summary ON true WHERE gp.approval_status='approved' AND (lower(trim(gp.home_region))=lower(trim($2)) OR EXISTS (SELECT 1 FROM guide_packages terrain_package WHERE terrain_package.guide_profile_id=gp.id AND terrain_package.is_active=true AND lower(trim(terrain_package.region))=lower(trim($2)))) ORDER BY COALESCE(review_summary.avg_rating, 0) DESC, COALESCE(review_summary.review_count, 0) DESC, guide_name ASC`, [row.id, row.region]),
-    ]);
+        ),
+        getReviews('trek', row.id, 4),
+        getReviewSummary('trek', row.id),
+        query(
+          `SELECT gp.id AS guide_id, gp.slug AS guide_slug, gp.headline, gp.bio, gp.home_region, gp.languages, gp.years_experience, gp.profile_image_url, p.title, p.summary, p.duration_days, p.price_amount, p.price_unit, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name, COALESCE(review_summary.avg_rating, 0)::numeric(3,1) AS avg_rating, COALESCE(review_summary.review_count, 0)::int AS review_count FROM guide_profiles gp JOIN users u ON u.id=gp.user_id LEFT JOIN LATERAL (SELECT id, title, summary, duration_days, price_amount, price_unit, trek_id, region, created_at FROM guide_packages WHERE guide_profile_id=gp.id AND is_active=true ORDER BY CASE WHEN trek_id=$1 THEN 0 WHEN lower(trim(region))=lower(trim($2)) THEN 1 ELSE 2 END, created_at DESC LIMIT 1) p ON true LEFT JOIN LATERAL (SELECT ROUND(AVG(r.rating)::numeric, 1) AS avg_rating, COUNT(r.id)::int AS review_count FROM reviews r WHERE r.target_type='guide' AND r.target_id=gp.id) review_summary ON true WHERE gp.approval_status='approved' AND (lower(trim(gp.home_region))=lower(trim($2)) OR EXISTS (SELECT 1 FROM guide_packages terrain_package WHERE terrain_package.guide_profile_id=gp.id AND terrain_package.is_active=true AND lower(trim(terrain_package.region))=lower(trim($2)))) ORDER BY COALESCE(review_summary.avg_rating, 0) DESC, COALESCE(review_summary.review_count, 0) DESC, guide_name ASC`,
+          [row.id, row.region]
+        ),
+      ]);
 
     const nearbyStays = stayRows.rows
       .map((stay) => {
@@ -2322,7 +2492,26 @@ export async function getServerSideProps(context) {
           reviews,
           reviewCount: reviewSummary.reviewCount,
           avgRating: reviewSummary.avgRating,
-          guidePackages: guidePackageRows.rows.map((guide) => ({ guideId: guide.guide_id, slug: guide.guide_slug, name: guide.guide_name, headline: guide.headline, bio: guide.bio, homeRegion: guide.home_region, languages: guide.languages || [], yearsExperience: guide.years_experience, profileImageUrl: guide.profile_image_url || '', avgRating: Number(guide.avg_rating), reviewCount: Number(guide.review_count), packageDetails: { title: guide.title, summary: guide.summary, durationDays: guide.duration_days, priceAmount: Number(guide.price_amount || 0), priceUnit: guide.price_unit || 'per_person' } })),
+          guidePackages: guidePackageRows.rows.map((guide) => ({
+            guideId: guide.guide_id,
+            slug: guide.guide_slug,
+            name: guide.guide_name,
+            headline: guide.headline,
+            bio: guide.bio,
+            homeRegion: guide.home_region,
+            languages: guide.languages || [],
+            yearsExperience: guide.years_experience,
+            profileImageUrl: guide.profile_image_url || '',
+            avgRating: Number(guide.avg_rating),
+            reviewCount: Number(guide.review_count),
+            packageDetails: {
+              title: guide.title,
+              summary: guide.summary,
+              durationDays: guide.duration_days,
+              priceAmount: Number(guide.price_amount || 0),
+              priceUnit: guide.price_unit || 'per_person',
+            },
+          })),
         },
       },
     };

@@ -19,8 +19,8 @@ function formatDate(value, options, fallback = 'Date unavailable') {
 }
 
 function centeredText(text, fontSize, color, y, font = 'F2') {
-  const fittedFontSize = Math.min(fontSize, 744 / (text.length * 0.53));
-  const estimatedWidth = text.length * fittedFontSize * 0.53;
+  const fittedFontSize = Math.min(fontSize, 744 / (text.length * 0.56));
+  const estimatedWidth = text.length * fittedFontSize * 0.56;
   const x = Math.max((792 - estimatedWidth) / 2, 24);
   return `BT /${font} ${fittedFontSize.toFixed(1)} Tf ${color} rg ${x.toFixed(
     1
@@ -88,17 +88,20 @@ function routeBackground(waypoints, completedWaypoints) {
       const labelX = Math.min(x + 9, 766 - labelWidth);
       const labelY = Math.min(y + 7, 574);
       commands.push(
+        'q',
+        '/GS1 gs',
         '1 1 1 rg',
         `${labelX.toFixed(1)} ${(labelY - 4).toFixed(1)} ${labelWidth.toFixed(
           1
         )} 18 re f`,
+        'Q',
         '0.08 0.29 0.22 RG 1.4 w',
         `${(x - 2).toFixed(1)} ${(y - 0.5).toFixed(1)} m ${(x + 0.5).toFixed(
           1
         )} ${(y - 3).toFixed(1)} l ${(x + 5).toFixed(1)} ${(y + 4).toFixed(
           1
         )} l S`,
-        `BT /F1 9 Tf 0.03 0.22 0.14 rg ${(labelX + 7).toFixed(1)} ${(
+        `BT /F2 10 Tf 0.03 0.22 0.14 rg ${(labelX + 7).toFixed(1)} ${(
           labelY + 2
         ).toFixed(1)} Td (${escapePdfText(label)}) Tj ET`
       );
@@ -122,38 +125,56 @@ function buildPdf({
   const evidenceText = isDemo
     ? 'Demo route records - not live GPS verification.'
     : 'GPS evidence recorded within 10 km of every mapped route waypoint.';
-  const logo =
-    'q 0.25 0.76 0.78 rg 8 12 m 30 42 l 52 12 l f 0.55 0.91 0.9 rg 34 12 m 63 51 l 92 12 l f 0.16 0.55 0.68 rg 74 12 m 104 46 l 134 12 l f 0.08 0.33 0.56 rg 112 12 m 135 38 l 158 12 l f 0.86 0.93 0.98 rg 20 24 m 30 42 l 38 30 l 30 33 l f 48 32 m 63 51 l 73 37 l 64 40 l f 90 28 m 104 46 l 114 34 l 105 36 l f 0.87 0.2 0.28 rg 47 12 m 63 43 l 79 12 l f 0.03 0.22 0.42 RG 1.8 w 47 12 m 63 43 l 79 12 l S 0.87 0.2 0.28 rg 82 12 m 99 39 l 116 12 l f 0.03 0.22 0.42 RG 1.8 w 82 12 m 99 39 l 116 12 l S 1 1 1 rg 64 27 3 3 re f 99 23 3 3 re f BT /F2 17 Tf 0.88 0.95 1 rg 14 0 Td (NepalTrex) Tj ET Q';
+  const logo = [
+    'q',
+    '0.49 0.85 0.91 rg 0 25 m 40 85 l 80 25 l f',
+    '0.75 0.92 0.95 rg 60 25 m 100 95 l 140 25 l f',
+    '0.49 0.85 0.91 rg 160 25 m 200 90 l 240 25 l f',
+    '0.75 0.92 0.95 rg 220 25 m 260 80 l 300 25 l f',
+    '0.24 0.77 0.85 rg 20 25 m 70 110 l 120 25 l f',
+    '0.13 0.6 0.67 rg 100 25 m 150 115 l 200 25 l f',
+    '0.24 0.77 0.85 rg 180 25 m 230 105 l 280 25 l f',
+    '0.86 0.08 0.24 rg 50 25 m 95 120 l 140 25 l f',
+    '0 0.22 0.58 RG 9 w 50 25 m 95 120 l 140 25 l S',
+    '0.86 0.08 0.24 rg 160 25 m 205 120 l 250 25 l f',
+    '0 0.22 0.58 RG 9 w 160 25 m 205 120 l 250 25 l S',
+    '1 0.93 0.78 rg',
+    '95 80 m 99.4 80 103 83.6 103 88 c 103 92.4 99.4 96 95 96 c 90.6 96 87 92.4 87 88 c 87 83.6 90.6 80 95 80 c f',
+    '0.001 0.067 0.114 rg',
+    '97.5 81 m 101.4 81 104.5 84.1 104.5 88 c 104.5 91.9 101.4 95 97.5 95 c 93.6 95 90.5 91.9 90.5 88 c 90.5 84.1 93.6 81 97.5 81 c f',
+    '1 0.93 0.78 rg',
+    '205 80 m 209.4 80 213 83.6 213 88 c 213 92.4 209.4 96 205 96 c 200.6 96 197 92.4 197 88 c 197 83.6 200.6 80 205 80 c f',
+    '1 0.93 0.78 RG 2 w 205 90 m 205 94 l S 205 66 m 205 70 l S 215 80 m 219 80 l S 191 80 m 195 80 l S 210.5 85.5 m 213.5 88.5 l S 199.5 74.5 m 196.5 71.5 l S 210.5 74.5 m 213.5 71.5 l S 199.5 85.5 m 196.5 88.5 l S',
+    '0.035 0.075 0.105 rg BT /F2 52 Tf 19 30 Td (NepalTrex) Tj ET',
+    'Q',
+  ].join('\n');
   const page = [
     'q 0.035 0.075 0.105 rg 0 0 792 612 re f Q',
     map,
-    'q 1 0 0 1 316 486 cm /Logo Do Q',
-    centeredText('CERTIFICATE OF COMPLETION', 27, '0.98 0.78 0.35', 438),
-    centeredText('This proudly recognizes', 17, '0.48 0.91 0.88', 397, 'F1'),
-    centeredText(recipientName, 31, '1 1 1', 357),
+    'q 0.6 0 0 0.6 306 504 cm /Logo Do Q',
+    centeredText('CERTIFICATE OF COMPLETION', 34, '0.98 0.78 0.35', 452),
+    centeredText('This proudly recognizes', 22, '0.48 0.91 0.88', 406),
+    centeredText(recipientName, 40, '1 1 1', 363),
     centeredText(
       'for verified completion of',
-      17,
+      22,
       '0.48 0.91 0.88',
-      322,
-      'F1'
+      321
     ),
-    centeredText(trekName, 25, '1 0.78 0.38', 286),
+    centeredText(trekName, 31, '1 0.78 0.38', 278),
     centeredText(
       `Verified ${completionDate}`,
-      18,
+      22,
       '0.82 0.94 0.97',
-      246,
-      'F1'
+      235
     ),
     centeredText(
       `Certificate ${certificateCode}`,
-      14,
+      19,
       '0.48 0.91 0.88',
-      218,
-      'F1'
+      203
     ),
-    centeredText(evidenceText, 11, '0.82 0.88 0.9', 184, 'F1'),
+    centeredText(evidenceText, 15, '0.82 0.88 0.9', 165),
   ].join('\n');
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
