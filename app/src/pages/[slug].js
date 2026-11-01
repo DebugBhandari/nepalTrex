@@ -1977,6 +1977,7 @@ function TrekDetailView({ trek }) {
                           startIcon={<MyLocationRoundedIcon />}
                           onClick={checkAndRecordCurrentLocation}
                           disabled={attemptStatus.loading}
+                          sx={{ height: '56px' }}
                         >
                           {attemptStatus.loading
                             ? 'Checking location…'
@@ -1988,7 +1989,7 @@ function TrekDetailView({ trek }) {
                           component="a"
                           href={`/api/trek-completions/${completionState.completion.id}/certificate`}
                           variant="outlined"
-                          sx={{ height: '40px' }}
+                          sx={{ height: '56px' }}
                         >
                           Download certificate PDF
                         </AppButton>
@@ -1999,7 +2000,7 @@ function TrekDetailView({ trek }) {
                             !completionState.verification?.eligible
                           }
                           onClick={claimCompletion}
-                          sx={{ height: '40px' }}
+                          sx={{ height: '56px' }}
                         >
                           Claim verified certificate
                         </AppButton>
