@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth/next';
 import { Alert, Avatar, Box, Chip, Container, List, ListItemButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ChatRoundedIcon from '@mui/icons-material/ChatRounded';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import SupportAgentRoundedIcon from '@mui/icons-material/SupportAgentRounded';
 import { authOptions } from '../lib/auth-options';
 import AppButton from '../components/AppButton';
@@ -28,6 +29,7 @@ export default function ChatsPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const loadConversations = useCallback(async () => {
     const response = await fetch('/api/chats');
@@ -89,6 +91,23 @@ export default function ChatsPage() {
     finally { setSending(false); }
   };
 
+  const removeConversation = async () => {
+    if (!selectedId) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/chats/${selectedId}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not remove chat');
+      const remaining = conversations.filter((conversation) => conversation.id !== selectedId);
+      setConversations(remaining);
+      setSelectedId('');
+      setSelected(null);
+      setMessages([]);
+      if (remaining[0]) await openConversation(remaining[0].id);
+    } catch (removeError) { setError(removeError.message || 'Could not remove chat'); }
+    finally { setDeleting(false); }
+  };
+
   const selectedConversation = conversations.find((item) => item.id === selectedId);
 
   return (
@@ -143,6 +162,7 @@ export default function ChatsPage() {
                         ) : <Typography fontWeight={800}>{selectedConversation?.contact_name || selectedConversation?.title || 'Chat'}</Typography>}
                         <Typography variant="caption" color="text.secondary">{selected.status === 'active' ? 'Private booking conversation' : 'Chat becomes available after acceptance'}</Typography>
                       </Box>
+                      <AppButton size="small" color="error" variant="outlined" startIcon={<DeleteOutlineRoundedIcon />} onClick={removeConversation} disabled={deleting} sx={{ ml: 'auto', flexShrink: 0 }}>{deleting ? 'Removing…' : 'Remove chat'}</AppButton>
                     </Stack>
                     {selectedConversation?.conversation_type === 'reservation' && selectedConversation.stay_slug && <Typography component={Link} href={`/stays/${selectedConversation.stay_slug}`} variant="body2" sx={{ display: 'inline-block', mt: 1.25, color: 'primary.main', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>View stay: {selectedConversation.title}</Typography>}
                   </Box>

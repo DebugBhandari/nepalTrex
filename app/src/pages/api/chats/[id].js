@@ -21,6 +21,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ conversation, currentUserId: session.user.id, messages: messages.rows });
     } catch (error) { return res.status(500).json({ error: error.message || 'Failed to load messages' }); }
   }
+  if (req.method === 'DELETE') {
+    try {
+      await query(`INSERT INTO chat_conversation_hides (conversation_id, user_id) VALUES ($1, $2) ON CONFLICT (conversation_id, user_id) DO UPDATE SET hidden_at = NOW()`, [id, session.user.id]);
+      return res.status(200).json({ success: true });
+    } catch (error) { return res.status(500).json({ error: error.message || 'Failed to remove chat' }); }
+  }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (conversation.status !== 'active') return res.status(403).json({ error: 'Chat will be available after the reservation is accepted' });
   const body = String(req.body?.body || '').trim();

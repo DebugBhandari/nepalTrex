@@ -16,7 +16,8 @@ export default async function handler(req, res) {
           CASE c.conversation_type
             WHEN 'reservation' THEN (SELECT s.name FROM reservations r JOIN stays s ON s.id = r.stay_id WHERE r.id = c.source_id)
             WHEN 'guide_booking' THEN (SELECT p.title FROM guide_bookings b JOIN guide_packages p ON p.id = b.guide_package_id WHERE b.id = c.source_id)
-            ELSE 'NepalTrex support'
+            WHEN 'support' THEN CASE WHEN $2 = 'superUser' THEN 'Support request' ELSE 'NepalTrex support' END
+            ELSE 'Chat'
           END AS title,
           CASE c.conversation_type
             WHEN 'reservation' THEN (SELECT s.slug FROM reservations r JOIN stays s ON s.id = r.stay_id WHERE r.id = c.source_id)
@@ -37,6 +38,11 @@ export default async function handler(req, res) {
               JOIN users contact ON contact.id = CASE WHEN gp.user_id = $1 THEN b.customer_user_id ELSE gp.user_id END
               WHERE b.id = c.source_id
             )
+            WHEN 'support' THEN (
+              SELECT COALESCE(NULLIF(requester.display_name, ''), NULLIF(requester.username, ''), split_part(requester.email, '@', 1))
+              FROM users requester
+              WHERE requester.id = c.source_id AND $2 = 'superUser'
+            )
             ELSE NULL
           END AS contact_name,
           CASE c.conversation_type
@@ -53,6 +59,11 @@ export default async function handler(req, res) {
               JOIN guide_profiles gp ON gp.id = b.guide_profile_id
               JOIN users contact ON contact.id = CASE WHEN gp.user_id = $1 THEN b.customer_user_id ELSE gp.user_id END
               WHERE b.id = c.source_id
+            )
+            WHEN 'support' THEN (
+              SELECT requester.profile_image_url
+              FROM users requester
+              WHERE requester.id = c.source_id AND $2 = 'superUser'
             )
             ELSE NULL
           END AS contact_image_url,
@@ -71,16 +82,22 @@ export default async function handler(req, res) {
               JOIN users contact ON contact.id = CASE WHEN gp.user_id = $1 THEN b.customer_user_id ELSE gp.user_id END
               WHERE b.id = c.source_id
             )
+            WHEN 'support' THEN (
+              SELECT trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(requester.username, ''), NULLIF(requester.display_name, ''))), '[^a-z0-9]+', '-', 'g'))
+              FROM users requester
+              WHERE requester.id = c.source_id AND $2 = 'superUser'
+            )
             ELSE NULL
           END AS contact_handle
           FROM chat_conversations c
           LEFT JOIN chat_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1
-          WHERE cp.user_id IS NOT NULL
-            OR ($2 = 'superUser' AND c.conversation_type IN ('support', 'guide_booking'))
+          WHERE (cp.user_id IS NOT NULL
+            OR ($2 = 'superUser' AND c.conversation_type IN ('support', 'guide_booking')))
+            AND NOT EXISTS (SELECT 1 FROM chat_conversation_hides hidden WHERE hidden.conversation_id = c.id AND hidden.user_id = $1)
          ORDER BY COALESCE((SELECT MAX(m.created_at) FROM chat_messages m WHERE m.conversation_id = c.id), c.updated_at) DESC`,
         [session.user.id, session.user.role || 'user']
       );
-      return res.status(200).json({ conversations: result.rows });
+      return res.status(200).json({ conversations: result.rows, unreadCount: result.rows.reduce((total, conversation) => total + Number(conversation.unread_count || 0), 0) });
     } catch (error) { return res.status(500).json({ error: error.message || 'Failed to load chats' }); }
   }
 
@@ -99,6 +116,7 @@ export default async function handler(req, res) {
       conversation = found.rows[0];
       if (!conversation) throw Object.assign(new Error('Chat is not available for this booking'), { statusCode: 404 });
     } else throw Object.assign(new Error('Invalid chat request'), { statusCode: 400 });
+    await client.query(`DELETE FROM chat_conversation_hides WHERE conversation_id = $1 AND user_id = $2`, [conversation.id, session.user.id]);
     await client.query('COMMIT');
     return res.status(200).json({ conversation });
   } catch (error) { await client.query('ROLLBACK'); return res.status(error.statusCode || 500).json({ error: error.message || 'Failed to open chat' }); } finally { client.release(); }
