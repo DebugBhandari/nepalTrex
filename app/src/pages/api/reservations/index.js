@@ -23,8 +23,10 @@ async function listReservationsForHost(userId, isSuperUser) {
   const result = await query(
     `
       SELECT r.*, s.name AS stay_name, s.slug AS stay_slug, s.location AS stay_location,
+        customer.id AS customer_user_id,
         COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), r.customer_name, split_part(customer.email, '@', 1)) AS customer_name,
         COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), customer.id::text) AS customer_handle,
+        owner.id AS owner_user_id,
         COALESCE(NULLIF(owner.display_name, ''), NULLIF(owner.username, ''), split_part(owner.email, '@', 1)) AS owner_name,
         COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(owner.username, ''), NULLIF(owner.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), owner.id::text) AS owner_handle,
         owner.email AS owner_email,

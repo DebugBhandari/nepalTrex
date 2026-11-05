@@ -506,6 +506,8 @@ export default function AdminPage({ user, initialStays }) {
               <Stack spacing={1.5}>
                 {visibleReservations.map((reservation) => {
                   const isUpdating = updatingReservationId === reservation.id;
+                  const customerProfileId = reservation.customerHandle || reservation.customerUserId;
+                  const ownerProfileId = reservation.ownerHandle || reservation.ownerUserId;
                   const isPending = reservation.status === 'pending';
                   const holdExpiry = reservation.holdExpiresAt ? new Date(reservation.holdExpiresAt) : null;
                   const holdIsActive = isPending && holdExpiry && holdExpiry > new Date();
@@ -535,12 +537,12 @@ export default function AdminPage({ user, initialStays }) {
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.75} sx={{ mt: 1.25 }}>
                               <Paper variant="outlined" sx={{ p: 1, flex: 1, bgcolor: 'primary.main', color: 'primary.contrastText', borderColor: 'primary.main' }}>
                                 <Typography variant="caption" sx={{ opacity: 0.82, display: 'block' }}>Customer</Typography>
-                                {reservation.customerHandle ? <Typography component={Link} href={`/user/${reservation.customerHandle}`} variant="body2" fontWeight={800} sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>{reservation.customerName || 'Guest'}</Typography> : <Typography variant="body2" fontWeight={800}>{reservation.customerName || 'Guest'}</Typography>}
+                                {customerProfileId ? <Typography component={Link} href={`/user/${customerProfileId}`} variant="body2" fontWeight={800} sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>{reservation.customerName || 'Guest'}</Typography> : <Typography variant="body2" fontWeight={800}>{reservation.customerName || 'Guest'}</Typography>}
                                 {reservation.customerEmail && <Typography component="a" href={`mailto:${reservation.customerEmail}`} variant="body2" sx={{ color: 'inherit', opacity: 0.94, overflowWrap: 'anywhere', textDecoration: 'underline', textUnderlineOffset: 2, userSelect: 'text' }}>{reservation.customerEmail}</Typography>}
                               </Paper>
                               <Paper variant="outlined" sx={{ p: 1, flex: 1, bgcolor: 'secondary.main', color: 'secondary.contrastText', borderColor: 'secondary.main' }}>
                                 <Typography variant="caption" sx={{ opacity: 0.82, display: 'block' }}>Stay owner</Typography>
-                                {reservation.ownerHandle ? <Typography component={Link} href={`/user/${reservation.ownerHandle}`} variant="body2" fontWeight={800} sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>{reservation.ownerName || 'Owner'}</Typography> : <Typography variant="body2" fontWeight={800}>{reservation.ownerName || 'Owner'}</Typography>}
+                                {ownerProfileId ? <Typography component={Link} href={`/user/${ownerProfileId}`} variant="body2" fontWeight={800} sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>{reservation.ownerName || 'Owner'}</Typography> : <Typography variant="body2" fontWeight={800}>{reservation.ownerName || 'Owner'}</Typography>}
                                 {reservation.ownerEmail && <Typography component="a" href={`mailto:${reservation.ownerEmail}`} variant="body2" sx={{ color: 'inherit', opacity: 0.94, overflowWrap: 'anywhere', textDecoration: 'underline', textUnderlineOffset: 2, userSelect: 'text' }}>{reservation.ownerEmail}</Typography>}
                               </Paper>
                             </Stack>
