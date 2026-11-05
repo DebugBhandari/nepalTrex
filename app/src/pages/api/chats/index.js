@@ -17,7 +17,62 @@ export default async function handler(req, res) {
             WHEN 'reservation' THEN (SELECT s.name FROM reservations r JOIN stays s ON s.id = r.stay_id WHERE r.id = c.source_id)
             WHEN 'guide_booking' THEN (SELECT p.title FROM guide_bookings b JOIN guide_packages p ON p.id = b.guide_package_id WHERE b.id = c.source_id)
             ELSE 'NepalTrex support'
-          END AS title
+          END AS title,
+          CASE c.conversation_type
+            WHEN 'reservation' THEN (SELECT s.slug FROM reservations r JOIN stays s ON s.id = r.stay_id WHERE r.id = c.source_id)
+            ELSE NULL
+          END AS stay_slug,
+          CASE c.conversation_type
+            WHEN 'reservation' THEN (
+              SELECT COALESCE(NULLIF(contact.display_name, ''), NULLIF(contact.username, ''), split_part(contact.email, '@', 1))
+              FROM reservations r
+              JOIN stays s ON s.id = r.stay_id
+              JOIN users contact ON contact.id = CASE WHEN r.customer_user_id = $1 THEN s.owner_user_id ELSE r.customer_user_id END
+              WHERE r.id = c.source_id
+            )
+            WHEN 'guide_booking' THEN (
+              SELECT COALESCE(NULLIF(contact.display_name, ''), NULLIF(contact.username, ''), split_part(contact.email, '@', 1))
+              FROM guide_bookings b
+              JOIN guide_profiles gp ON gp.id = b.guide_profile_id
+              JOIN users contact ON contact.id = CASE WHEN gp.user_id = $1 THEN b.customer_user_id ELSE gp.user_id END
+              WHERE b.id = c.source_id
+            )
+            ELSE NULL
+          END AS contact_name,
+          CASE c.conversation_type
+            WHEN 'reservation' THEN (
+              SELECT contact.profile_image_url
+              FROM reservations r
+              JOIN stays s ON s.id = r.stay_id
+              JOIN users contact ON contact.id = CASE WHEN r.customer_user_id = $1 THEN s.owner_user_id ELSE r.customer_user_id END
+              WHERE r.id = c.source_id
+            )
+            WHEN 'guide_booking' THEN (
+              SELECT contact.profile_image_url
+              FROM guide_bookings b
+              JOIN guide_profiles gp ON gp.id = b.guide_profile_id
+              JOIN users contact ON contact.id = CASE WHEN gp.user_id = $1 THEN b.customer_user_id ELSE gp.user_id END
+              WHERE b.id = c.source_id
+            )
+            ELSE NULL
+          END AS contact_image_url,
+          CASE c.conversation_type
+            WHEN 'reservation' THEN (
+              SELECT trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(contact.username, ''), NULLIF(contact.display_name, ''))), '[^a-z0-9]+', '-', 'g'))
+              FROM reservations r
+              JOIN stays s ON s.id = r.stay_id
+              JOIN users contact ON contact.id = CASE WHEN r.customer_user_id = $1 THEN s.owner_user_id ELSE r.customer_user_id END
+              WHERE r.id = c.source_id
+            )
+            WHEN 'guide_booking' THEN (
+              SELECT trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(contact.username, ''), NULLIF(contact.display_name, ''))), '[^a-z0-9]+', '-', 'g'))
+              FROM guide_bookings b
+              JOIN guide_profiles gp ON gp.id = b.guide_profile_id
+              JOIN users contact ON contact.id = CASE WHEN gp.user_id = $1 THEN b.customer_user_id ELSE gp.user_id END
+              WHERE b.id = c.source_id
+            )
+            ELSE NULL
+          END AS contact_handle
           FROM chat_conversations c
           LEFT JOIN chat_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1
           WHERE cp.user_id IS NOT NULL
