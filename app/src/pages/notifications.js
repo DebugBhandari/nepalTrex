@@ -13,6 +13,13 @@ function formattedDate(value) {
   return new Date(value).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+function notificationHref(notification) {
+  if (notification.notification_type === 'guide_booking_requested' && notification.metadata?.guideBookingId) {
+    return `/profile?tab=guide-bookings&booking=${encodeURIComponent(notification.metadata.guideBookingId)}`;
+  }
+  return notification.href || '/';
+}
+
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +71,7 @@ export default function NotificationsPage() {
             ) : (
               <List disablePadding>
                 {notifications.map((notification, index) => (
-                  <ListItemButton key={notification.id} component={Link} href={notification.href || '/'} onClick={() => openNotification(notification)} divider={index < notifications.length - 1} sx={{ alignItems: 'flex-start', py: 2, bgcolor: notification.read_at ? 'transparent' : 'action.hover' }}>
+                  <ListItemButton key={notification.id} component={Link} href={notificationHref(notification)} onClick={() => openNotification(notification)} divider={index < notifications.length - 1} sx={{ alignItems: 'flex-start', py: 2, bgcolor: notification.read_at ? 'transparent' : 'action.hover' }}>
                     <ListItemText primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}><Typography fontWeight={notification.read_at ? 600 : 800}>{notification.title}</Typography>{!notification.read_at && <Chip size="small" label="New" color="primary" />}</Box>} secondary={<><Typography component="span" display="block" color="text.primary" sx={{ mt: 0.6 }}>{notification.body}</Typography><Typography component="span" display="block" variant="caption" color="text.secondary" sx={{ mt: 0.7 }}>{formattedDate(notification.created_at)}</Typography></>} />
                   </ListItemButton>
                 ))}

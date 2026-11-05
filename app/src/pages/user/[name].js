@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useEffect, useMemo, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { useSession } from 'next-auth/react';
@@ -53,6 +54,7 @@ function formatDate(value) {
 }
 
 export default function UserProfilePage({ profile, wishlistItems, initialReservations, guideBookings, guideApprovalStatus }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const [statusMessage, setStatusMessage] = useState('');
   const [saving, setSaving] = useState(false);
@@ -75,10 +77,15 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
     () => (initialReservations || []).filter((reservation) => ['pending', 'confirmed'].includes(reservation.status)),
     [initialReservations]
   );
+  const selectedGuideBookingId = typeof router.query.booking === 'string' ? router.query.booking : '';
 
   useEffect(() => {
     if (typeof window !== 'undefined') window.localStorage.setItem('nepaltrex-profile-active-tab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (router.query.tab === 'guide-bookings') setActiveTab('guide-bookings');
+  }, [router.query.tab]);
 
   useEffect(() => {
     if (!ownProfile && activeTab === 'reservations') setActiveTab('wishlist');
@@ -201,7 +208,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                 </Stack>
               )}
               {activeTab === 'guide-bookings' && ownProfile && (
-                <Stack spacing={1.5}>{guideBookings.length === 0 ? <Typography color="text.secondary">No guide booking requests yet.</Typography> : guideBookings.map((booking) => <Card key={booking.id} variant="outlined"><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography fontWeight={800}>{booking.packageTitle}</Typography><Typography variant="body2" color="text.secondary">with {booking.guideName} · {formatDate(booking.startDate)} · {booking.travelerCount} travelers</Typography></Box><Chip label={booking.status} color={RESERVATION_STATUS_COLORS[booking.status] || 'default'} size="small" /></Stack></CardContent></Card>)}</Stack>
+                <Stack spacing={1.5}>{guideBookings.length === 0 ? <Typography color="text.secondary">No guide booking requests yet.</Typography> : guideBookings.map((booking) => <Card key={booking.id} variant="outlined" sx={booking.id === selectedGuideBookingId ? { borderColor: 'primary.main', borderWidth: 2, boxShadow: (theme) => `0 0 0 3px ${theme.palette.primary.main}1f` } : undefined}><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography fontWeight={800}>{booking.packageTitle}</Typography><Typography variant="body2" color="text.secondary">{booking.isGuide ? `Requested by ${booking.customerName}` : `with ${booking.guideName}`} · {formatDate(booking.startDate)} · {booking.travelerCount} travelers</Typography></Box><Chip label={booking.status} color={RESERVATION_STATUS_COLORS[booking.status] || 'default'} size="small" /></Stack></CardContent></Card>)}</Stack>
               )}
             </CardContent>
           </Card>
@@ -232,7 +239,7 @@ export async function getServerSideProps(context) {
     )
     : { rows: [] };
   const guideBookingsResult = session?.user?.id && String(session.user.id) === String(row.id)
-    ? await query(`SELECT b.id, b.start_date, b.traveler_count, b.status, p.title AS package_title, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS guide_name FROM guide_bookings b JOIN guide_packages p ON p.id = b.guide_package_id JOIN guide_profiles gp ON gp.id = b.guide_profile_id JOIN users u ON u.id = gp.user_id WHERE b.customer_user_id = $1 ORDER BY b.created_at DESC`, [row.id])
+    ? await query(`SELECT b.id, b.start_date, b.traveler_count, b.status, p.title AS package_title, COALESCE(NULLIF(guide_user.display_name, ''), NULLIF(guide_user.username, ''), split_part(guide_user.email, '@', 1)) AS guide_name, COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), split_part(customer.email, '@', 1)) AS customer_name, (gp.user_id = $1) AS is_guide FROM guide_bookings b JOIN guide_packages p ON p.id = b.guide_package_id JOIN guide_profiles gp ON gp.id = b.guide_profile_id JOIN users guide_user ON guide_user.id = gp.user_id JOIN users customer ON customer.id = b.customer_user_id WHERE b.customer_user_id = $1 OR gp.user_id = $1 ORDER BY b.created_at DESC`, [row.id])
     : { rows: [] };
 
   return {
@@ -241,7 +248,7 @@ export async function getServerSideProps(context) {
       guideApprovalStatus: row.guide_approval_status || '',
       wishlistItems: wishlistResult.rows.map((item) => ({ slug: item.trek_slug, name: item.name || item.trek_slug, durationDays: item.duration_days || null, level: item.level || '', region: item.region || '' })),
       initialReservations: reservationsResult.rows.map((reservation) => ({ id: reservation.id, stayName: reservation.stay_name, stayLocation: reservation.stay_location || '', checkInDate: reservation.check_in_date, checkOutDate: reservation.check_out_date, nights: Math.max(1, Math.round((new Date(reservation.check_out_date) - new Date(reservation.check_in_date)) / 86400000)), guestCount: Number(reservation.guest_count), status: reservation.status, guestNotes: reservation.guest_notes || '', hostNote: reservation.host_note || '', contactPhone: reservation.customer_phone || '', createdAt: reservation.created_at, totalPrice: Number(reservation.total_price), items: Array.isArray(reservation.items) ? reservation.items.map((item) => ({ roomName: item.roomName, units: Number(item.units) })) : [], events: Array.isArray(reservation.events) ? reservation.events : [] })),
-      guideBookings: guideBookingsResult.rows.map((booking) => ({ id: booking.id, packageTitle: booking.package_title, guideName: booking.guide_name, startDate: booking.start_date, travelerCount: Number(booking.traveler_count), status: booking.status })),
+      guideBookings: guideBookingsResult.rows.map((booking) => ({ id: booking.id, packageTitle: booking.package_title, guideName: booking.guide_name, customerName: booking.customer_name, isGuide: Boolean(booking.is_guide), startDate: booking.start_date, travelerCount: Number(booking.traveler_count), status: booking.status })),
     },
   };
 }

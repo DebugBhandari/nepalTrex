@@ -31,10 +31,14 @@ export async function getServerSideProps(context) {
   );
   const row = result.rows[0];
   const handle = normalizeHandle(row?.username || row?.display_name || row?.email?.split('@')[0]);
+  const params = new URLSearchParams();
+  if (typeof context.query.tab === 'string') params.set('tab', context.query.tab);
+  if (typeof context.query.booking === 'string') params.set('booking', context.query.booking);
+  const destination = `/user/${encodeURIComponent(handle)}${params.size ? `?${params.toString()}` : ''}`;
 
   return {
     redirect: {
-      destination: `/user/${encodeURIComponent(handle)}`,
+      destination,
       permanent: false,
     },
   };
