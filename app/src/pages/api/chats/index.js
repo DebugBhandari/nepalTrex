@@ -11,6 +11,11 @@ export default async function handler(req, res) {
       const result = await query(
         `SELECT c.id, c.conversation_type, c.source_id, c.status, c.updated_at,
           CASE WHEN c.conversation_type = 'reservation' THEN (SELECT r.status FROM reservations r WHERE r.id = c.source_id) ELSE NULL END AS reservation_status,
+          CASE
+            WHEN c.conversation_type = 'reservation' THEN (SELECT r.status FROM reservations r WHERE r.id = c.source_id)
+            WHEN c.conversation_type = 'guide_booking' THEN (SELECT b.status FROM guide_bookings b WHERE b.id = c.source_id)
+            ELSE NULL
+          END AS booking_status,
           COALESCE((SELECT m.body FROM chat_messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1), '') AS last_message,
           (SELECT m.created_at FROM chat_messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message_at,
           (SELECT COUNT(*)::int FROM chat_messages m WHERE m.conversation_id = c.id AND m.sender_user_id <> $1 AND (cp.last_read_at IS NULL OR m.created_at > cp.last_read_at)) AS unread_count,
@@ -118,7 +123,11 @@ export default async function handler(req, res) {
           LEFT JOIN chat_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1
           WHERE (cp.user_id IS NOT NULL
             OR ($2 = 'superUser' AND c.conversation_type IN ('support', 'guide_booking')))
-            AND (c.status = 'active' OR (c.conversation_type = 'reservation' AND EXISTS (SELECT 1 FROM reservations r WHERE r.id = c.source_id AND r.status <> 'completed')))
+            AND (
+              c.status = 'active'
+              OR (c.conversation_type = 'reservation' AND EXISTS (SELECT 1 FROM reservations r WHERE r.id = c.source_id AND r.status <> 'completed'))
+              OR (c.conversation_type = 'guide_booking' AND EXISTS (SELECT 1 FROM guide_bookings b WHERE b.id = c.source_id AND b.status <> 'completed'))
+            )
             AND NOT EXISTS (SELECT 1 FROM chat_conversation_hides hidden WHERE hidden.conversation_id = c.id AND hidden.user_id = $1)
          ORDER BY COALESCE((SELECT MAX(m.created_at) FROM chat_messages m WHERE m.conversation_id = c.id), c.updated_at) DESC`,
         [session.user.id, session.user.role || 'user']

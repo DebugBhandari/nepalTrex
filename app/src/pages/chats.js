@@ -22,6 +22,16 @@ function initials(value) {
   return String(value || 'NepalTrex').trim().split(/\s+/).map((part) => part[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
 
+const bookingStatusColor = { pending: 'warning', confirmed: 'success', declined: 'error', cancelled: 'default', completed: 'primary' };
+
+function formatDate(value) {
+  return value ? new Date(`${String(value).slice(0, 10)}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+}
+
+function ProfileLink({ handle, children }) {
+  return handle ? <Typography component={Link} href={`/user/${handle}`} variant="body2" sx={{ color: 'primary.main', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>{children}</Typography> : <Typography variant="body2" fontWeight={700}>{children}</Typography>;
+}
+
 export default function ChatsPage() {
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState('');
@@ -52,7 +62,7 @@ export default function ChatsPage() {
       const response = await fetch(`/api/chats/${id}`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not load messages');
-      setSelected(data.conversation);
+      setSelected({ ...data.conversation, booking: data.booking || null });
       setCurrentUserId(data.currentUserId || '');
       setMessages(data.messages || []);
       setConversations((items) => items.map((item) => item.id === id ? { ...item, unread_count: 0 } : item));
@@ -192,7 +202,7 @@ export default function ChatsPage() {
   };
 
   const selectedConversation = conversations.find((item) => item.id === selectedId);
-  const pinnedReservations = conversations.filter((conversation) => conversation.conversation_type === 'reservation' && conversation.reservation_status !== 'completed');
+  const pinnedReservations = conversations.filter((conversation) => ['reservation', 'guide_booking'].includes(conversation.conversation_type) && conversation.booking_status !== 'completed');
   const regularConversations = conversations.filter((conversation) => !pinnedReservations.some((reservation) => reservation.id === conversation.id));
   const renderConversation = (conversation) => (
     <ListItemButton key={conversation.id} selected={conversation.id === selectedId} onClick={() => openConversation(conversation.id)} divider sx={(theme) => Number(conversation.unread_count) > 0 && conversation.id !== selectedId ? { bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1) } : undefined}>
@@ -200,11 +210,11 @@ export default function ChatsPage() {
       <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <Typography fontWeight={800} noWrap sx={{ flex: 1 }}>{conversation.contact_name || conversation.title}</Typography>
-          {conversation.conversation_type === 'reservation' && <PushPinRoundedIcon color="primary" sx={{ fontSize: 16 }} />}
+          {['reservation', 'guide_booking'].includes(conversation.conversation_type) && <PushPinRoundedIcon color="primary" sx={{ fontSize: 16 }} />}
           {Number(conversation.unread_count) > 0 && <Chip label={conversation.unread_count} size="small" color="primary" />}
         </Box>
         <Typography variant="caption" color="text.secondary" noWrap>{conversation.title}</Typography>
-        <Typography variant="caption" color="text.secondary" noWrap>{conversation.last_message || (conversation.conversation_type === 'reservation' ? `Reservation ${conversation.reservation_status || 'pending'}` : 'Start the conversation')}</Typography>
+          <Typography variant="caption" color="text.secondary" noWrap>{conversation.last_message || (['reservation', 'guide_booking'].includes(conversation.conversation_type) ? `Booking ${conversation.booking_status || 'pending'}` : 'Start the conversation')}</Typography>
       </Stack>
       <IconButton size="small" aria-label={`Options for ${conversation.contact_name || conversation.title}`} sx={{ ml: 'auto', alignSelf: 'center' }} onClick={(event) => { event.stopPropagation(); setChatMenu({ anchor: event.currentTarget, conversationId: conversation.id }); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
     </ListItemButton>
@@ -219,7 +229,7 @@ export default function ChatsPage() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: { sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' } }}>
             <Box>
               <Typography variant="h3">Chats</Typography>
-              <Typography color="text.secondary" sx={{ mt: 0.75 }}>Message people, hosts, guides, and NepalTrex support. Reservation chats stay pinned until the reservation is completed.</Typography>
+                <Typography color="text.secondary" sx={{ mt: 0.75 }}>Message people, hosts, guides, and NepalTrex support. Stay and guide booking chats stay pinned until completed.</Typography>
             </Box>
             <AppButton startIcon={<SupportAgentRoundedIcon />} onClick={contactSupport}>Contact NepalTrex</AppButton>
           </Box>
@@ -247,7 +257,7 @@ export default function ChatsPage() {
                 </Stack>
               ) : (
                 <List disablePadding>
-                  {pinnedReservations.length > 0 && <><Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 2, pt: 1.25, pb: 0.5, fontWeight: 800 }}>Pinned reservations</Typography>{pinnedReservations.map(renderConversation)}</>}
+                  {pinnedReservations.length > 0 && <><Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 2, pt: 1.25, pb: 0.5, fontWeight: 800 }}>Pinned bookings</Typography>{pinnedReservations.map(renderConversation)}</>}
                   {regularConversations.length > 0 && <><Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 2, pt: pinnedReservations.length ? 1.75 : 1.25, pb: 0.5, fontWeight: 800 }}>{pinnedReservations.length ? 'All chats' : 'Chats'}</Typography>{regularConversations.map(renderConversation)}</>}
                 </List>
               )}
@@ -265,7 +275,21 @@ export default function ChatsPage() {
                         <Typography variant="caption" color="text.secondary">{selected.status === 'active' ? 'Private booking conversation' : 'Chat becomes available after acceptance'}</Typography>
                       </Box>
                     </Stack>
-                    {selectedConversation?.conversation_type === 'reservation' && selectedConversation.stay_slug && <Typography component={Link} href={`/stays/${selectedConversation.stay_slug}`} variant="body2" sx={{ display: 'inline-block', mt: 1.25, color: 'primary.main', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>View stay: {selectedConversation.title}</Typography>}
+                    {selected.booking && <Paper variant="outlined" sx={{ mt: 1.75, p: 1.25, bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.06) }}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} justifyContent="space-between">
+                        <Stack direction="row" spacing={0.75} alignItems="center"><PushPinRoundedIcon color="primary" fontSize="small" /><Typography fontWeight={800}>{selected.booking.type === 'reservation' ? 'Pinned stay reservation' : 'Pinned guide booking'}</Typography></Stack>
+                        <Chip label={selected.booking.status} color={bookingStatusColor[selected.booking.status] || 'default'} size="small" sx={{ textTransform: 'capitalize', alignSelf: { xs: 'flex-start', sm: 'auto' } }} />
+                      </Stack>
+                      {selected.booking.type === 'reservation' ? <>
+                        <Typography component={Link} href={`/stays/${selected.booking.staySlug}`} variant="body2" sx={{ display: 'inline-block', mt: 1, color: 'primary.main', fontWeight: 800, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>View stay: {selected.booking.stayName}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{formatDate(selected.booking.checkInDate)} – {formatDate(selected.booking.checkOutDate)} · {selected.booking.guestCount} guest{selected.booking.guestCount === 1 ? '' : 's'}</Typography>
+                        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.75 }}><Stack direction="row" spacing={0.5}><Typography variant="body2" color="text.secondary">Host:</Typography><ProfileLink handle={selected.booking.hostHandle}>{selected.booking.hostName}</ProfileLink></Stack><Stack direction="row" spacing={0.5}><Typography variant="body2" color="text.secondary">Customer:</Typography><ProfileLink handle={selected.booking.customerHandle}>{selected.booking.customerName}</ProfileLink></Stack></Stack>
+                      </> : <>
+                        <Typography component={Link} href={`/guides/${selected.booking.guideSlug}`} variant="body2" sx={{ display: 'inline-block', mt: 1, color: 'primary.main', fontWeight: 800, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>View guide booking: {selected.booking.packageTitle}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Starts {formatDate(selected.booking.startDate)} · {selected.booking.travelerCount} traveler{selected.booking.travelerCount === 1 ? '' : 's'}</Typography>
+                        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap sx={{ mt: 0.75 }}><Stack direction="row" spacing={0.5}><Typography variant="body2" color="text.secondary">Guide:</Typography><ProfileLink handle={selected.booking.guideHandle}>{selected.booking.guideName}</ProfileLink></Stack><Stack direction="row" spacing={0.5}><Typography variant="body2" color="text.secondary">Customer:</Typography><ProfileLink handle={selected.booking.customerHandle}>{selected.booking.customerName}</ProfileLink></Stack></Stack>
+                      </>}
+                    </Paper>}
                   </Box>
                   <Stack spacing={1.25} sx={{ flex: 1, p: 2, overflowY: 'auto', maxHeight: 480 }}>
                     {messages.length === 0 && <Typography color="text.secondary" textAlign="center" sx={{ py: 5 }}>No messages yet.</Typography>}

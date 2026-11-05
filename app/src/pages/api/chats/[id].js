@@ -13,6 +13,58 @@ async function markConversationRead(conversationId, userId) {
   await query(`UPDATE app_notifications SET read_at = COALESCE(read_at, NOW()), updated_at = NOW() WHERE recipient_user_id = $1 AND read_at IS NULL AND notification_type IN ('chat_message', 'chat_ready') AND (metadata->>'conversationId' = $2 OR href = '/chats?conversation=' || $2)`, [userId, conversationId]);
 }
 
+async function getBookingContext(conversation) {
+  if (conversation.conversation_type === 'reservation') {
+    const result = await query(
+      `SELECT r.status, r.check_in_date, r.check_out_date, r.guest_count,
+        s.name AS stay_name, s.slug AS stay_slug,
+        COALESCE(NULLIF(host.display_name, ''), NULLIF(host.username, ''), split_part(host.email, '@', 1)) AS host_name,
+        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(host.username, ''), NULLIF(host.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS host_handle,
+        COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), split_part(customer.email, '@', 1)) AS customer_name,
+        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS customer_handle
+       FROM reservations r
+       JOIN stays s ON s.id = r.stay_id
+       JOIN users host ON host.id = s.owner_user_id
+       JOIN users customer ON customer.id = r.customer_user_id
+       WHERE r.id = $1`,
+      [conversation.source_id]
+    );
+    const booking = result.rows[0];
+    return booking ? {
+      type: 'reservation', status: booking.status, stayName: booking.stay_name, staySlug: booking.stay_slug,
+      checkInDate: booking.check_in_date, checkOutDate: booking.check_out_date, guestCount: Number(booking.guest_count),
+      hostName: booking.host_name, hostHandle: booking.host_handle || '',
+      customerName: booking.customer_name, customerHandle: booking.customer_handle || '',
+    } : null;
+  }
+
+  if (conversation.conversation_type === 'guide_booking') {
+    const result = await query(
+      `SELECT b.status, b.start_date, b.traveler_count, p.title AS package_title, gp.slug AS guide_slug,
+        COALESCE(NULLIF(guide_user.display_name, ''), NULLIF(guide_user.username, ''), split_part(guide_user.email, '@', 1)) AS guide_name,
+        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(guide_user.username, ''), NULLIF(guide_user.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS guide_handle,
+        COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), split_part(customer.email, '@', 1)) AS customer_name,
+        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS customer_handle
+       FROM guide_bookings b
+       JOIN guide_packages p ON p.id = b.guide_package_id
+       JOIN guide_profiles gp ON gp.id = b.guide_profile_id
+       JOIN users guide_user ON guide_user.id = gp.user_id
+       JOIN users customer ON customer.id = b.customer_user_id
+       WHERE b.id = $1`,
+      [conversation.source_id]
+    );
+    const booking = result.rows[0];
+    return booking ? {
+      type: 'guide_booking', status: booking.status, packageTitle: booking.package_title, guideSlug: booking.guide_slug,
+      startDate: booking.start_date, travelerCount: Number(booking.traveler_count),
+      guideName: booking.guide_name, guideHandle: booking.guide_handle || '',
+      customerName: booking.customer_name, customerHandle: booking.customer_handle || '',
+    } : null;
+  }
+
+  return null;
+}
+
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
@@ -22,8 +74,9 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const messages = await query(`SELECT m.id, m.body, m.created_at, m.sender_user_id, CASE WHEN $2='support' AND u.role IN ('admin','superUser') THEN 'NepalTrex support · ' || u.email ELSE COALESCE(NULLIF(u.display_name,''), NULLIF(u.username,''), split_part(u.email,'@',1)) END AS sender_name FROM chat_messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=$1 ORDER BY m.created_at ASC`, [id, conversation.conversation_type]);
+      const booking = await getBookingContext(conversation);
       await markConversationRead(id, session.user.id);
-      return res.status(200).json({ conversation, currentUserId: session.user.id, messages: messages.rows });
+      return res.status(200).json({ conversation, booking, currentUserId: session.user.id, messages: messages.rows });
     } catch (error) { return res.status(500).json({ error: error.message || 'Failed to load messages' }); }
   }
   if (req.method === 'DELETE') {
