@@ -8,6 +8,7 @@ import ChatRoundedIcon from '@mui/icons-material/ChatRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import DoneAllRoundedIcon from '@mui/icons-material/DoneAllRounded';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import PushPinRoundedIcon from '@mui/icons-material/PushPinRounded';
 import SupportAgentRoundedIcon from '@mui/icons-material/SupportAgentRounded';
 import { authOptions } from '../lib/auth-options';
 import AppButton from '../components/AppButton';
@@ -36,7 +37,7 @@ export default function ChatsPage() {
   const [contactResults, setContactResults] = useState([]);
   const [searchingContacts, setSearchingContacts] = useState(false);
   const [startingDirectChat, setStartingDirectChat] = useState(false);
-  const [chatMenuAnchor, setChatMenuAnchor] = useState(null);
+  const [chatMenu, setChatMenu] = useState(null);
 
   const loadConversations = useCallback(async () => {
     const response = await fetch('/api/chats');
@@ -151,32 +152,34 @@ export default function ChatsPage() {
     finally { setSending(false); }
   };
 
-  const removeConversation = async () => {
-    if (!selectedId) return;
+  const removeConversation = async (conversationId = selectedId) => {
+    if (!conversationId) return;
     setDeleting(true);
     try {
-      const response = await fetch(`/api/chats/${selectedId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/chats/${conversationId}`, { method: 'DELETE' });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not remove chat');
-      const remaining = conversations.filter((conversation) => conversation.id !== selectedId);
+      const remaining = conversations.filter((conversation) => conversation.id !== conversationId);
       setConversations(remaining);
-      setSelectedId('');
-      setSelected(null);
-      setMessages([]);
-      if (remaining[0]) await openConversation(remaining[0].id);
+      if (selectedId === conversationId) {
+        setSelectedId('');
+        setSelected(null);
+        setMessages([]);
+        if (remaining[0]) await openConversation(remaining[0].id);
+      }
     } catch (removeError) { setError(removeError.message || 'Could not remove chat'); }
     finally { setDeleting(false); }
   };
 
-  const markConversationRead = async () => {
-    if (!selectedId) return;
+  const markConversationRead = async (conversationId = selectedId) => {
+    if (!conversationId) return;
     try {
-      const response = await fetch(`/api/chats/${selectedId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markRead: true }) });
+      const response = await fetch(`/api/chats/${conversationId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markRead: true }) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not mark chat as read');
-      setConversations((items) => items.map((item) => item.id === selectedId ? { ...item, unread_count: 0 } : item));
+      setConversations((items) => items.map((item) => item.id === conversationId ? { ...item, unread_count: 0 } : item));
     } catch (readError) { setError(readError.message || 'Could not mark chat as read'); }
-    finally { setChatMenuAnchor(null); }
+    finally { setChatMenu(null); }
   };
 
   const sendOnEnter = (event) => {
@@ -187,6 +190,23 @@ export default function ChatsPage() {
   };
 
   const selectedConversation = conversations.find((item) => item.id === selectedId);
+  const pinnedReservations = conversations.filter((conversation) => conversation.conversation_type === 'reservation' && conversation.reservation_status !== 'completed');
+  const regularConversations = conversations.filter((conversation) => !pinnedReservations.some((reservation) => reservation.id === conversation.id));
+  const renderConversation = (conversation) => (
+    <ListItemButton key={conversation.id} selected={conversation.id === selectedId} onClick={() => openConversation(conversation.id)} divider sx={(theme) => Number(conversation.unread_count) > 0 && conversation.id !== selectedId ? { bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1) } : undefined}>
+      <Avatar src={conversation.contact_image_url || undefined} sx={{ mr: 1.25, width: 40, height: 40 }}>{initials(conversation.contact_name)}</Avatar>
+      <Stack width="100%" spacing={0.5} minWidth={0}>
+        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+          <Typography fontWeight={800} noWrap sx={{ flex: 1 }}>{conversation.contact_name || conversation.title}</Typography>
+          {conversation.conversation_type === 'reservation' && <PushPinRoundedIcon color="primary" sx={{ fontSize: 16 }} />}
+          {Number(conversation.unread_count) > 0 && <Chip label={conversation.unread_count} size="small" color="primary" />}
+          <IconButton size="small" aria-label={`Options for ${conversation.contact_name || conversation.title}`} onClick={(event) => { event.stopPropagation(); setChatMenu({ anchor: event.currentTarget, conversationId: conversation.id }); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
+        </Box>
+        <Typography variant="caption" color="text.secondary" noWrap>{conversation.title}</Typography>
+        <Typography variant="caption" color="text.secondary" noWrap>{conversation.last_message || (conversation.conversation_type === 'reservation' ? `Reservation ${conversation.reservation_status || 'pending'}` : 'Start the conversation')}</Typography>
+      </Stack>
+    </ListItemButton>
+  );
 
   return (
     <>
@@ -197,7 +217,7 @@ export default function ChatsPage() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: { sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' } }}>
             <Box>
               <Typography variant="h3">Chats</Typography>
-              <Typography color="text.secondary" sx={{ mt: 0.75 }}>Message people, hosts, guides, and NepalTrex support. Only active chats are shown.</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.75 }}>Message people, hosts, guides, and NepalTrex support. Reservation chats stay pinned until the reservation is completed.</Typography>
             </Box>
             <AppButton startIcon={<SupportAgentRoundedIcon />} onClick={contactSupport}>Contact NepalTrex</AppButton>
           </Box>
@@ -221,23 +241,12 @@ export default function ChatsPage() {
                 <Stack alignItems="center" spacing={1} sx={{ p: 4, textAlign: 'center' }}>
                   <ChatRoundedIcon color="disabled" sx={{ fontSize: 40 }} />
                   <Typography fontWeight={800}>No chats yet</Typography>
-                  <Typography variant="body2" color="text.secondary">Accepted reservation chats will appear here.</Typography>
+                  <Typography variant="body2" color="text.secondary">Reservation chats and conversations will appear here.</Typography>
                 </Stack>
               ) : (
                 <List disablePadding>
-                  {conversations.map((conversation) => (
-                    <ListItemButton key={conversation.id} selected={conversation.id === selectedId} onClick={() => openConversation(conversation.id)} divider sx={(theme) => Number(conversation.unread_count) > 0 && conversation.id !== selectedId ? { bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1) } : undefined}>
-                      <Avatar src={conversation.contact_image_url || undefined} sx={{ mr: 1.25, width: 40, height: 40 }}>{initials(conversation.contact_name)}</Avatar>
-                      <Stack width="100%" spacing={0.5} minWidth={0}>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                          <Typography fontWeight={800} noWrap sx={{ flex: 1 }}>{conversation.contact_name || conversation.title}</Typography>
-                          {Number(conversation.unread_count) > 0 && <Chip label={conversation.unread_count} size="small" color="primary" />}
-                        </Box>
-                        <Typography variant="caption" color="text.secondary" noWrap>{conversation.title}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap>{conversation.last_message || (conversation.status === 'active' ? 'Start the conversation' : 'Waiting for acceptance')}</Typography>
-                      </Stack>
-                    </ListItemButton>
-                  ))}
+                  {pinnedReservations.length > 0 && <><Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 2, pt: 1.25, pb: 0.5, fontWeight: 800 }}>Pinned reservations</Typography>{pinnedReservations.map(renderConversation)}</>}
+                  {regularConversations.length > 0 && <><Typography variant="overline" color="text.secondary" sx={{ display: 'block', px: 2, pt: pinnedReservations.length ? 1.75 : 1.25, pb: 0.5, fontWeight: 800 }}>{pinnedReservations.length ? 'All chats' : 'Chats'}</Typography>{regularConversations.map(renderConversation)}</>}
                 </List>
               )}
             </Paper>
@@ -253,12 +262,7 @@ export default function ChatsPage() {
                         ) : <Typography fontWeight={800}>{selectedConversation?.contact_name || selectedConversation?.title || 'Chat'}</Typography>}
                         <Typography variant="caption" color="text.secondary">{selected.status === 'active' ? 'Private booking conversation' : 'Chat becomes available after acceptance'}</Typography>
                       </Box>
-                      <IconButton aria-label="Chat options" aria-controls={chatMenuAnchor ? 'chat-options-menu' : undefined} aria-haspopup="true" aria-expanded={chatMenuAnchor ? 'true' : undefined} onClick={(event) => setChatMenuAnchor(event.currentTarget)} sx={{ ml: 'auto' }}><MoreVertRoundedIcon /></IconButton>
                     </Stack>
-                    <Menu id="chat-options-menu" anchorEl={chatMenuAnchor} open={Boolean(chatMenuAnchor)} onClose={() => setChatMenuAnchor(null)}>
-                      <MenuItem onClick={markConversationRead}><ListItemIcon><DoneAllRoundedIcon fontSize="small" /></ListItemIcon>Mark as read</MenuItem>
-                      <MenuItem onClick={() => { setChatMenuAnchor(null); removeConversation(); }} disabled={deleting} sx={{ color: 'error.main' }}><ListItemIcon sx={{ color: 'error.main' }}><DeleteOutlineRoundedIcon fontSize="small" /></ListItemIcon>{deleting ? 'Deleting…' : 'Delete chat'}</MenuItem>
-                    </Menu>
                     {selectedConversation?.conversation_type === 'reservation' && selectedConversation.stay_slug && <Typography component={Link} href={`/stays/${selectedConversation.stay_slug}`} variant="body2" sx={{ display: 'inline-block', mt: 1.25, color: 'primary.main', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>View stay: {selectedConversation.title}</Typography>}
                   </Box>
                   <Stack spacing={1.25} sx={{ flex: 1, p: 2, overflowY: 'auto', maxHeight: 480 }}>
@@ -270,6 +274,10 @@ export default function ChatsPage() {
               ) : <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, p: 5 }}><ChatRoundedIcon color="disabled" sx={{ fontSize: 48 }} /><Typography color="text.secondary" sx={{ mt: 1 }}>Choose a chat to view messages.</Typography></Stack>}
             </Paper>
           </Box>
+          <Menu id="chat-options-menu" anchorEl={chatMenu?.anchor} open={Boolean(chatMenu)} onClose={() => setChatMenu(null)}>
+            <MenuItem onClick={() => markConversationRead(chatMenu?.conversationId)}><ListItemIcon><DoneAllRoundedIcon fontSize="small" /></ListItemIcon>Mark as read</MenuItem>
+            <MenuItem onClick={() => { const conversationId = chatMenu?.conversationId; setChatMenu(null); removeConversation(conversationId); }} disabled={deleting} sx={{ color: 'error.main' }}><ListItemIcon sx={{ color: 'error.main' }}><DeleteOutlineRoundedIcon fontSize="small" /></ListItemIcon>{deleting ? 'Deleting…' : 'Delete chat'}</MenuItem>
+          </Menu>
         </Stack>
       </Container>
     </>
