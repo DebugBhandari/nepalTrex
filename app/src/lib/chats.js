@@ -42,9 +42,14 @@ export async function activateConversation(client, conversationType, sourceId) {
 
 export async function createChatNotifications(client, conversationId, senderUserId, body, notificationType = 'chat_message') {
   const recipients = await client.query(
-    `SELECT u.id, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS name
-     FROM chat_participants cp JOIN users u ON u.id = cp.user_id
-     WHERE cp.conversation_id = $1 AND cp.user_id <> $2`,
+    `SELECT DISTINCT u.id, COALESCE(NULLIF(u.display_name, ''), NULLIF(u.username, ''), split_part(u.email, '@', 1)) AS name
+     FROM users u
+     JOIN chat_conversations c ON c.id = $1
+     WHERE u.id <> $2
+       AND (
+         EXISTS (SELECT 1 FROM chat_participants cp WHERE cp.conversation_id = c.id AND cp.user_id = u.id)
+         OR (c.conversation_type = 'support' AND u.role = 'superUser' AND EXISTS (SELECT 1 FROM users sender WHERE sender.id = $2 AND sender.role NOT IN ('admin', 'superUser')))
+       )`,
     [conversationId, senderUserId]
   );
   const sender = await client.query(`SELECT COALESCE(NULLIF(display_name, ''), NULLIF(username, ''), split_part(email, '@', 1)) AS name FROM users WHERE id = $1`, [senderUserId]);

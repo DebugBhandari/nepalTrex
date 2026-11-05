@@ -15,7 +15,7 @@ function formattedDate(value) {
 
 function notificationHref(notification) {
   if (notification.notification_type === 'guide_booking_requested' && notification.metadata?.guideBookingId) {
-    return `/profile?tab=guide-bookings&booking=${encodeURIComponent(notification.metadata.guideBookingId)}`;
+    return `/guides/manage?booking=${encodeURIComponent(notification.metadata.guideBookingId)}`;
   }
   return notification.href || '/';
 }

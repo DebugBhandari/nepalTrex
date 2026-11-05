@@ -4,7 +4,7 @@ import { pool, query } from '../../../lib/db';
 import { createChatNotifications } from '../../../lib/chats';
 
 async function canAccessConversation(conversationId, userId, role) {
-  const result = await query(`SELECT c.* FROM chat_conversations c LEFT JOIN chat_participants cp ON cp.conversation_id=c.id AND cp.user_id=$2 WHERE c.id=$1 AND (cp.user_id IS NOT NULL OR ($3 IN ('admin', 'superUser') AND c.conversation_type='support'))`, [conversationId, userId, role || 'user']);
+  const result = await query(`SELECT c.* FROM chat_conversations c LEFT JOIN chat_participants cp ON cp.conversation_id=c.id AND cp.user_id=$2 WHERE c.id=$1 AND (cp.user_id IS NOT NULL OR ($3='superUser' AND c.conversation_type IN ('support', 'guide_booking')))`, [conversationId, userId, role || 'user']);
   return result.rows[0] || null;
 }
 
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   if (!conversation) return res.status(404).json({ error: 'Chat not found' });
   if (req.method === 'GET') {
     try {
-      const messages = await query(`SELECT m.id, m.body, m.created_at, m.sender_user_id, COALESCE(NULLIF(u.display_name,''), NULLIF(u.username,''), split_part(u.email,'@',1)) AS sender_name FROM chat_messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=$1 ORDER BY m.created_at ASC`, [id]);
+      const messages = await query(`SELECT m.id, m.body, m.created_at, m.sender_user_id, CASE WHEN $2='support' AND u.role IN ('admin','superUser') THEN 'NepalTrex support · ' || u.email ELSE COALESCE(NULLIF(u.display_name,''), NULLIF(u.username,''), split_part(u.email,'@',1)) END AS sender_name FROM chat_messages m JOIN users u ON u.id=m.sender_user_id WHERE m.conversation_id=$1 ORDER BY m.created_at ASC`, [id, conversation.conversation_type]);
       await query(`UPDATE chat_participants SET last_read_at=NOW() WHERE conversation_id=$1 AND user_id=$2`, [id, session.user.id]);
       return res.status(200).json({ conversation, currentUserId: session.user.id, messages: messages.rows });
     } catch (error) { return res.status(500).json({ error: error.message || 'Failed to load messages' }); }
@@ -32,6 +32,9 @@ export default async function handler(req, res) {
     await client.query(`UPDATE chat_conversations SET updated_at=NOW() WHERE id=$1`, [id]);
     await createChatNotifications(client, id, session.user.id, body);
     await client.query('COMMIT');
-    return res.status(201).json({ message: message.rows[0] });
+    const senderName = conversation.conversation_type === 'support' && ['admin', 'superUser'].includes(session.user.role)
+      ? `NepalTrex support · ${session.user.email || ''}`
+      : session.user.name || session.user.email || 'You';
+    return res.status(201).json({ message: { ...message.rows[0], sender_name: senderName } });
   } catch (error) { await client.query('ROLLBACK'); return res.status(500).json({ error: error.message || 'Failed to send message' }); } finally { client.release(); }
 }
