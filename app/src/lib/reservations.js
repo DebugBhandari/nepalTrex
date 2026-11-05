@@ -30,6 +30,7 @@ export function serializeReservation(row) {
     customerHandle: row.customer_handle || '',
     ownerName: row.owner_name || '',
     ownerHandle: row.owner_handle || '',
+    ownerEmail: row.owner_email || '',
     customerEmail: row.customer_email || '',
     customerPhone: row.customer_phone,
     checkInDate: row.check_in_date,

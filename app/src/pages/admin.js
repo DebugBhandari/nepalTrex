@@ -532,9 +532,19 @@ export default function AdminPage({ user, initialStays }) {
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.4 }}>
                               {reservation.stayLocation || 'Location unavailable'} · {new Date(`${String(reservation.checkInDate).slice(0, 10)}T00:00:00`).toLocaleDateString()} – {new Date(`${String(reservation.checkOutDate).slice(0, 10)}T00:00:00`).toLocaleDateString()}
                             </Typography>
-                            <Stack direction="row" spacing={0.75} sx={{ mt: 1.25, flexWrap: 'wrap', gap: 0.5 }}>
-                              {reservation.customerHandle ? <Chip size="small" variant="outlined" component={Link} href={`/user/${reservation.customerHandle}`} clickable label={`Customer: ${reservation.customerName || 'Guest'}`} /> : <Chip size="small" variant="outlined" label={`Customer: ${reservation.customerName || 'Guest'}`} />}
-                              {isSuperUser && (reservation.ownerHandle ? <Chip size="small" variant="outlined" component={Link} href={`/user/${reservation.ownerHandle}`} clickable label={`Stay owner: ${reservation.ownerName || 'Owner'}`} /> : <Chip size="small" variant="outlined" label={`Stay owner: ${reservation.ownerName || 'Owner'}`} />)}
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.75} sx={{ mt: 1.25 }}>
+                              <Paper variant="outlined" sx={{ p: 1, flex: 1, bgcolor: 'primary.main', color: 'primary.contrastText', borderColor: 'primary.main' }}>
+                                <Typography variant="caption" sx={{ opacity: 0.82, display: 'block' }}>Customer</Typography>
+                                {reservation.customerHandle ? <Typography component={Link} href={`/user/${reservation.customerHandle}`} variant="body2" fontWeight={800} sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>{reservation.customerName || 'Guest'}</Typography> : <Typography variant="body2" fontWeight={800}>{reservation.customerName || 'Guest'}</Typography>}
+                                {reservation.customerEmail && <Typography component="a" href={`mailto:${reservation.customerEmail}`} variant="body2" sx={{ color: 'inherit', opacity: 0.94, overflowWrap: 'anywhere', textDecoration: 'underline', textUnderlineOffset: 2, userSelect: 'text' }}>{reservation.customerEmail}</Typography>}
+                              </Paper>
+                              <Paper variant="outlined" sx={{ p: 1, flex: 1, bgcolor: 'secondary.main', color: 'secondary.contrastText', borderColor: 'secondary.main' }}>
+                                <Typography variant="caption" sx={{ opacity: 0.82, display: 'block' }}>Stay owner</Typography>
+                                {reservation.ownerHandle ? <Typography component={Link} href={`/user/${reservation.ownerHandle}`} variant="body2" fontWeight={800} sx={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: 2 }}>{reservation.ownerName || 'Owner'}</Typography> : <Typography variant="body2" fontWeight={800}>{reservation.ownerName || 'Owner'}</Typography>}
+                                {reservation.ownerEmail && <Typography component="a" href={`mailto:${reservation.ownerEmail}`} variant="body2" sx={{ color: 'inherit', opacity: 0.94, overflowWrap: 'anywhere', textDecoration: 'underline', textUnderlineOffset: 2, userSelect: 'text' }}>{reservation.ownerEmail}</Typography>}
+                              </Paper>
+                            </Stack>
+                            <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, flexWrap: 'wrap', gap: 0.5 }}>
                               {reservation.customerPhone && <Chip size="small" variant="outlined" label={reservation.customerPhone} />}
                               {reservation.customerEmail && <Chip size="small" variant="outlined" label={reservation.customerEmail} />}
                               <Chip size="small" variant="outlined" label={`${reservation.guestCount} guest${reservation.guestCount === 1 ? '' : 's'}`} />
