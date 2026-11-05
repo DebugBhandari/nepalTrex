@@ -118,6 +118,7 @@ export default function AdminPage({ user, initialStays }) {
   const [reservationsLoaded, setReservationsLoaded] = useState(false);
   const [updatingReservationId, setUpdatingReservationId] = useState('');
   const [reservationNotes, setReservationNotes] = useState({});
+  const [reservationIdSearch, setReservationIdSearch] = useState('');
   const [staySearch, setStaySearch] = useState('');
   const [showStayFilters, setShowStayFilters] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
@@ -129,6 +130,10 @@ export default function AdminPage({ user, initialStays }) {
   const isAdminOrSuperUser = ['admin', 'superUser'].includes(user?.role || '');
   const profileHandle = normalizeHandle(user?.name || (user?.email || '').split('@')[0]);
   const pendingReservations = reservations.filter((reservation) => reservation.status === 'pending');
+  const visibleReservations = useMemo(() => {
+    const needle = reservationIdSearch.trim().toLowerCase();
+    return needle ? reservations.filter((reservation) => String(reservation.id || '').toLowerCase().includes(needle)) : reservations;
+  }, [reservationIdSearch, reservations]);
   const visibleStays = useMemo(() => {
     if (!isSuperUser) {
       return stays;
@@ -487,18 +492,19 @@ export default function AdminPage({ user, initialStays }) {
           <Card sx={{ mt: 4, border: '1px solid', borderColor: 'divider' }}>
             <CardContent>
               <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={1} sx={{ mb: 0.6 }}>
-                <Typography variant="h6" fontWeight={800}>Reservation Inbox{reservationsLoaded ? ` (${reservations.length})` : ''}</Typography>
+                <Typography variant="h6" fontWeight={800}>Reservation Inbox{reservationsLoaded ? ` (${visibleReservations.length}${reservationIdSearch.trim() ? ` of ${reservations.length}` : ''})` : ''}</Typography>
                 {pendingReservations.length > 0 && <Chip size="small" color="warning" label={`${pendingReservations.length} awaiting response`} />}
               </Stack>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2.25 }}>
                 Review date-aware room requests. Confirmed reservations reserve inventory; pending requests expire after 24 hours.
               </Typography>
+              <TextField label="Search reservation ID" value={reservationIdSearch} onChange={(event) => setReservationIdSearch(event.target.value)} placeholder="Paste all or part of a reservation ID" size="small" fullWidth sx={{ mb: 2 }} inputProps={{ 'aria-label': 'Search reservations by ID' }} />
 
               {!reservationsLoaded && <Typography color="text.secondary">Loading reservations...</Typography>}
-              {reservationsLoaded && reservations.length === 0 && <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}><Typography color="text.secondary">No reservation requests yet.</Typography></Paper>}
+              {reservationsLoaded && visibleReservations.length === 0 && <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}><Typography color="text.secondary">{reservations.length === 0 ? 'No reservation requests yet.' : 'No reservations match that ID.'}</Typography></Paper>}
 
               <Stack spacing={1.5}>
-                {reservations.map((reservation) => {
+                {visibleReservations.map((reservation) => {
                   const isUpdating = updatingReservationId === reservation.id;
                   const isPending = reservation.status === 'pending';
                   const holdExpiry = reservation.holdExpiresAt ? new Date(reservation.holdExpiresAt) : null;
@@ -527,7 +533,8 @@ export default function AdminPage({ user, initialStays }) {
                               {reservation.stayLocation || 'Location unavailable'} · {new Date(`${String(reservation.checkInDate).slice(0, 10)}T00:00:00`).toLocaleDateString()} – {new Date(`${String(reservation.checkOutDate).slice(0, 10)}T00:00:00`).toLocaleDateString()}
                             </Typography>
                             <Stack direction="row" spacing={0.75} sx={{ mt: 1.25, flexWrap: 'wrap', gap: 0.5 }}>
-                              <Chip size="small" variant="outlined" label={reservation.customerName || 'Guest'} />
+                              {reservation.customerHandle ? <Chip size="small" variant="outlined" component={Link} href={`/user/${reservation.customerHandle}`} clickable label={`Customer: ${reservation.customerName || 'Guest'}`} /> : <Chip size="small" variant="outlined" label={`Customer: ${reservation.customerName || 'Guest'}`} />}
+                              {isSuperUser && (reservation.ownerHandle ? <Chip size="small" variant="outlined" component={Link} href={`/user/${reservation.ownerHandle}`} clickable label={`Stay owner: ${reservation.ownerName || 'Owner'}`} /> : <Chip size="small" variant="outlined" label={`Stay owner: ${reservation.ownerName || 'Owner'}`} />)}
                               {reservation.customerPhone && <Chip size="small" variant="outlined" label={reservation.customerPhone} />}
                               {reservation.customerEmail && <Chip size="small" variant="outlined" label={reservation.customerEmail} />}
                               <Chip size="small" variant="outlined" label={`${reservation.guestCount} guest${reservation.guestCount === 1 ? '' : 's'}`} />

@@ -23,6 +23,10 @@ async function listReservationsForHost(userId, isSuperUser) {
   const result = await query(
     `
       SELECT r.*, s.name AS stay_name, s.slug AS stay_slug, s.location AS stay_location,
+        COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), r.customer_name, split_part(customer.email, '@', 1)) AS customer_name,
+        COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), customer.id::text) AS customer_handle,
+        COALESCE(NULLIF(owner.display_name, ''), NULLIF(owner.username, ''), split_part(owner.email, '@', 1)) AS owner_name,
+        COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(owner.username, ''), NULLIF(owner.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), owner.id::text) AS owner_handle,
         COALESCE(
           json_agg(json_build_object('roomId', ri.room_id, 'roomName', ri.room_name, 'nightlyPrice', ri.nightly_price, 'units', ri.units))
           FILTER (WHERE ri.id IS NOT NULL),
@@ -44,9 +48,11 @@ async function listReservationsForHost(userId, isSuperUser) {
         ) AS events
       FROM reservations r
       JOIN stays s ON s.id = r.stay_id
+      JOIN users customer ON customer.id = r.customer_user_id
+      JOIN users owner ON owner.id = s.owner_user_id
       LEFT JOIN reservation_items ri ON ri.reservation_id = r.id
       ${isSuperUser ? '' : 'WHERE s.owner_user_id = $1'}
-      GROUP BY r.id, s.id
+      GROUP BY r.id, s.id, customer.id, owner.id
       ORDER BY r.created_at DESC
     `,
     isSuperUser ? [] : [userId]

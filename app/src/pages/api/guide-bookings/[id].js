@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
   const id = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id;
   const { status, guideNote } = req.body || {};
-  if (!['confirmed', 'declined'].includes(status)) return res.status(400).json({ error: 'A confirmed or declined status is required' });
+  if (!['confirmed', 'declined', 'completed'].includes(status)) return res.status(400).json({ error: 'A confirmed, declined, or completed status is required' });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -17,7 +17,9 @@ export default async function handler(req, res) {
     const booking = found.rows[0];
     if (!booking) throw Object.assign(new Error('Guide booking not found'), { statusCode: 404 });
     if (booking.guide_user_id !== session.user.id && session.user.role !== 'superUser') throw Object.assign(new Error('Guide booking not found'), { statusCode: 404 });
-    if (booking.status !== 'pending') throw Object.assign(new Error('Only pending guide bookings can be updated'), { statusCode: 400 });
+    const isRespondingToPendingBooking = booking.status === 'pending' && ['confirmed', 'declined'].includes(status);
+    const isCompletingConfirmedBooking = booking.status === 'confirmed' && status === 'completed';
+    if (!isRespondingToPendingBooking && !isCompletingConfirmedBooking) throw Object.assign(new Error('Only pending guide bookings can be accepted or declined, and only confirmed guide bookings can be completed'), { statusCode: 400 });
     const update = await client.query(`UPDATE guide_bookings SET status=$1, guide_note=CASE WHEN $2::text IS NULL THEN guide_note ELSE $2 END, updated_at=NOW() WHERE id=$3 RETURNING id,status,guide_note,updated_at`, [status, typeof guideNote === 'string' ? guideNote.trim() || null : null, id]);
     await client.query(`INSERT INTO guide_booking_events (guide_booking_id,event_type,previous_status,next_status,note,actor_user_id) VALUES ($1,'guide_status_updated',$2,$3,$4,$5)`, [id, booking.status, status, typeof guideNote === 'string' ? guideNote.trim() || null : null, session.user.id]);
     if (status === 'confirmed') {

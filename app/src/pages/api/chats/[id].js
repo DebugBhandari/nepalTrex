@@ -19,9 +19,9 @@ async function getBookingContext(conversation) {
       `SELECT r.status, r.check_in_date, r.check_out_date, r.guest_count,
         s.name AS stay_name, s.slug AS stay_slug,
         COALESCE(NULLIF(host.display_name, ''), NULLIF(host.username, ''), split_part(host.email, '@', 1)) AS host_name,
-        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(host.username, ''), NULLIF(host.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS host_handle,
+        COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(host.username, ''), NULLIF(host.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), host.id::text) AS host_handle,
         COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), split_part(customer.email, '@', 1)) AS customer_name,
-        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS customer_handle
+        COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), customer.id::text) AS customer_handle
        FROM reservations r
        JOIN stays s ON s.id = r.stay_id
        JOIN users host ON host.id = s.owner_user_id
@@ -42,9 +42,9 @@ async function getBookingContext(conversation) {
     const result = await query(
       `SELECT b.status, b.start_date, b.traveler_count, p.title AS package_title, gp.slug AS guide_slug,
         COALESCE(NULLIF(guide_user.display_name, ''), NULLIF(guide_user.username, ''), split_part(guide_user.email, '@', 1)) AS guide_name,
-        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(guide_user.username, ''), NULLIF(guide_user.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS guide_handle,
+        COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(guide_user.username, ''), NULLIF(guide_user.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), guide_user.id::text) AS guide_handle,
         COALESCE(NULLIF(customer.display_name, ''), NULLIF(customer.username, ''), split_part(customer.email, '@', 1)) AS customer_name,
-        trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')) AS customer_handle
+        COALESCE(NULLIF(trim(both '-' from regexp_replace(lower(COALESCE(NULLIF(customer.username, ''), NULLIF(customer.display_name, ''))), '[^a-z0-9]+', '-', 'g')), ''), customer.id::text) AS customer_handle
        FROM guide_bookings b
        JOIN guide_packages p ON p.id = b.guide_package_id
        JOIN guide_profiles gp ON gp.id = b.guide_profile_id

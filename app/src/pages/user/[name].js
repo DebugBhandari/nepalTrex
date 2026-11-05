@@ -251,6 +251,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                               <AppButton size="small" onClick={() => updateGuideBooking(booking.id, 'confirmed')} disabled={updatingGuideBookingId === booking.id}>Accept</AppButton>
                               <AppButton size="small" color="error" variant="outlined" onClick={() => updateGuideBooking(booking.id, 'declined')} disabled={updatingGuideBookingId === booking.id}>Decline</AppButton>
                             </>}
+                            {booking.isGuide && booking.status === 'confirmed' && <AppButton size="small" color="success" variant="outlined" onClick={() => updateGuideBooking(booking.id, 'completed')} disabled={updatingGuideBookingId === booking.id}>Complete</AppButton>}
                             <AppButton size="small" variant="outlined" onClick={() => openChat('guide_booking', booking.id)}>{booking.status === 'confirmed' ? 'Message' : 'View chat request'}</AppButton>
                           </Stack>
                         </Stack>
@@ -271,7 +272,7 @@ export async function getServerSideProps(context) {
   const session = await getServerSession(context.req, context.res, authOptions);
   const handle = normalizeHandle(context.params?.name);
   const profileResult = await query(
-    `SELECT u.id, u.username, u.display_name, u.email, u.role, u.provider, u.profile_image_url, gp.approval_status AS guide_approval_status FROM users u LEFT JOIN guide_profiles gp ON gp.user_id = u.id WHERE trim(both '-' from regexp_replace(lower(COALESCE(u.username, '')), '[^a-z0-9]+', '-', 'g')) = $1 OR trim(both '-' from regexp_replace(lower(COALESCE(u.display_name, '')), '[^a-z0-9]+', '-', 'g')) = $1 LIMIT 1`,
+    `SELECT u.id, u.username, u.display_name, u.email, u.role, u.provider, u.profile_image_url, gp.approval_status AS guide_approval_status FROM users u LEFT JOIN guide_profiles gp ON gp.user_id = u.id WHERE trim(both '-' from regexp_replace(lower(COALESCE(u.username, '')), '[^a-z0-9]+', '-', 'g')) = $1 OR trim(both '-' from regexp_replace(lower(COALESCE(u.display_name, '')), '[^a-z0-9]+', '-', 'g')) = $1 OR u.id::text = $1 LIMIT 1`,
     [handle]
   );
   const row = profileResult.rows[0];
