@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const session = await getServerSession(req, res, authOptions);
     if (!session?.user?.id) return res.status(401).json({ error: 'Authentication required' });
-    try { const result = await query(`SELECT b.*, gp.slug AS guide_slug, COALESCE(NULLIF(u.display_name,''), NULLIF(u.username,''), split_part(u.email,'@',1)) AS guide_name, p.title AS package_title FROM guide_bookings b JOIN guide_profiles gp ON gp.id=b.guide_profile_id JOIN users u ON u.id=gp.user_id JOIN guide_packages p ON p.id=b.guide_package_id WHERE b.customer_user_id=$1 OR gp.user_id=$1 ORDER BY b.created_at DESC`, [session.user.id]); return res.status(200).json({ bookings: result.rows }); } catch (error) { return res.status(500).json({ error: error.message || 'Failed to fetch guide bookings' }); }
+    try { const result = await query(`SELECT b.*, gp.slug AS guide_slug, COALESCE(NULLIF(u.display_name,''), NULLIF(u.username,''), split_part(u.email,'@',1)) AS guide_name, p.title AS package_title FROM guide_bookings b JOIN guide_profiles gp ON gp.id=b.guide_profile_id JOIN users u ON u.id=gp.user_id JOIN guide_packages p ON p.id=b.guide_package_id WHERE $2 = 'superUser' OR b.customer_user_id=$1 OR gp.user_id=$1 ORDER BY b.created_at DESC LIMIT 10`, [session.user.id, session.user.role || 'user']); return res.status(200).json({ bookings: result.rows }); } catch (error) { return res.status(500).json({ error: error.message || 'Failed to fetch guide bookings' }); }
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   const session = await getServerSession(req, res, authOptions);

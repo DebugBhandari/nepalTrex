@@ -122,7 +122,7 @@ export default async function handler(req, res) {
           FROM chat_conversations c
           LEFT JOIN chat_participants cp ON cp.conversation_id = c.id AND cp.user_id = $1
           WHERE (cp.user_id IS NOT NULL
-            OR ($2 = 'superUser' AND c.conversation_type IN ('support', 'guide_booking')))
+            OR ($2 = 'superUser' AND c.conversation_type IN ('support', 'reservation', 'guide_booking')))
             AND (
               c.status = 'active'
               OR (c.conversation_type = 'reservation' AND EXISTS (SELECT 1 FROM reservations r WHERE r.id = c.source_id AND r.status <> 'completed'))
@@ -156,7 +156,7 @@ export default async function handler(req, res) {
       if (conversation.id !== created.rows[0].id) await client.query(`DELETE FROM chat_conversations WHERE id = $1`, [created.rows[0].id]);
       await client.query(`INSERT INTO chat_participants (conversation_id, user_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING`, [conversation.id, session.user.id, userId]);
     } else if (['reservation', 'guide_booking'].includes(conversationType) && typeof sourceId === 'string') {
-      const found = await client.query(`SELECT c.* FROM chat_conversations c LEFT JOIN chat_participants cp ON cp.conversation_id=c.id AND cp.user_id=$3 WHERE c.conversation_type=$1 AND c.source_id=$2 AND (cp.user_id IS NOT NULL OR ($4='superUser' AND c.conversation_type='guide_booking'))`, [conversationType, sourceId, session.user.id, session.user.role || 'user']);
+      const found = await client.query(`SELECT c.* FROM chat_conversations c LEFT JOIN chat_participants cp ON cp.conversation_id=c.id AND cp.user_id=$3 WHERE c.conversation_type=$1 AND c.source_id=$2 AND (cp.user_id IS NOT NULL OR ($4='superUser' AND c.conversation_type IN ('reservation', 'guide_booking')))`, [conversationType, sourceId, session.user.id, session.user.role || 'user']);
       conversation = found.rows[0];
       if (!conversation) throw Object.assign(new Error('Chat is not available for this booking'), { statusCode: 404 });
     } else throw Object.assign(new Error('Invalid chat request'), { statusCode: 400 });

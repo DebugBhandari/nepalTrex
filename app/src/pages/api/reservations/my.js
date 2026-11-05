@@ -38,6 +38,7 @@ export default async function handler(req, res) {
         WHERE r.customer_user_id = $1
         GROUP BY r.id, s.id
         ORDER BY r.created_at DESC
+        LIMIT 10
       `,
       [session.user.id]
     );

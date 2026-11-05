@@ -4,7 +4,7 @@ import { pool, query } from '../../../lib/db';
 import { createChatNotifications } from '../../../lib/chats';
 
 async function canAccessConversation(conversationId, userId, role) {
-  const result = await query(`SELECT c.* FROM chat_conversations c LEFT JOIN chat_participants cp ON cp.conversation_id=c.id AND cp.user_id=$2 WHERE c.id=$1 AND (cp.user_id IS NOT NULL OR ($3='superUser' AND c.conversation_type IN ('support', 'guide_booking')))`, [conversationId, userId, role || 'user']);
+  const result = await query(`SELECT c.* FROM chat_conversations c LEFT JOIN chat_participants cp ON cp.conversation_id=c.id AND cp.user_id=$2 WHERE c.id=$1 AND (cp.user_id IS NOT NULL OR ($3='superUser' AND c.conversation_type IN ('support', 'reservation', 'guide_booking')))`, [conversationId, userId, role || 'user']);
   return result.rows[0] || null;
 }
 

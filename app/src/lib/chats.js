@@ -1,3 +1,14 @@
+async function addBookingParticipants(client, conversationId, requesterUserId, providerUserId) {
+  await client.query(
+    `INSERT INTO chat_participants (conversation_id, user_id)
+     SELECT $1, u.id
+     FROM users u
+     WHERE u.id = ANY($2::uuid[]) OR u.role = 'superUser'
+     ON CONFLICT DO NOTHING`,
+    [conversationId, [requesterUserId, providerUserId]]
+  );
+}
+
 export async function createReservationConversation(client, reservation) {
   const result = await client.query(
     `INSERT INTO chat_conversations (conversation_type, source_id, status)
@@ -7,10 +18,7 @@ export async function createReservationConversation(client, reservation) {
     [reservation.id, reservation.status === 'confirmed' ? 'active' : 'pending']
   );
   const conversation = result.rows[0];
-  await client.query(
-    `INSERT INTO chat_participants (conversation_id, user_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING`,
-    [conversation.id, reservation.customerUserId, reservation.ownerUserId]
-  );
+  await addBookingParticipants(client, conversation.id, reservation.customerUserId, reservation.ownerUserId);
   return conversation;
 }
 
@@ -23,10 +31,7 @@ export async function createGuideBookingConversation(client, booking) {
     [booking.id, booking.status === 'confirmed' ? 'active' : 'pending']
   );
   const conversation = result.rows[0];
-  await client.query(
-    `INSERT INTO chat_participants (conversation_id, user_id) VALUES ($1, $2), ($1, $3) ON CONFLICT DO NOTHING`,
-    [conversation.id, booking.customerUserId, booking.guideUserId]
-  );
+  await addBookingParticipants(client, conversation.id, booking.customerUserId, booking.guideUserId);
   return conversation;
 }
 

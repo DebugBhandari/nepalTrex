@@ -55,6 +55,7 @@ async function listReservationsForHost(userId, isSuperUser) {
       ${isSuperUser ? '' : 'WHERE s.owner_user_id = $1'}
       GROUP BY r.id, s.id, customer.id, owner.id
       ORDER BY r.created_at DESC
+       LIMIT 10
     `,
     isSuperUser ? [] : [userId]
   );
