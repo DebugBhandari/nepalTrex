@@ -2,6 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Chip, Container, List, ListItemButton, ListItemText, Paper, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import NotificationsNoneRoundedIcon from '@mui/icons-material/NotificationsNoneRounded';
 import DoneAllRoundedIcon from '@mui/icons-material/DoneAllRounded';
 import { getServerSession } from 'next-auth/next';
@@ -71,7 +72,7 @@ export default function NotificationsPage() {
             ) : (
               <List disablePadding>
                 {notifications.map((notification, index) => (
-                  <ListItemButton key={notification.id} component={Link} href={notificationHref(notification)} onClick={() => openNotification(notification)} divider={index < notifications.length - 1} sx={{ alignItems: 'flex-start', py: 2, bgcolor: notification.read_at ? 'transparent' : 'action.hover' }}>
+                  <ListItemButton key={notification.id} component={Link} href={notificationHref(notification)} onClick={() => openNotification(notification)} divider={index < notifications.length - 1} sx={(theme) => ({ alignItems: 'flex-start', py: 2, bgcolor: notification.read_at ? 'transparent' : alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1) })}>
                     <ListItemText primary={<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}><Typography fontWeight={notification.read_at ? 600 : 800}>{notification.title}</Typography>{!notification.read_at && <Chip size="small" label="New" color="primary" />}</Box>} secondary={<><Typography component="span" display="block" color="text.primary" sx={{ mt: 0.6 }}>{notification.body}</Typography><Typography component="span" display="block" variant="caption" color="text.secondary" sx={{ mt: 0.7 }}>{formattedDate(notification.created_at)}</Typography></>} />
                   </ListItemButton>
                 ))}

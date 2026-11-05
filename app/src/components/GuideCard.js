@@ -35,10 +35,10 @@ export default function GuideCard({ guide, packageDetails }) {
         <Box component={Link} href={`/reviews/guide/${slug}`} sx={{ alignSelf: 'flex-start', color: 'inherit', textDecoration: 'none', borderRadius: 1, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 } }} aria-label={`View reviews for ${name}`}>
           <RatingStars rating={rating} count={reviewCount} />
         </Box>
-        <Stack direction="row" gap={0.75} flexWrap="wrap">
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', columnGap: 0.75, rowGap: 0.75 }}>
           {(languages || []).slice(0, 3).map((language) => <Chip key={language} label={language} size="small" />)}
           <Chip label={`${yearsExperience} yrs experience`} size="small" />
-        </Stack>
+        </Box>
         {packageDetails && (
           <Box>
             {packageDetails.title ? <><Typography variant="h6" sx={{ mt: 0.25 }}>{packageDetails.title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{packageDetails.durationDays} days · NPR {Number(packageDetails.priceAmount || 0).toLocaleString()} {String(packageDetails.priceUnit || 'per_person').replace('_', ' ')}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{packageDetails.summary}</Typography></> : <Typography variant="body2" color="text.secondary">Experienced in this terrain. Contact the guide for a tailored itinerary.</Typography>}
