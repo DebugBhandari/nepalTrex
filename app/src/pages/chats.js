@@ -197,7 +197,7 @@ export default function ChatsPage() {
   const renderConversation = (conversation) => (
     <ListItemButton key={conversation.id} selected={conversation.id === selectedId} onClick={() => openConversation(conversation.id)} divider sx={(theme) => Number(conversation.unread_count) > 0 && conversation.id !== selectedId ? { bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.2 : 0.1) } : undefined}>
       <Avatar src={conversation.contact_image_url || undefined} sx={{ mr: 1.25, width: 40, height: 40 }}>{initials(conversation.contact_name)}</Avatar>
-      <Stack flex={1} spacing={0.5} minWidth={0}>
+      <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
         <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
           <Typography fontWeight={800} noWrap sx={{ flex: 1 }}>{conversation.contact_name || conversation.title}</Typography>
           {conversation.conversation_type === 'reservation' && <PushPinRoundedIcon color="primary" sx={{ fontSize: 16 }} />}
@@ -206,7 +206,7 @@ export default function ChatsPage() {
         <Typography variant="caption" color="text.secondary" noWrap>{conversation.title}</Typography>
         <Typography variant="caption" color="text.secondary" noWrap>{conversation.last_message || (conversation.conversation_type === 'reservation' ? `Reservation ${conversation.reservation_status || 'pending'}` : 'Start the conversation')}</Typography>
       </Stack>
-      <IconButton size="small" aria-label={`Options for ${conversation.contact_name || conversation.title}`} sx={{ ml: 0.5 }} onClick={(event) => { event.stopPropagation(); setChatMenu({ anchor: event.currentTarget, conversationId: conversation.id }); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
+      <IconButton size="small" aria-label={`Options for ${conversation.contact_name || conversation.title}`} sx={{ ml: 'auto', alignSelf: 'center' }} onClick={(event) => { event.stopPropagation(); setChatMenu({ anchor: event.currentTarget, conversationId: conversation.id }); }}><MoreVertRoundedIcon fontSize="small" /></IconButton>
     </ListItemButton>
   );
 
