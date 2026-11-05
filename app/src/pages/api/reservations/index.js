@@ -3,6 +3,7 @@ import { authOptions } from '../../../lib/auth-options';
 import { pool, query } from '../../../lib/db';
 import { MAX_RESERVATION_UNITS, parseReservationDates, serializeReservation } from '../../../lib/reservations';
 import { createStayReservationNotifications, deliverReservationNotificationEmails } from '../../../lib/reservation-notifications';
+import { createReservationConversation } from '../../../lib/chats';
 
 const HOLD_INTERVAL = '24 hours';
 
@@ -195,6 +196,12 @@ export default async function handler(req, res) {
         `,
         [reservation.id, session.user.id]
       );
+      await createReservationConversation(client, {
+        id: reservation.id,
+        status: reservation.status,
+        customerUserId: session.user.id,
+        ownerUserId: room.owner_user_id,
+      });
 
       const notifications = await createStayReservationNotifications(client, {
         id: reservation.id,

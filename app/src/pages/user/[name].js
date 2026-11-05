@@ -78,6 +78,27 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
     [initialReservations]
   );
   const selectedGuideBookingId = typeof router.query.booking === 'string' ? router.query.booking : '';
+  const [updatingGuideBookingId, setUpdatingGuideBookingId] = useState('');
+
+  const openChat = async (conversationType, sourceId) => {
+    try {
+      const response = await fetch('/api/chats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversationType, sourceId }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not open chat');
+      await router.push(`/chats?conversation=${data.conversation.id}`);
+    } catch (error) { setStatusMessage(error.message || 'Could not open chat'); }
+  };
+
+  const updateGuideBooking = async (bookingId, status) => {
+    setUpdatingGuideBookingId(bookingId);
+    try {
+      const response = await fetch(`/api/guide-bookings/${bookingId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not update guide booking');
+      await router.replace(router.asPath);
+    } catch (error) { setStatusMessage(error.message || 'Could not update guide booking'); }
+    finally { setUpdatingGuideBookingId(''); }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') window.localStorage.setItem('nepaltrex-profile-active-tab', activeTab);
@@ -193,6 +214,7 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                           <Stack alignItems={{ xs: 'flex-start', sm: 'flex-end' }} spacing={0.75}>
                             <Chip label={reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)} color={RESERVATION_STATUS_COLORS[reservation.status] || 'default'} size="small" />
                             <Typography fontWeight={800}>NPR {Number(reservation.totalPrice || 0).toLocaleString()}</Typography>
+                            <AppButton size="small" variant="outlined" onClick={() => openChat('reservation', reservation.id)}>{reservation.status === 'confirmed' ? 'Message host' : 'View chat request'}</AppButton>
                           </Stack>
                         </Stack>
                       </CardContent>
@@ -208,7 +230,30 @@ export default function UserProfilePage({ profile, wishlistItems, initialReserva
                 </Stack>
               )}
               {activeTab === 'guide-bookings' && ownProfile && (
-                <Stack spacing={1.5}>{guideBookings.length === 0 ? <Typography color="text.secondary">No guide booking requests yet.</Typography> : guideBookings.map((booking) => <Card key={booking.id} variant="outlined" sx={booking.id === selectedGuideBookingId ? { borderColor: 'primary.main', borderWidth: 2, boxShadow: (theme) => `0 0 0 3px ${theme.palette.primary.main}1f` } : undefined}><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}><Box><Typography fontWeight={800}>{booking.packageTitle}</Typography><Typography variant="body2" color="text.secondary">{booking.isGuide ? `Requested by ${booking.customerName}` : `with ${booking.guideName}`} · {formatDate(booking.startDate)} · {booking.travelerCount} travelers</Typography></Box><Chip label={booking.status} color={RESERVATION_STATUS_COLORS[booking.status] || 'default'} size="small" /></Stack></CardContent></Card>)}</Stack>
+                <Stack spacing={1.5}>
+                  {guideBookings.length === 0 ? (
+                    <Typography color="text.secondary">No guide bookings yet.</Typography>
+                  ) : guideBookings.map((booking) => (
+                    <Card key={booking.id} variant="outlined" sx={booking.id === selectedGuideBookingId ? { borderColor: 'primary.main', borderWidth: 2, boxShadow: (theme) => `0 0 0 3px ${theme.palette.primary.main}1f` } : undefined}>
+                      <CardContent>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}>
+                          <Box>
+                            <Typography fontWeight={800}>{booking.packageTitle}</Typography>
+                            <Typography variant="body2" color="text.secondary">{booking.isGuide ? `Requested by ${booking.customerName}` : `with ${booking.guideName}`} · {formatDate(booking.startDate)} · {booking.travelerCount} travelers</Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                            <Chip label={booking.status} color={RESERVATION_STATUS_COLORS[booking.status] || 'default'} size="small" />
+                            {booking.isGuide && booking.status === 'pending' && <>
+                              <AppButton size="small" onClick={() => updateGuideBooking(booking.id, 'confirmed')} disabled={updatingGuideBookingId === booking.id}>Accept</AppButton>
+                              <AppButton size="small" color="error" variant="outlined" onClick={() => updateGuideBooking(booking.id, 'declined')} disabled={updatingGuideBookingId === booking.id}>Decline</AppButton>
+                            </>}
+                            <AppButton size="small" variant="outlined" onClick={() => openChat('guide_booking', booking.id)}>{booking.status === 'confirmed' ? 'Message' : 'View chat request'}</AppButton>
+                          </Stack>
+                        </Stack>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
               )}
             </CardContent>
           </Card>

@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth-options';
 import { pool } from '../../../lib/db';
 import { CUSTOMER_RESERVATION_STATUSES, HOST_RESERVATION_STATUSES } from '../../../lib/reservations';
+import { activateConversation, createChatNotifications } from '../../../lib/chats';
 
 function requestError(message, statusCode) {
   const error = new Error(message);
@@ -82,6 +83,10 @@ export default async function handler(req, res) {
       `,
       [id, session.user.id, isHost ? 'host_status_updated' : 'customer_cancelled', reservation.status, status, isHost && typeof hostNote === 'string' ? hostNote.trim() || null : null]
     );
+    if (status === 'confirmed') {
+      const conversation = await activateConversation(client, 'reservation', id);
+      if (conversation) await createChatNotifications(client, conversation.id, session.user.id, 'Your reservation was accepted. You can now message each other.', 'chat_ready');
+    }
     await client.query('COMMIT');
 
     return res.status(200).json({ reservation: updateResult.rows[0] });
