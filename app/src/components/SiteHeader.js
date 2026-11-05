@@ -40,7 +40,9 @@ export default function SiteHeader() {
   const { data: session, status } = useSession();
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [guideApprovalStatus, setGuideApprovalStatus] = useState(null);
   const isAdmin = ['admin', 'superUser'].includes(session?.user?.role);
+  const isApprovedGuide = guideApprovalStatus === 'approved';
 
   useEffect(() => {
     if (status !== 'authenticated') { setUnreadNotifications(0); return undefined; }
@@ -53,6 +55,24 @@ export default function SiteHeader() {
       } catch { /* Header notifications are non-critical. */ }
     };
     loadUnreadCount();
+    return () => { active = false; };
+  }, [status]);
+
+  useEffect(() => {
+    if (status !== 'authenticated') {
+      setGuideApprovalStatus(null);
+      return undefined;
+    }
+
+    let active = true;
+    const loadGuideStatus = async () => {
+      try {
+        const response = await fetch('/api/guides/status');
+        const data = await response.json();
+        if (active && response.ok) setGuideApprovalStatus(data.approvalStatus || null);
+      } catch { /* The guide menu item is non-critical. */ }
+    };
+    loadGuideStatus();
     return () => { active = false; };
   }, [status]);
 
@@ -122,7 +142,7 @@ export default function SiteHeader() {
               <MenuItem component={Link} href="/profile" onClick={() => setUserMenuAnchor(null)}><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />My profile</MenuItem>
               <MenuItem component={Link} href="/notifications" onClick={() => setUserMenuAnchor(null)}><NotificationsRoundedIcon fontSize="small" sx={{ mr: 1 }} />Notifications</MenuItem>
               <MenuItem component={Link} href="/attempts" onClick={() => setUserMenuAnchor(null)}><WorkspacePremiumRoundedIcon fontSize="small" sx={{ mr: 1 }} />My trek achievements</MenuItem>
-              <MenuItem component={Link} href="/guides/manage" onClick={() => setUserMenuAnchor(null)}><HikingRoundedIcon fontSize="small" sx={{ mr: 1 }} />Guide workspace</MenuItem>
+              {isApprovedGuide && <MenuItem component={Link} href="/guides/manage" onClick={() => setUserMenuAnchor(null)}><HikingRoundedIcon fontSize="small" sx={{ mr: 1 }} />Guide dashboard</MenuItem>}
               {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><HotelRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}
               {session?.user?.role === 'superUser' && <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}><DashboardRoundedIcon fontSize="small" sx={{ mr: 1 }} />Platform dashboard</MenuItem>}
               <MenuItem onClick={() => signOut({ callbackUrl: '/' })}><LogoutRoundedIcon fontSize="small" sx={{ mr: 1 }} />Sign out</MenuItem>
