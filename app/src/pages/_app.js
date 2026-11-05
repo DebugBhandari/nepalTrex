@@ -26,8 +26,9 @@ function FloatingChatNotifications() {
       } catch { /* Chat badge is non-critical. */ }
     };
     loadUnreadChats();
-    const interval = window.setInterval(loadUnreadChats, 30000);
-    return () => { active = false; window.clearInterval(interval); };
+    window.addEventListener('nepaltrex:chat-read', loadUnreadChats);
+    const interval = window.setInterval(loadUnreadChats, 5000);
+    return () => { active = false; window.removeEventListener('nepaltrex:chat-read', loadUnreadChats); window.clearInterval(interval); };
   }, [status]);
 
   if (status !== 'authenticated') return null;

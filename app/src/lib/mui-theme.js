@@ -149,10 +149,26 @@ export function createAppTheme(mode = 'light') {
             borderRadius: 7,
             borderColor: palette.border,
             fontWeight: 650,
-            backgroundColor: alpha(palette.primary, 0.07),
           },
           colorDefault: {
             color: palette.text,
+            backgroundColor: alpha(palette.primary, 0.07),
+          },
+          colorPrimary: {
+            color: brandPalette.papayaWhip[900],
+            backgroundColor: palette.primary,
+          },
+          colorSuccess: {
+            color: '#ffffff',
+            backgroundColor: '#18794e',
+          },
+          colorWarning: {
+            color: '#201305',
+            backgroundColor: '#f2a51a',
+          },
+          colorError: {
+            color: '#ffffff',
+            backgroundColor: '#b42318',
           },
           outlined: {
             backgroundColor: 'transparent',
