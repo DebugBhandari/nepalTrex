@@ -2,10 +2,12 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
-import { Alert, Avatar, Box, Chip, CircularProgress, Container, List, ListItemButton, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Chip, CircularProgress, Container, IconButton, List, ListItemButton, ListItemIcon, Menu, MenuItem, Paper, Stack, TextField, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ChatRoundedIcon from '@mui/icons-material/ChatRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
+import DoneAllRoundedIcon from '@mui/icons-material/DoneAllRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import SupportAgentRoundedIcon from '@mui/icons-material/SupportAgentRounded';
 import { authOptions } from '../lib/auth-options';
 import AppButton from '../components/AppButton';
@@ -34,6 +36,7 @@ export default function ChatsPage() {
   const [contactResults, setContactResults] = useState([]);
   const [searchingContacts, setSearchingContacts] = useState(false);
   const [startingDirectChat, setStartingDirectChat] = useState(false);
+  const [chatMenuAnchor, setChatMenuAnchor] = useState(null);
 
   const loadConversations = useCallback(async () => {
     const response = await fetch('/api/chats');
@@ -43,8 +46,7 @@ export default function ChatsPage() {
     return data.conversations || [];
   }, []);
 
-  const openConversation = useCallback(async (id) => {
-    setSelectedId(id);
+  const refreshConversation = useCallback(async (id, showErrors = true) => {
     try {
       const response = await fetch(`/api/chats/${id}`);
       const data = await response.json();
@@ -53,8 +55,13 @@ export default function ChatsPage() {
       setCurrentUserId(data.currentUserId || '');
       setMessages(data.messages || []);
       setConversations((items) => items.map((item) => item.id === id ? { ...item, unread_count: 0 } : item));
-    } catch (loadError) { setError(loadError.message || 'Could not load messages'); }
+    } catch (loadError) { if (showErrors) setError(loadError.message || 'Could not load messages'); }
   }, []);
+
+  const openConversation = useCallback(async (id) => {
+    setSelectedId(id);
+    await refreshConversation(id);
+  }, [refreshConversation]);
 
   useEffect(() => {
     let active = true;
@@ -69,6 +76,23 @@ export default function ChatsPage() {
     })();
     return () => { active = false; };
   }, [loadConversations, openConversation]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') loadConversations().catch(() => {});
+    };
+    const interval = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(interval);
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (!selectedId) return undefined;
+    const refresh = () => {
+      if (document.visibilityState === 'visible') refreshConversation(selectedId, false);
+    };
+    const interval = window.setInterval(refresh, 3000);
+    return () => window.clearInterval(interval);
+  }, [selectedId, refreshConversation]);
 
   useEffect(() => {
     const search = contactSearch.trim();
@@ -144,6 +168,24 @@ export default function ChatsPage() {
     finally { setDeleting(false); }
   };
 
+  const markConversationRead = async () => {
+    if (!selectedId) return;
+    try {
+      const response = await fetch(`/api/chats/${selectedId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ markRead: true }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not mark chat as read');
+      setConversations((items) => items.map((item) => item.id === selectedId ? { ...item, unread_count: 0 } : item));
+    } catch (readError) { setError(readError.message || 'Could not mark chat as read'); }
+    finally { setChatMenuAnchor(null); }
+  };
+
+  const sendOnEnter = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      if (!sending && body.trim()) sendMessage(event);
+    }
+  };
+
   const selectedConversation = conversations.find((item) => item.id === selectedId);
 
   return (
@@ -211,15 +253,19 @@ export default function ChatsPage() {
                         ) : <Typography fontWeight={800}>{selectedConversation?.contact_name || selectedConversation?.title || 'Chat'}</Typography>}
                         <Typography variant="caption" color="text.secondary">{selected.status === 'active' ? 'Private booking conversation' : 'Chat becomes available after acceptance'}</Typography>
                       </Box>
-                      <AppButton size="small" color="error" variant="outlined" startIcon={<DeleteOutlineRoundedIcon />} onClick={removeConversation} disabled={deleting} sx={{ ml: 'auto', flexShrink: 0 }}>{deleting ? 'Removing…' : 'Remove chat'}</AppButton>
+                      <IconButton aria-label="Chat options" aria-controls={chatMenuAnchor ? 'chat-options-menu' : undefined} aria-haspopup="true" aria-expanded={chatMenuAnchor ? 'true' : undefined} onClick={(event) => setChatMenuAnchor(event.currentTarget)} sx={{ ml: 'auto' }}><MoreVertRoundedIcon /></IconButton>
                     </Stack>
+                    <Menu id="chat-options-menu" anchorEl={chatMenuAnchor} open={Boolean(chatMenuAnchor)} onClose={() => setChatMenuAnchor(null)}>
+                      <MenuItem onClick={markConversationRead}><ListItemIcon><DoneAllRoundedIcon fontSize="small" /></ListItemIcon>Mark as read</MenuItem>
+                      <MenuItem onClick={() => { setChatMenuAnchor(null); removeConversation(); }} disabled={deleting} sx={{ color: 'error.main' }}><ListItemIcon sx={{ color: 'error.main' }}><DeleteOutlineRoundedIcon fontSize="small" /></ListItemIcon>{deleting ? 'Deleting…' : 'Delete chat'}</MenuItem>
+                    </Menu>
                     {selectedConversation?.conversation_type === 'reservation' && selectedConversation.stay_slug && <Typography component={Link} href={`/stays/${selectedConversation.stay_slug}`} variant="body2" sx={{ display: 'inline-block', mt: 1.25, color: 'primary.main', fontWeight: 700, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>View stay: {selectedConversation.title}</Typography>}
                   </Box>
                   <Stack spacing={1.25} sx={{ flex: 1, p: 2, overflowY: 'auto', maxHeight: 480 }}>
                     {messages.length === 0 && <Typography color="text.secondary" textAlign="center" sx={{ py: 5 }}>No messages yet.</Typography>}
                     {messages.map((message) => <Box key={message.id} sx={{ alignSelf: message.sender_user_id === currentUserId ? 'flex-end' : 'flex-start', maxWidth: '82%' }}><Paper variant="outlined" sx={{ p: 1.25, bgcolor: 'background.default' }}><Typography variant="caption" color="text.secondary">{message.sender_name || 'You'} · {formatTime(message.created_at)}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{message.body}</Typography></Paper></Box>)}
                   </Stack>
-                  {selected.status === 'active' ? <Box component="form" onSubmit={sendMessage} sx={{ p: 2, borderTop: 1, borderColor: 'divider', display: 'flex', gap: 1 }}><TextField value={body} onChange={(event) => setBody(event.target.value)} placeholder="Write a message…" multiline maxRows={4} fullWidth inputProps={{ maxLength: 4000 }} /><AppButton type="submit" disabled={sending || !body.trim()}>{sending ? 'Sending…' : 'Send'}</AppButton></Box> : <Alert severity="info" sx={{ m: 2 }}>The provider must accept this booking before messaging is enabled.</Alert>}
+                  {selected.status === 'active' ? <Box component="form" onSubmit={sendMessage} sx={{ p: 2, borderTop: 1, borderColor: 'divider', display: 'flex', gap: 1 }}><TextField value={body} onChange={(event) => setBody(event.target.value)} onKeyDown={sendOnEnter} placeholder="Write a message…" helperText="Enter to send · Shift+Enter for a new line" multiline maxRows={4} fullWidth inputProps={{ maxLength: 4000 }} /><AppButton type="submit" disabled={sending || !body.trim()}>{sending ? 'Sending…' : 'Send'}</AppButton></Box> : <Alert severity="info" sx={{ m: 2 }}>The provider must accept this booking before messaging is enabled.</Alert>}
                 </>
               ) : <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, p: 5 }}><ChatRoundedIcon color="disabled" sx={{ fontSize: 48 }} /><Typography color="text.secondary" sx={{ mt: 1 }}>Choose a chat to view messages.</Typography></Stack>}
             </Paper>

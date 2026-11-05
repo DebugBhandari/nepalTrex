@@ -27,6 +27,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     } catch (error) { return res.status(500).json({ error: error.message || 'Failed to remove chat' }); }
   }
+  if (req.method === 'PATCH') {
+    if (req.body?.markRead !== true) return res.status(400).json({ error: 'markRead must be true' });
+    try {
+      await query(`UPDATE chat_participants SET last_read_at = NOW() WHERE conversation_id = $1 AND user_id = $2`, [id, session.user.id]);
+      return res.status(200).json({ success: true });
+    } catch (error) { return res.status(500).json({ error: error.message || 'Failed to mark chat as read' }); }
+  }
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (conversation.status !== 'active') return res.status(403).json({ error: 'Chat will be available after the reservation is accepted' });
   const body = String(req.body?.body || '').trim();
