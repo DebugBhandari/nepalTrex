@@ -2,7 +2,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { getServerSession } from 'next-auth/next';
-import { Alert, Avatar, Box, Chip, Container, List, ListItemButton, Paper, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Chip, CircularProgress, Container, List, ListItemButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ChatRoundedIcon from '@mui/icons-material/ChatRounded';
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
@@ -30,6 +30,10 @@ export default function ChatsPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [contactSearch, setContactSearch] = useState('');
+  const [contactResults, setContactResults] = useState([]);
+  const [searchingContacts, setSearchingContacts] = useState(false);
+  const [startingDirectChat, setStartingDirectChat] = useState(false);
 
   const loadConversations = useCallback(async () => {
     const response = await fetch('/api/chats');
@@ -66,6 +70,24 @@ export default function ChatsPage() {
     return () => { active = false; };
   }, [loadConversations, openConversation]);
 
+  useEffect(() => {
+    const search = contactSearch.trim();
+    if (search.length < 2) { setContactResults([]); setSearchingContacts(false); return undefined; }
+    let active = true;
+    const timeout = window.setTimeout(async () => {
+      setSearchingContacts(true);
+      try {
+        const response = await fetch(`/api/chats/contacts?search=${encodeURIComponent(search)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not search users');
+        if (active) setContactResults(data.contacts || []);
+      } catch (searchError) {
+        if (active) { setContactResults([]); setError(searchError.message || 'Could not search users'); }
+      } finally { if (active) setSearchingContacts(false); }
+    }, 250);
+    return () => { active = false; window.clearTimeout(timeout); };
+  }, [contactSearch]);
+
   const contactSupport = async () => {
     try {
       const response = await fetch('/api/chats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversationType: 'support' }) });
@@ -74,6 +96,20 @@ export default function ChatsPage() {
       await loadConversations();
       await openConversation(data.conversation.id);
     } catch (requestError) { setError(requestError.message || 'Could not open support chat'); }
+  };
+
+  const startDirectChat = async (contact) => {
+    setStartingDirectChat(true);
+    try {
+      const response = await fetch('/api/chats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ conversationType: 'direct', userId: contact.id }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not start chat');
+      setContactSearch('');
+      setContactResults([]);
+      await loadConversations();
+      await openConversation(data.conversation.id);
+    } catch (startError) { setError(startError.message || 'Could not start chat'); }
+    finally { setStartingDirectChat(false); }
   };
 
   const sendMessage = async (event) => {
@@ -119,11 +155,24 @@ export default function ChatsPage() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: { sm: 'center' }, flexDirection: { xs: 'column', sm: 'row' } }}>
             <Box>
               <Typography variant="h3">Chats</Typography>
-              <Typography color="text.secondary">Coordinate accepted bookings, ask for help, or report a problem.</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.75 }}>Message people, hosts, guides, and NepalTrex support. Only active chats are shown.</Typography>
             </Box>
             <AppButton startIcon={<SupportAgentRoundedIcon />} onClick={contactSupport}>Contact NepalTrex</AppButton>
           </Box>
           {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
+          <Paper sx={{ p: 2 }}>
+            <Typography fontWeight={800}>Start a conversation</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>Search by a user’s name or username.</Typography>
+            <TextField value={contactSearch} onChange={(event) => setContactSearch(event.target.value)} label="Search users" placeholder="Start typing a name…" fullWidth size="small" sx={{ mt: 1.5 }} InputProps={{ endAdornment: searchingContacts ? <CircularProgress size={18} /> : null }} />
+            {contactSearch.trim().length >= 2 && !searchingContacts && contactResults.length === 0 && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>No matching users found.</Typography>}
+            {contactResults.length > 0 && <List disablePadding sx={{ mt: 1 }}>
+              {contactResults.map((contact) => <ListItemButton key={contact.id} onClick={() => startDirectChat(contact)} disabled={startingDirectChat} sx={{ borderRadius: 1.25, gap: 1.25 }}>
+                <Avatar src={contact.image_url || undefined}>{initials(contact.name)}</Avatar>
+                <Box minWidth={0}><Typography fontWeight={700} noWrap>{contact.name}</Typography>{contact.handle && <Typography variant="caption" color="text.secondary">@{contact.handle}</Typography>}</Box>
+                {startingDirectChat && <CircularProgress size={18} sx={{ ml: 'auto' }} />}
+              </ListItemButton>)}
+            </List>}
+          </Paper>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '340px minmax(0, 1fr)' }, gap: 2 }}>
             <Paper sx={{ overflow: 'hidden' }}>
               {loading ? <Typography sx={{ p: 3 }} color="text.secondary">Loading chats…</Typography> : conversations.length === 0 ? (
