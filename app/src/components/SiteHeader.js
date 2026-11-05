@@ -56,8 +56,7 @@ export default function SiteHeader() {
       } catch { /* Header notifications are non-critical. */ }
     };
     loadUnreadCount();
-    window.addEventListener('nepaltrex:chat-read', loadUnreadCount);
-    return () => { active = false; window.removeEventListener('nepaltrex:chat-read', loadUnreadCount); };
+    return () => { active = false; };
   }, [status]);
 
   useEffect(() => {

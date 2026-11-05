@@ -13,6 +13,7 @@ export default async function handler(req, res) {
           SELECT id, notification_type, title, body, href, metadata, read_at, created_at
           FROM app_notifications
           WHERE recipient_user_id = $1
+            AND notification_type NOT IN ('chat_message', 'chat_ready')
           ORDER BY created_at DESC
           LIMIT 100
         `,
@@ -31,7 +32,7 @@ export default async function handler(req, res) {
     try {
       if (markAllRead) {
         await query(
-          `UPDATE app_notifications SET read_at = COALESCE(read_at, NOW()), updated_at = NOW() WHERE recipient_user_id = $1 AND read_at IS NULL`,
+          `UPDATE app_notifications SET read_at = COALESCE(read_at, NOW()), updated_at = NOW() WHERE recipient_user_id = $1 AND read_at IS NULL AND notification_type NOT IN ('chat_message', 'chat_ready')`,
           [session.user.id]
         );
       } else {
