@@ -145,6 +145,7 @@ export default function SiteHeader() {
               <MenuItem component={Link} href="/chats" onClick={() => setUserMenuAnchor(null)}><ChatRoundedIcon fontSize="small" sx={{ mr: 1 }} />Chats & support</MenuItem>
               <MenuItem component={Link} href="/attempts" onClick={() => setUserMenuAnchor(null)}><WorkspacePremiumRoundedIcon fontSize="small" sx={{ mr: 1 }} />My trek achievements</MenuItem>
               {isApprovedGuide && <MenuItem component={Link} href="/guides/manage" onClick={() => setUserMenuAnchor(null)}><HikingRoundedIcon fontSize="small" sx={{ mr: 1 }} />Guide dashboard</MenuItem>}
+              {session?.user?.role === 'superUser' && <MenuItem component={Link} href="/guides/manage" onClick={() => setUserMenuAnchor(null)}><HikingRoundedIcon fontSize="small" sx={{ mr: 1 }} />Guide bookings</MenuItem>}
               {isAdmin && <MenuItem component={Link} href="/admin" onClick={() => setUserMenuAnchor(null)}><HotelRoundedIcon fontSize="small" sx={{ mr: 1 }} />Host dashboard</MenuItem>}
               {session?.user?.role === 'superUser' && <MenuItem component={Link} href="/dashboard" onClick={() => setUserMenuAnchor(null)}><DashboardRoundedIcon fontSize="small" sx={{ mr: 1 }} />Platform dashboard</MenuItem>}
               <MenuItem onClick={() => signOut({ callbackUrl: '/' })}><LogoutRoundedIcon fontSize="small" sx={{ mr: 1 }} />Sign out</MenuItem>
